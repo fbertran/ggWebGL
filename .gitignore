@@ -1,10 +1,18 @@
+add_data
+
+TODO_LIST
+
+.DS_Store
+src/*.o
+src/*.so
+src/*.dll
+
 # History files
 .Rhistory
 .Rapp.history
 
 # Session Data files
 .RData
-.RDataTmp
 
 # User-specific files
 .Ruserdata
@@ -35,15 +43,14 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+README.html
 
 # R Environment Variables
 .Renviron
+.DS_Store
 
-# pkgdown site
-docs/
+extra_docs/
 
-# translation temp files
-po/*~
+siggraph_figures
+siggraph_figures/
 
-# RStudio Connect folder
-rsconnect/
