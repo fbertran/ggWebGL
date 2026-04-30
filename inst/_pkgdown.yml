@@ -1,0 +1,52 @@
+url: https://fbertran.github.io/ggWebGL/
+title: "ggWebGL"
+lang: en
+
+news:
+  one_page: true
+
+template:
+  bootstrap: 5
+  bslib:
+    pkgdown-nav-height: 60px
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Space Grotesk"}
+    code_font: {google: "JetBrains Mono"}
+  bootswatch: litera
+  includes:
+    in_header: |
+      <style>
+        .navbar-brand {
+          letter-spacing: 0.02em;
+        }
+      </style>
+
+development:
+  mode: auto
+
+navbar:
+  structure:
+    left:
+      - intro
+      - reference
+      - articles
+      - news
+
+articles:
+  - title: Articles
+    navbar: Articles
+    contents:
+      - getting-started
+      - renderer-capabilities
+      - renderer-showcase-examples
+      - real-data-evidence
+  - title: Optional downstream bridges
+    navbar: Optional bridges
+    contents:
+      - xgeortr-bridge
+      - boids4r-animation
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with

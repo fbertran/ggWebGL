@@ -1,0 +1,181 @@
+# Experiment with Renderer Capabilities
+
+## Boundary
+
+This vignette demonstrates renderer capabilities in `ggWebGL`. The
+examples are renderer-generic: they exercise primitive payloads,
+interaction state, camera state, and widget controls without assigning
+scientific or package-specific meaning to the data.
+
+The showcased paths are:
+
+- `vectors` layers for 2D and 3D arrow glyphs
+- stable point ids for brush and lasso selection callbacks
+- linked magnifier metadata for brush-driven local zoom views
+- timeline metadata for frame-filtered rendering
+- opt-in 3D camera options for point, line, and vector layers
+- mesh payloads produced directly or through surface helpers
+
+The live widgets are sourced from `future_work_vector_field_demo()`,
+`future_work_selection_demo()`, `future_work_timeline_demo()`,
+`future_work_3d_camera_demo()`, and `future_work_mesh_surface_demo()` in
+`inst/examples/htmlwidget/future-work-gallery.R`.
+
+This article is intended for visual inspection and API orientation, not
+for performance claims. Fixed-rate interaction numbers must come from
+the benchmark scripts before they are used in package material.
+
+## Vector Arrows
+
+**Primitive contract.** The vector demo sends `x`, `y`, optional `z`,
+`xend`, `yend`, optional `zend`, `width`, `head_size`, `rgba`, and
+stable ids through
+[`ggwebgl_layer_vectors()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_vectors.md).
+
+**What to inspect.** Arrow shafts and heads should remain contained in
+the plot region during pan and zoom. The arrows are a renderer
+primitive, not a line-layer approximation.
+
+``` r
+renderer_capability_widgets$vectors
+```
+
+## Brush and Lasso Selection
+
+**Primitive contract.** The selection demo uses point payloads with
+stable `id` values and enables the widget-owned `brush` and `lasso`
+interaction modes.
+
+**What to inspect.** Dragging a brush or lasso region should show the
+selection outline, highlight selected samples, update the selected-count
+status, and report selected point ids through Shiny-style events or an
+optional JavaScript callback when the widget is embedded in an
+application.
+
+``` r
+renderer_capability_widgets$selection
+```
+
+## Linked Magnifying-Glass Zoom
+
+**Primitive contract.** The linked zoom demo uses
+[`ggwebgl_magnify_region()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_magnify_region.md)
+with `interactive = TRUE`. The helper builds a two-panel renderer spec,
+stores the linkage in `render$links$magnifiers`, and enables a brush
+interaction on the source panel. The right panel starts with a viewport
+that exactly matches the selected rectangle on the left.
+
+``` r
+set.seed(2031)
+linked_zoom_points <- data.frame(
+  x = c(rnorm(900, -0.7, 0.28), rnorm(700, 0.85, 0.2), rnorm(600, 0.1, 0.18)),
+  y = c(rnorm(900, 0.0, 0.2), rnorm(700, 0.55, 0.16), rnorm(600, -0.7, 0.12)),
+  group = rep(c("global", "local", "bridge"), c(900, 700, 600))
+)
+
+linked_zoom_source <- ggwebgl_spec(
+  layers = list(
+    ggwebgl_layer_points(
+      linked_zoom_points,
+      x = "x",
+      y = "y",
+      colour = c("#2563eb", "#f97316", "#0f766e")[match(linked_zoom_points$group, c("global", "local", "bridge"))],
+      alpha = 0.36,
+      size = 2.2
+    )
+  ),
+  labels = list(title = "Interactive linked zoom"),
+  webgl = list(shader = "density_splat", interactions = character())
+)
+
+linked_zoom_spec <- ggwebgl_magnify_region(
+  linked_zoom_source,
+  region = list(x = c(0.48, 1.25), y = c(0.25, 0.82)),
+  display = "panel",
+  interactive = TRUE,
+  global_label = "Global view",
+  zoom_label = "Brush-driven zoom"
+)
+
+linked_zoom_spec$render$links$magnifiers[[1L]]
+#> $source_panel
+#> [1] "global"
+#> 
+#> $target_panel
+#> [1] "local"
+#> 
+#> $region
+#> $region$x
+#> [1] 0.48 1.25
+#> 
+#> $region$y
+#> [1] 0.25 0.82
+```
+
+**What to inspect.** Drag a brush rectangle in the left panel. The
+rectangle is drawn in global coordinates, selected points are
+highlighted, and the right panel updates live to the brushed
+data-coordinate region. This is a renderer link, not a backend semantic
+selection.
+
+``` r
+ggWebGL(linked_zoom_spec, height = 430)
+```
+
+## Timeline Controls
+
+**Primitive contract.** The timeline demo attaches `frame` metadata to
+points and passes a
+[`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md)
+specification through
+[`ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_spec.md).
+
+**What to inspect.** The play, scrub, speed, and reset controls should
+change which exact frame is visible without changing the underlying
+scene contract.
+
+``` r
+renderer_capability_widgets$timeline
+```
+
+## Opt-In 3D Camera
+
+**Primitive contract.** The 3D demo uses point, line, and vector layers
+with `z` coordinates and sets `webgl$view` with an explicit
+[`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md)
+camera controller and projection.
+
+**What to inspect.** Dragging the scene should change the camera
+orientation while ordinary two-dimensional plots continue to use the
+existing pan and zoom behavior. Trackball examples use distinct rotation
+state rather than the orbit controller alias.
+
+``` r
+renderer_capability_widgets$camera_3d
+```
+
+## Mesh and Surface Helpers
+
+**Primitive contract.** The surface demo lowers a regular height field
+to an indexed mesh payload through
+[`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md).
+Direct mesh payloads can be created with
+[`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md).
+
+**What to inspect.** The surface is rendered as indexed triangle
+geometry with generated normals, Lambert material metadata, picking ids,
+and an optional wireframe overlay. Raster fields remain raster fields;
+they are not silently treated as surfaces.
+
+``` r
+renderer_capability_widgets$mesh_surface
+```
+
+## Standalone Gallery
+
+The same examples can be exported as standalone HTML files:
+
+``` r
+source(system.file("examples", "htmlwidget", "future-work-gallery.R", package = "ggWebGL"))
+export_future_work_gallery()
+```

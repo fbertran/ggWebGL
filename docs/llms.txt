@@ -1,0 +1,249 @@
+# ggWebGL, Browser-Native ‘WebGL’ Rendering for R Graphics ![](reference/figures/logo_ggWebGL.png)
+
+## Frédéric Bertrand
+
+`ggWebGL` is an R package for browser-native `WebGL` rendering of R
+graphics through `htmlwidgets`. It supports grammar-style graphics
+workflows and renderer-ready specifications for dense analytical and
+scientific scenes, including point, line, trajectory, raster, vector,
+mesh, and surface layers, shader-driven display modes, timeline
+controls, structured views, selection metadata, `Shiny` output, and
+publication-oriented static export helpers.
+
+The package keeps rendering in the browser and avoids any mandatory
+`CUDA`, `Metal`, or `OpenCL` toolchain. Heavier preprocessing,
+large-data preparation, and device-specific acceleration are left to
+companion packages.
+
+## Scope
+
+`ggWebGL` provides two complementary interfaces:
+
+- grammar-style layers for selected `ggplot2` workflows;
+- renderer-ready layer and specification helpers for downstream packages
+  or custom visualization pipelines.
+
+The package provides browser-native rendering, widget construction,
+renderer-ready specifications, shader modes, interaction contracts,
+structured views, timelines, and static export surfaces. It does not
+implement downstream scientific, simulation, topological,
+model-explanation, or domain-specific semantics. Those semantics should
+enter `ggWebGL` through explicit adapter boundaries such as
+backend-neutral tables, renderer-ready primitive layers, or
+`ggwebgl_spec` payloads.
+
+## Status
+
+The current implementation supports:
+
+| Feature | Current status |
+|----|----|
+| [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md) | Rendered in `WebGL` |
+| [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md) | Rendered in `WebGL` |
+| [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md) | Rendered in `WebGL` |
+| [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md) | Renderer path for vector-arrow layers |
+| [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md) | Renderer path for indexed mesh layers |
+| [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md) | Renderer path for triangulated surface layers |
+| Renderer-ready layers | Points, lines, vectors, rasters, meshes, and surfaces through `ggwebgl_layer_*()` helpers |
+| Renderer specification | [`ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_spec.md) and [`as_ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.md) adapter boundaries |
+| Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow` |
+| Interaction | `pan`, `zoom`, `hover`; visible `brush` and `lasso` selection through [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md) |
+| Runtime controls | Exact/cumulative timeline controls through [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md) |
+| View contract | Structured 2D/3D view and camera metadata through [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md) |
+| Output targets | R Markdown / Quarto HTML, `Shiny`, and static image export helpers |
+| `ggplot2` compatibility | Focused grammar-preserving paths for dense scenes and fixed-scale facets |
+| Unsupported facet mode | Free x/y scales fall back to metadata |
+
+`ggWebGL` is not a full replacement for `ggplot2`. It is a
+browser-native `WebGL` rendering backend with both grammar-style front
+ends and explicit renderer-ready adapter boundaries.
+
+## Installation
+
+``` r
+install.packages("ggWebGL")
+```
+
+For the development version:
+
+``` r
+# install.packages("remotes")
+remotes::install_github("fbertran/ggWebGL")
+```
+
+## Basic use
+
+``` r
+library(ggplot2)
+library(ggWebGL)
+
+plot <- ggplot(diamonds, aes(carat, price, colour = cut)) +
+  geom_point_webgl(size = 1.1, alpha = 0.18) +
+  theme_webgl(
+    shader = "density_splat",
+    interactions = c("pan", "zoom", "hover")
+  )
+
+ggplot_webgl(plot, height = 520)
+```
+
+## Renderer-ready specifications
+
+`ggWebGL` can also render explicit primitive layers without requiring
+the input to originate from a `ggplot2` object.
+
+``` r
+library(ggWebGL)
+
+points <- ggwebgl_layer_points(
+  data.frame(
+    x = c(0, 1, 2),
+    y = c(2, 1, 0),
+    colour = c("#0f766e", "#f97316", "#2563eb")
+  ),
+  x = "x",
+  y = "y",
+  colour = "colour",
+  size = 4
+)
+
+spec <- ggwebgl_spec(
+  layers = list(points),
+  labels = list(title = "Renderer-ready point layer")
+)
+
+ggWebGL(spec, height = 420)
+```
+
+## Architecture
+
+1.  Parse supported grammar-style point, line, raster, vector, mesh,
+    surface, and fixed-scale facet layers.
+2.  Normalize parsed layers into a renderer-scene contract.
+3.  Accept renderer-ready primitive payloads from explicit adapter
+    boundaries.
+4.  Resolve raster fills and styling metadata on the R side.
+5.  Bind panel-local payloads to browser-side `WebGL` buffers, textures,
+    attributes, and shader modes.
+6.  Render interactively through an `htmlwidgets` widget.
+7.  Reuse the same widget in `Shiny`.
+
+For static capture and publication workflows, `ggWebGL` exposes:
+
+- [`snapshot_ggwebgl()`](https://fbertran.github.io/ggWebGL/reference/snapshot_ggwebgl.md)
+  for PNG/JPEG captures;
+- [`compose_ggwebgl_figure()`](https://fbertran.github.io/ggWebGL/reference/compose_ggwebgl_figure.md)
+  for figure assembly, labels, and lightweight annotations.
+
+# Package index
+
+## All functions
+
+- [`as_ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.md)
+  : Convert backend objects to a ggWebGL renderer specification
+
+- [`as_ggwebgl_spec(`*`<xgeo_state>`*`)`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.xgeo_state.md)
+  :
+
+  Convert an `xgeo_state` object to a ggWebGL renderer specification
+
+- [`compose_ggwebgl_figure()`](https://fbertran.github.io/ggWebGL/reference/compose_ggwebgl_figure.md)
+  : Compose a Publication Figure from ggWebGL Panels
+
+- [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
+  : WebGL Line Layer
+
+- [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md)
+  : WebGL Mesh Layer
+
+- [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md)
+  : WebGL Point Layer
+
+- [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md)
+  : WebGL Raster Layer
+
+- [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md)
+  : WebGL Triangulated Surface Layer
+
+- [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md)
+  : WebGL Vector Arrow Layer
+
+- [`ggWebGL()`](https://fbertran.github.io/ggWebGL/reference/ggWebGL.md)
+  : Create a ggWebGL htmlwidget
+
+- [`ggWebGLOutput()`](https://fbertran.github.io/ggWebGL/reference/ggWebGLOutput.md)
+  : Shiny Output Binding for ggWebGL
+
+- [`ggplot_webgl()`](https://fbertran.github.io/ggWebGL/reference/ggplot_webgl.md)
+  : Convert a ggplot to a ggWebGL Widget
+
+- [`ggwebgl_example_data()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_example_data.md)
+  : Load Packaged ggWebGL Example Data
+
+- [`ggwebgl_layer_lines()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_lines.md)
+  : Renderer-Ready Line Layer
+
+- [`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md)
+  : Renderer-Ready Mesh Layer
+
+- [`ggwebgl_layer_points()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_points.md)
+  : Renderer-Ready Point Layer
+
+- [`ggwebgl_layer_raster()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_raster.md)
+  : Renderer-Ready Raster Layer
+
+- [`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md)
+  : Renderer-Ready Surface Layer
+
+- [`ggwebgl_layer_vectors()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_vectors.md)
+  : Renderer-Ready Vector Arrow Layer
+
+- [`ggwebgl_magnify_region()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_magnify_region.md)
+  : Build a Linked Magnifying-Glass Zoom Scene
+
+- [`ggwebgl_material()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_material.md)
+  : Define ggWebGL Mesh Material
+
+- [`ggwebgl_publication_figure()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_publication_figure.md)
+  : Build a Publication-Mode Figure Container from ggWebGL Panels
+
+- [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md)
+  : Define ggWebGL Selection Behavior
+
+- [`ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_spec.md)
+  : Build a ggWebGL Specification from Renderer-Ready Layers
+
+- [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md)
+  : ggWebGL Timeline Controls
+
+- [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md)
+  : Define a ggWebGL View Contract
+
+- [`renderGgWebGL()`](https://fbertran.github.io/ggWebGL/reference/renderGgWebGL.md)
+  : Render a ggWebGL Widget in Shiny
+
+- [`snapshot_ggwebgl()`](https://fbertran.github.io/ggWebGL/reference/snapshot_ggwebgl.md)
+  : Capture a ggWebGL Scene as a Static Image
+
+- [`theme_webgl()`](https://fbertran.github.io/ggWebGL/reference/theme_webgl.md)
+  : Add WebGL Rendering Options to a ggplot
+
+# Articles
+
+### Articles
+
+- [Getting Started with
+  ggWebGL](https://fbertran.github.io/ggWebGL/articles/getting-started.md):
+- [Experiment with Renderer
+  Capabilities](https://fbertran.github.io/ggWebGL/articles/renderer-capabilities.md):
+- [Renderer Showcase
+  Examples](https://fbertran.github.io/ggWebGL/articles/renderer-showcase-examples.md):
+- [Real-Data
+  Evidence](https://fbertran.github.io/ggWebGL/articles/real-data-evidence.md):
+
+### Optional downstream bridges
+
+- [Optional XGeoRTR
+  Bridge](https://fbertran.github.io/ggWebGL/articles/xgeortr-bridge.md):
+- [Swarm Art in the Browser with
+  boids4R](https://fbertran.github.io/ggWebGL/articles/boids4r-animation.md):

@@ -1,0 +1,19 @@
+citHeader("To cite the ggWebGL package in publications use:")
+
+titl <- meta$Title
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
+vers <- paste("R package version", meta$Version)
+
+bibentry(bibtype = "Manual",
+         title = titl,
+         author = c(person(given = "Frederic", family = "Bertrand")),
+         year = year,
+         note = vers,
+         url = paste0("https://CRAN.R-project.org/package=", meta$Package),
+         textVersion =
+           paste(
+             "Frederic Bertrand (", year, "). ",
+             titl, ". ", vers, ".",
+             sep=""
+           )
+)

@@ -1,0 +1,43 @@
+Package: ggWebGL
+Title: Browser-Native 'WebGL' Rendering for R Graphics
+Date: 2026-04-29
+Version: 0.4.0
+Authors@R: c(
+	person(given = "Frederic", family= "Bertrand", role = c("cre", "aut"), 
+	email = "frederic.bertrand@lecnam.net", comment = c(ORCID = "0000-0002-0837-8281")))
+Author: Frederic Bertrand [cre, aut] (<https://orcid.org/0000-0002-0837-8281>)
+Maintainer: Frederic Bertrand <frederic.bertrand@lecnam.net>
+Description: Provides browser-native 'WebGL' rendering for R graphics through
+    'htmlwidgets'. The package supports grammar-style graphics workflows and
+    renderer-ready specifications for dense analytical and scientific scenes,
+    including point, line, trajectory, raster, vector, mesh, and surface
+    layers, shader-driven display modes, timeline controls, structured views,
+    selection metadata, and publication-oriented static export helpers.
+    Rendering stays in the browser, and the core package remains
+    cross-platform without requiring 'CUDA', 'Metal', or 'OpenCL' toolchains.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 4.1)
+Imports:
+    ggplot2,
+    htmltools,
+    htmlwidgets,
+    rlang
+Suggests:
+    chromote,
+    knitr,
+    magick,
+    pkgdown,
+    pkgload,
+    plotly,
+    processx,
+    rmarkdown,
+    shiny,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Config/Needs/website: pkgdown
+URL: https://fbertran.github.io/ggWebGL/, https://github.com/fbertran/ggWebGL
+BugReports: https://github.com/fbertran/ggWebGL/issues

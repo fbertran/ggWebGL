@@ -1,0 +1,6 @@
+dependencies:
+  - name: ggWebGL-styles
+    version: 0.2.0
+    src: htmlwidgets
+    stylesheet: ggWebGL.css
+    all_files: false
