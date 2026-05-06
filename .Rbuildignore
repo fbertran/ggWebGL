@@ -14,14 +14,4 @@
 ^\.Rproj\.user$
 ^cran-comments\.md$
 
-^siggraph_figures
-^siggraph_figures.*
-^figure.*$
-^plans.*$
-^siggraph_figures.*$
-^vignettes/poster-evidence\.Rmd$
-^vignettes/real-data-evidence\.Rmd$
-^vignettes/renderer-capabilities\.Rmd$
-^vignettes/renderer-showcase-examples\.Rmd$
-^vignettes/figures/poster$
-^inst/benchmarks/poster-evidence-summary\.R$
+^internal.*$
