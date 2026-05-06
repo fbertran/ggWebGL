@@ -5,10 +5,11 @@
 `ggWebGL` is an R package for browser-native `WebGL` rendering of R
 graphics through `htmlwidgets`. It supports grammar-style graphics
 workflows and renderer-ready specifications for dense analytical and
-scientific scenes, including point, line, trajectory, raster, vector,
-mesh, and surface layers, shader-driven display modes, timeline
-controls, structured views, selection metadata, `Shiny` output, and
-publication-oriented static export helpers.
+scientific scenes. The stable current scope covers point, line,
+trajectory, raster, fixed-scale facet, shader, pan/zoom/hover, `Shiny`,
+and publication-oriented static export paths. Vector, mesh, surface,
+timeline, brush/lasso, and structured 3D view support are implemented
+`ggWebGL` public APIs and optional GeoXGL extension classes.
 
 The package keeps rendering in the browser and avoids any mandatory
 `CUDA`, `Metal`, or `OpenCL` toolchain. Heavier preprocessing,
@@ -25,14 +26,14 @@ companion packages.
 
 The package provides browser-native rendering, widget construction,
 renderer-ready specifications, shader modes, interaction contracts,
-structured views, timelines, and static export surfaces. It does not
+optional extension classes, and static export surfaces. It does not
 implement downstream scientific, simulation, topological,
 model-explanation, or domain-specific semantics. Those semantics should
 enter `ggWebGL` through explicit adapter boundaries such as
 backend-neutral tables, renderer-ready primitive layers, or
 `ggwebgl_spec` payloads.
 
-## Status
+## Stable current scope
 
 The current implementation supports:
 
@@ -41,18 +42,28 @@ The current implementation supports:
 | [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md) | Rendered in `WebGL` |
 | [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md) | Rendered in `WebGL` |
 | [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md) | Rendered in `WebGL` |
-| [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md) | Renderer path for vector-arrow layers |
-| [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md) | Renderer path for indexed mesh layers |
-| [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md) | Renderer path for triangulated surface layers |
-| Renderer-ready layers | Points, lines, vectors, rasters, meshes, and surfaces through `ggwebgl_layer_*()` helpers |
+| Renderer-ready stable layers | Points, lines, and rasters through `ggwebgl_layer_*()` helpers |
 | Renderer specification | [`ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_spec.md) and [`as_ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.md) adapter boundaries |
 | Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow` |
-| Interaction | `pan`, `zoom`, `hover`; visible `brush` and `lasso` selection through [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md) |
-| Runtime controls | Exact/cumulative timeline controls through [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md) |
-| View contract | Structured 2D/3D view and camera metadata through [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md) |
+| Interaction | `pan`, `zoom`, and `hover` |
 | Output targets | R Markdown / Quarto HTML, `Shiny`, and static image export helpers |
 | `ggplot2` compatibility | Focused grammar-preserving paths for dense scenes and fixed-scale facets |
 | Unsupported facet mode | Free x/y scales fall back to metadata |
+
+## Implemented optional extension classes
+
+These are implemented `ggWebGL` public APIs and are covered by package
+tests, examples, or vignettes. They are optional GeoXGL extension
+classes rather than requirements of the minimal stable GeoXGL scene
+contract.
+
+| Feature | Evidence |
+|----|----|
+| [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md) and [`ggwebgl_layer_vectors()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_vectors.md) for vector-arrow layers | `tests/testthat/test-future-work-roadmap.R`, `vignettes/renderer-capabilities.Rmd` |
+| [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md), [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md), [`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md), and [`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md) for mesh/surface payloads | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
+| [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md) for exact/cumulative frame controls | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
+| [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md) for brush/lasso selection metadata and browser interaction | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
+| [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md) for structured 2D/3D view and camera metadata | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 
 `ggWebGL` is not a full replacement for `ggplot2`. It is a
 browser-native `WebGL` rendering backend with both grammar-style front
@@ -117,16 +128,19 @@ ggWebGL(spec, height = 420)
 
 ## Architecture
 
-1.  Parse supported grammar-style point, line, raster, vector, mesh,
-    surface, and fixed-scale facet layers.
+1.  Parse stable grammar-style point, line, raster, and fixed-scale
+    facet layers.
 2.  Normalize parsed layers into a renderer-scene contract.
 3.  Accept renderer-ready primitive payloads from explicit adapter
     boundaries.
-4.  Resolve raster fills and styling metadata on the R side.
-5.  Bind panel-local payloads to browser-side `WebGL` buffers, textures,
+4.  Accept implemented optional extension classes for vectors, meshes,
+    surfaces, timelines, selection metadata, and structured views when
+    callers opt in.
+5.  Resolve raster fills and styling metadata on the R side.
+6.  Bind panel-local payloads to browser-side `WebGL` buffers, textures,
     attributes, and shader modes.
-6.  Render interactively through an `htmlwidgets` widget.
-7.  Reuse the same widget in `Shiny`.
+7.  Render interactively through an `htmlwidgets` widget.
+8.  Reuse the same widget in `Shiny`.
 
 For static capture and publication workflows, `ggWebGL` exposes:
 

@@ -2,6 +2,8 @@
 
 ## ggWebGL 0.4.0
 
+CRAN release: 2026-05-04
+
 - Froze the experimental renderer API around structured
   [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md),
   [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md),

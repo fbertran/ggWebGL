@@ -75,7 +75,7 @@
 <div class="section level2">
 <h2 id="frédéric-bertrand">Frédéric Bertrand<a class="anchor" aria-label="anchor" href="#fr%C3%A9d%C3%A9ric-bertrand"></a>
 </h2>
-<p><code>ggWebGL</code> is an R package for browser-native <code>WebGL</code> rendering of R graphics through <code>htmlwidgets</code>. It supports grammar-style graphics workflows and renderer-ready specifications for dense analytical and scientific scenes, including point, line, trajectory, raster, vector, mesh, and surface layers, shader-driven display modes, timeline controls, structured views, selection metadata, <code>Shiny</code> output, and publication-oriented static export helpers.</p>
+<p><code>ggWebGL</code> is an R package for browser-native <code>WebGL</code> rendering of R graphics through <code>htmlwidgets</code>. It supports grammar-style graphics workflows and renderer-ready specifications for dense analytical and scientific scenes. The stable current scope covers point, line, trajectory, raster, fixed-scale facet, shader, pan/zoom/hover, <code>Shiny</code>, and publication-oriented static export paths. Vector, mesh, surface, timeline, brush/lasso, and structured 3D view support are implemented <code>ggWebGL</code> public APIs and optional GeoXGL extension classes.</p>
 <p>The package keeps rendering in the browser and avoids any mandatory <code>CUDA</code>, <code>Metal</code>, or <code>OpenCL</code> toolchain. Heavier preprocessing, large-data preparation, and device-specific acceleration are left to companion packages.</p>
 </div>
 <div class="section level2">
@@ -86,10 +86,10 @@
 <li>grammar-style layers for selected <code>ggplot2</code> workflows;</li>
 <li>renderer-ready layer and specification helpers for downstream packages or custom visualization pipelines.</li>
 </ul>
-<p>The package provides browser-native rendering, widget construction, renderer-ready specifications, shader modes, interaction contracts, structured views, timelines, and static export surfaces. It does not implement downstream scientific, simulation, topological, model-explanation, or domain-specific semantics. Those semantics should enter <code>ggWebGL</code> through explicit adapter boundaries such as backend-neutral tables, renderer-ready primitive layers, or <code>ggwebgl_spec</code> payloads.</p>
+<p>The package provides browser-native rendering, widget construction, renderer-ready specifications, shader modes, interaction contracts, optional extension classes, and static export surfaces. It does not implement downstream scientific, simulation, topological, model-explanation, or domain-specific semantics. Those semantics should enter <code>ggWebGL</code> through explicit adapter boundaries such as backend-neutral tables, renderer-ready primitive layers, or <code>ggwebgl_spec</code> payloads.</p>
 </div>
 <div class="section level2">
-<h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
+<h2 id="stable-current-scope">Stable current scope<a class="anchor" aria-label="anchor" href="#stable-current-scope"></a>
 </h2>
 <p>The current implementation supports:</p>
 <table class="table">
@@ -118,20 +118,8 @@
 </td>
 </tr>
 <tr>
-<td><code><a href="reference/geom_vector_webgl.html">geom_vector_webgl()</a></code></td>
-<td>Renderer path for vector-arrow layers</td>
-</tr>
-<tr>
-<td><code><a href="reference/geom_mesh_webgl.html">geom_mesh_webgl()</a></code></td>
-<td>Renderer path for indexed mesh layers</td>
-</tr>
-<tr>
-<td><code><a href="reference/geom_surface_webgl.html">geom_surface_webgl()</a></code></td>
-<td>Renderer path for triangulated surface layers</td>
-</tr>
-<tr>
-<td>Renderer-ready layers</td>
-<td>Points, lines, vectors, rasters, meshes, and surfaces through <code>ggwebgl_layer_*()</code> helpers</td>
+<td>Renderer-ready stable layers</td>
+<td>Points, lines, and rasters through <code>ggwebgl_layer_*()</code> helpers</td>
 </tr>
 <tr>
 <td>Renderer specification</td>
@@ -147,17 +135,7 @@
 <tr>
 <td>Interaction</td>
 <td>
-<code>pan</code>, <code>zoom</code>, <code>hover</code>; visible <code>brush</code> and <code>lasso</code> selection through <code><a href="reference/ggwebgl_selection.html">ggwebgl_selection()</a></code>
-</td>
-</tr>
-<tr>
-<td>Runtime controls</td>
-<td>Exact/cumulative timeline controls through <code><a href="reference/ggwebgl_timeline.html">ggwebgl_timeline()</a></code>
-</td>
-</tr>
-<tr>
-<td>View contract</td>
-<td>Structured 2D/3D view and camera metadata through <code><a href="reference/ggwebgl_view.html">ggwebgl_view()</a></code>
+<code>pan</code>, <code>zoom</code>, and <code>hover</code>
 </td>
 </tr>
 <tr>
@@ -172,6 +150,58 @@
 <tr>
 <td>Unsupported facet mode</td>
 <td>Free x/y scales fall back to metadata</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="implemented-optional-extension-classes">Implemented optional extension classes<a class="anchor" aria-label="anchor" href="#implemented-optional-extension-classes"></a>
+</h2>
+<p>These are implemented <code>ggWebGL</code> public APIs and are covered by package tests, examples, or vignettes. They are optional GeoXGL extension classes rather than requirements of the minimal stable GeoXGL scene contract.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Feature</th>
+<th>Evidence</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>
+<code><a href="reference/geom_vector_webgl.html">geom_vector_webgl()</a></code> and <code><a href="reference/ggwebgl_layer_vectors.html">ggwebgl_layer_vectors()</a></code> for vector-arrow layers</td>
+<td>
+<code>tests/testthat/test-future-work-roadmap.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/geom_mesh_webgl.html">geom_mesh_webgl()</a></code>, <code><a href="reference/geom_surface_webgl.html">geom_surface_webgl()</a></code>, <code><a href="reference/ggwebgl_layer_mesh.html">ggwebgl_layer_mesh()</a></code>, and <code><a href="reference/ggwebgl_layer_surface.html">ggwebgl_layer_surface()</a></code> for mesh/surface payloads</td>
+<td>
+<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_timeline.html">ggwebgl_timeline()</a></code> for exact/cumulative frame controls</td>
+<td>
+<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_selection.html">ggwebgl_selection()</a></code> for brush/lasso selection metadata and browser interaction</td>
+<td>
+<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_view.html">ggwebgl_view()</a></code> for structured 2D/3D view and camera metadata</td>
+<td>
+<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
 </tr>
 </tbody>
 </table>
@@ -233,9 +263,10 @@
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a>
 </h2>
 <ol style="list-style-type: decimal">
-<li>Parse supported grammar-style point, line, raster, vector, mesh, surface, and fixed-scale facet layers.</li>
+<li>Parse stable grammar-style point, line, raster, and fixed-scale facet layers.</li>
 <li>Normalize parsed layers into a renderer-scene contract.</li>
 <li>Accept renderer-ready primitive payloads from explicit adapter boundaries.</li>
+<li>Accept implemented optional extension classes for vectors, meshes, surfaces, timelines, selection metadata, and structured views when callers opt in.</li>
 <li>Resolve raster fills and styling metadata on the R side.</li>
 <li>Bind panel-local payloads to browser-side <code>WebGL</code> buffers, textures, attributes, and shader modes.</li>
 <li>Render interactively through an <code>htmlwidgets</code> widget.</li>
@@ -253,6 +284,7 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=ggWebGL" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/fbertran/ggWebGL/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/fbertran/ggWebGL/issues" class="external-link">Report a bug</a></li>
 </ul>
