@@ -949,6 +949,9 @@ HTMLWidgets.widget({
       };
       normalized.render.selection = normalized.render.selection || normalized.webgl.selection || { mode: "none", highlight: true, emit: true };
       normalized.render.timeline = normalized.render.timeline || normalized.webgl.timeline || null;
+      if (window.ggWebGLScene && typeof window.ggWebGLScene.finalizeScene === "function") {
+        normalized = window.ggWebGLScene.finalizeScene(normalized);
+      }
 
       return normalized;
     }
@@ -4056,6 +4059,63 @@ HTMLWidgets.widget({
       gl.deleteBuffer(texcoordBuffer);
     }
 
+    function getProgramForLayer(programRegistry, layer, material, scene) {
+      if (window.ggWebGLProgramRegistry &&
+          typeof window.ggWebGLProgramRegistry.getProgramForLayer === "function") {
+        return window.ggWebGLProgramRegistry.getProgramForLayer(programRegistry, layer, material, scene);
+      }
+      return layer && layer.type === "raster" ? programRegistry.raster : programRegistry.primitive;
+    }
+
+    function drawPointsLayer(gl, programs, layer, scene, panel, viewport, box) {
+      drawPointLayer(gl, programs, layer, scene, viewport);
+    }
+
+    function drawLinesLayer(gl, programs, layer, scene, panel, viewport, box) {
+      drawLineLayer(gl, programs, layer, scene, viewport, box);
+    }
+
+    function drawRasterLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
+      drawRasterLayer(gl, programs, layer, viewport);
+    }
+
+    function drawVectorsLayer(gl, programs, layer, scene, panel, viewport, box) {
+      drawVectorLayer(gl, programs, layer, scene, viewport, box);
+    }
+
+    function drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
+      drawMeshLayer(gl, programs, layer, scene, viewport);
+    }
+
+    function drawSurfaceLayer(gl, programs, layer, scene, panel, viewport, box) {
+      if (layer && layer.lowered_type === "mesh") {
+        drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box);
+      }
+    }
+
+    function drawLayer(gl, programs, layer, scene, panel, viewport, box) {
+      var programInfo = getProgramForLayer(programs, layer, layer && layer.material, scene);
+      if (!programInfo) {
+        return;
+      }
+      if (!layer || !layer.type) {
+        return;
+      }
+      if (layer.type === "raster") {
+        drawRasterLayerTyped(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "lines") {
+        drawLinesLayer(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "vectors") {
+        drawVectorsLayer(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "mesh") {
+        drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "surface") {
+        drawSurfaceLayer(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "points") {
+        drawPointsLayer(gl, programs, layer, scene, panel, viewport, box);
+      }
+    }
+
     function drawScene(x) {
       var panels = panelList(x);
 
@@ -4107,17 +4167,7 @@ HTMLWidgets.widget({
         gl.viewport(scissorX, scissorY, scissorWidth, scissorHeight);
 
         (panel.layers || []).forEach(function(layer) {
-          if (layer.type === "raster") {
-            drawRasterLayer(gl, programs, layer, viewport);
-          } else if (layer.type === "lines") {
-            drawLineLayer(gl, programs, layer, x, viewport, box);
-          } else if (layer.type === "vectors") {
-            drawVectorLayer(gl, programs, layer, x, viewport, box);
-          } else if (layer.type === "mesh") {
-            drawMeshLayer(gl, programs, layer, x, viewport);
-          } else if (layer.type === "points") {
-            drawPointLayer(gl, programs, layer, x, viewport);
-          }
+          drawLayer(gl, programs, layer, x, panel, viewport, box);
         });
         drawSelectionHighlights(gl, programs, x, panel, viewport);
       });

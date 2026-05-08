@@ -122,15 +122,44 @@ test_that("current ggwebgl_spec payloads satisfy the v2 top-level shape", {
   )
 
   expect_true(all(c("labels", "webgl", "layer_count", "layers", "render") %in% names(spec)))
+  expect_equal(spec[["scene_version"]], 2L)
   expect_equal(spec[["layer_count"]], 5L)
   expect_equal(spec[["labels"]][["title"]], "schema fixture")
   expect_equal(spec[["render"]][["mode"]], "webgl")
   expect_equal(spec[["render"]][["messages"]], "schema fixture message")
   expect_equal(schema_v2_coordinate_system(spec[["render"]]), "cartesian3d")
+  expect_equal(spec[["render"]][["coordinate_system"]], "cartesian3d")
   expect_equal(spec[["render"]][["dimension"]], "3d")
   expect_equal(spec[["render"]][["selection"]][["mode"]], "brush_lasso")
   expect_equal(spec[["render"]][["timeline"]][["filter"]], "exact")
   expect_setequal(spec[["render"]][["primitives"]], c("points", "lines", "raster", "vectors", "mesh"))
+})
+
+test_that("ggplot_webgl payloads include scene_version and validate typed panels", {
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(
+      data.frame(x = c(0, 1), y = c(1, 0)),
+      ggplot2::aes(x, y)
+    ) +
+      geom_point_webgl() +
+      theme_webgl(interactions = character())
+  )
+
+  expect_equal(widget$x[["scene_version"]], 2L)
+  expect_equal(widget$x[["render"]][["coordinate_system"]], "cartesian2d")
+
+  invalid <- structure(
+    list(
+      scene_version = 2L,
+      render = list(
+        mode = "webgl",
+        panels = list(list(row = 1L, col = 1L, layers = list()))
+      )
+    ),
+    class = c("ggwebgl_spec", "list")
+  )
+
+  expect_error(ggWebGL(invalid), "panel_id")
 })
 
 test_that("v2 aliases map to current line and surface payloads without new runtime primitives", {
@@ -167,4 +196,43 @@ test_that("single-panel compatibility fields remain derived from render panels",
   expect_identical(render[["layers"]], render[["panels"]][[1]][["layers"]])
   expect_identical(render[["viewport"]], render[["panels"]][[1]][["viewport"]])
   expect_identical(render[["panel"]], render[["panels"]][[1]][["panel_id"]])
+})
+
+test_that("htmlwidget dependencies register typed scene modules before the widget", {
+  yaml <- read_schema_v2_text("inst/htmlwidgets/ggWebGL.yaml")
+  expected <- c(
+    "lib/scene.js",
+    "lib/camera.js",
+    "lib/program-registry.js",
+    "lib/picking.js"
+  )
+
+  for (script in expected) {
+    expect_match(yaml, script, fixed = TRUE)
+    expect_true(file.exists(locate_schema_v2_file(file.path("inst/htmlwidgets", script))))
+  }
+
+  positions <- vapply(expected, function(script) regexpr(script, yaml, fixed = TRUE)[[1L]], integer(1))
+  expect_true(all(diff(positions) > 0L))
+})
+
+test_that("widget source routes drawing through a typed layer dispatcher", {
+  js <- read_schema_v2_text("inst/htmlwidgets/ggWebGL.js")
+
+  expect_match(js, "function drawLayer", fixed = TRUE)
+  expect_match(js, "drawLayer(gl, programs, layer, x, panel, viewport, box)", fixed = TRUE)
+  expect_match(js, "function drawPointsLayer", fixed = TRUE)
+  expect_match(js, "function drawLinesLayer", fixed = TRUE)
+  expect_match(js, "function drawRasterLayer", fixed = TRUE)
+  expect_match(js, "function drawVectorsLayer", fixed = TRUE)
+  expect_match(js, "function drawMeshLayer", fixed = TRUE)
+  expect_match(js, "function drawSurfaceLayer", fixed = TRUE)
+  expect_match(js, "function getProgramForLayer", fixed = TRUE)
+  expect_match(js, "ggWebGLScene.finalizeScene", fixed = TRUE)
+
+  scene_lib <- read_schema_v2_text("inst/htmlwidgets/lib/scene.js")
+  program_lib <- read_schema_v2_text("inst/htmlwidgets/lib/program-registry.js")
+  expect_match(scene_lib, "Scene.VERSION = 2", fixed = TRUE)
+  expect_match(scene_lib, "Scene.finalizeScene", fixed = TRUE)
+  expect_match(program_lib, "getProgramForLayer", fixed = TRUE)
 })

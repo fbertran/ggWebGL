@@ -544,7 +544,7 @@ extract_ggplot_scene_source <- function(plot) {
       x = plot$labels$x %||% NULL,
       y = plot$labels$y %||% NULL
     )),
-    webgl = normalise_webgl_options(plot$ggwebgl),
+    webgl = ggwebgl_scene_webgl_options(plot$ggwebgl),
     layer_count = length(plot$layers),
     layer_metadata = layer_metadata,
     panel_contract = extract_panel_contract(built_plot),
@@ -610,14 +610,7 @@ empty_panel_render <- function(panel_contract) {
 }
 
 add_single_panel_compatibility <- function(render) {
-  if (length(render$panels) != 1L) {
-    return(render)
-  }
-
-  render$panel <- render$panels[[1]]$panel_id
-  render$viewport <- render$panels[[1]]$viewport
-  render$layers <- render$panels[[1]]$layers
-  render
+  derive_single_panel_compatibility(render)
 }
 
 build_render_plan <- function(scene_source) {
@@ -690,14 +683,15 @@ build_render_plan <- function(scene_source) {
 build_ggwebgl_spec <- function(plot) {
   scene_source <- extract_ggplot_scene_source(plot)
 
-  compact_list(list(
+  validate_ggwebgl_scene(compact_list(list(
+    scene_version = ggwebgl_scene_version(),
     package_version = as.character(utils::packageVersion("ggWebGL")),
     labels = scene_source$labels,
     webgl = scene_source$webgl,
     layer_count = scene_source$layer_count,
     layers = scene_source$layer_metadata,
     render = ggwebgl_enrich_render(build_render_plan(scene_source), scene_source$webgl)
-  ))
+  )), allow_legacy = FALSE)
 }
 
 #' Create a ggWebGL htmlwidget
@@ -722,9 +716,14 @@ build_ggwebgl_spec <- function(plot) {
 #' ggWebGL(spec, width = 320, height = 240)
 #' @export
 ggWebGL <- function(x = list(), width = NULL, height = NULL, elementId = NULL) {
+  classed_adapter <- inherits(x, "ggwebgl_spec") ||
+    (!is.null(attr(x, "class")) && !identical(class(x), "list"))
   if (inherits(x, "ggwebgl_spec") ||
       (!is.null(attr(x, "class")) && !identical(class(x), "list"))) {
     x <- as_ggwebgl_spec(x)
+  }
+  if (isTRUE(classed_adapter) || !is.null(x$scene_version)) {
+    x <- validate_ggwebgl_scene(x, allow_legacy = TRUE)
   }
 
   htmlwidgets::createWidget(

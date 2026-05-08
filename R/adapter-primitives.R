@@ -610,7 +610,7 @@ ggwebgl_spec <- function(layers,
 
   layers <- lapply(layers, ggwebgl_validate_layer)
   panel_specs <- ggwebgl_build_panels(layers, panels = panels, grid = grid)
-  webgl <- normalise_webgl_options(webgl)
+  webgl <- ggwebgl_scene_webgl_options(webgl)
   if (!is.null(timeline)) {
     webgl$timeline <- normalise_timeline(timeline)
   }
@@ -626,15 +626,18 @@ ggwebgl_spec <- function(layers,
     ))
   })
 
+  scene <- validate_ggwebgl_scene(compact_list(list(
+    scene_version = ggwebgl_scene_version(),
+    package_version = as.character(utils::packageVersion("ggWebGL")),
+    labels = ggwebgl_labels(labels),
+    webgl = webgl,
+    layer_count = as.integer(length(layers)),
+    layers = layer_metadata,
+    render = render
+  )), allow_legacy = FALSE)
+
   structure(
-    compact_list(list(
-      package_version = as.character(utils::packageVersion("ggWebGL")),
-      labels = ggwebgl_labels(labels),
-      webgl = webgl,
-      layer_count = as.integer(length(layers)),
-      layers = layer_metadata,
-      render = render
-    )),
+    scene,
     class = c("ggwebgl_spec", "list")
   )
 }
@@ -1008,7 +1011,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
     cols = max(vapply(panels, `[[`, integer(1), "col"))
   )
 
-  add_single_panel_compatibility(compact_list(list(
+  derive_single_panel_compatibility(compact_list(list(
     mode = if (has_layers) "webgl" else "metadata",
     grid = grid,
     panels = panels,
@@ -1026,19 +1029,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
 }
 
 ggwebgl_enrich_render <- function(render, webgl) {
-  webgl <- normalise_webgl_options(webgl)
-  render$dimension <- webgl$view$dimension %||% webgl$dimension %||% "2d"
-  render$camera <- compact_list(list(
-    mode = webgl$view$controller %||% webgl$camera %||% "orbit",
-    controller = webgl$view$controller %||% webgl$camera %||% "orbit",
-    projection = webgl$view$projection %||% webgl$projection %||% "orthographic",
-    state = webgl$view$state %||% webgl$camera_state %||% list()
-  ))
-  render$selection <- webgl$selection %||% list(mode = "none", highlight = TRUE, emit = TRUE)
-  if (!is.null(webgl$timeline)) {
-    render$timeline <- webgl$timeline
-  }
-  render
+  ggwebgl_enrich_scene_render(render, webgl)
 }
 
 ggwebgl_labels <- function(labels) {

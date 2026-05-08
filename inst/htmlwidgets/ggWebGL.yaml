@@ -1,4 +1,13 @@
 dependencies:
+  - name: ggWebGL-runtime
+    version: 0.6.0
+    src: htmlwidgets
+    script:
+      - lib/scene.js
+      - lib/camera.js
+      - lib/program-registry.js
+      - lib/picking.js
+    all_files: false
   - name: ggWebGL-styles
     version: 0.2.0
     src: htmlwidgets
