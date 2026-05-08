@@ -1,7 +1,7 @@
 Package: ggWebGL
 Title: Browser-Native 'WebGL' Rendering for R Graphics
-Date: 2026-04-29
-Version: 0.4.0
+Date: 2026-05-08
+Version: 0.6.0
 Authors@R: c(
 	person(given = "Frederic", family= "Bertrand", role = c("cre", "aut"), 
 	email = "frederic.bertrand@lecnam.net", comment = c(ORCID = "0000-0002-0837-8281")))
@@ -26,6 +26,7 @@ Imports:
     htmlwidgets,
     rlang
 Suggests:
+    boids4R,
     chromote,
     knitr,
     magick,
@@ -35,7 +36,8 @@ Suggests:
     processx,
     rmarkdown,
     shiny,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    XGeoRTR
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/Needs/website: pkgdown

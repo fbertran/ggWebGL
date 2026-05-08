@@ -1,8 +1,21 @@
 # Changelog
 
-## ggWebGL 0.4.0
+## ggWebGL 0.6.0
 
-CRAN release: 2026-05-04
+- Added `XGeoRTR` and `boids4R` to `Suggests` as optional integrations
+  while keeping them out of hard dependencies.
+- Restored the richer `boids4R` animation and swarm-art vignette plus
+  the matching htmlwidget example, using installed suggested packages
+  instead of sibling-repository loading.
+- Restored live `XGeoRTR` bridge vignette behavior with neutral
+  renderer/backend ownership wording and guarded example code.
+- Kept `shapViz3D` as a guarded optional ecosystem example without
+  adding it to package dependencies.
+- Updated dependency and bridge tests to allow `XGeoRTR` and `boids4R`
+  in `Suggests` while continuing to reject hard dependencies on optional
+  ecosystem packages.
+
+## ggWebGL 0.5.0
 
 - Froze the experimental renderer API around structured
   [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md),
@@ -21,19 +34,6 @@ CRAN release: 2026-05-04
 - Expanded the interaction-frame benchmark artifact schema so fixed
   frame-rate performance statements require device, browser, GPU,
   commit, primitive-count, and artifact metadata.
-- Added a guarded optional downstream `boids4R` animation vignette and
-  htmlwidget example that render renderer-neutral swarm frames as
-  exact-timeline point and vector primitives. The examples keep
-  `boids4R` as an optional development ecosystem package and avoid
-  attaching its namespace during ggWebGL tests.
-- Reframed the optional `boids4R` documentation as browser-native swarm
-  art, clarifying that `boids4R` owns simulation semantics while
-  `ggWebGL` owns WebGL rendering and timeline interaction.
-- Prepared CRAN self-containment by removing GitHub-only ecosystem
-  packages from `DESCRIPTION`, gating live optional bridge vignettes
-  behind an explicit development environment variable, and documenting
-  that `XGeoRTR`, `boids4R`, and `shapViz3D` are optional integrations
-  rather than installation requirements.
 
 ## ggWebGL 0.3.0
 

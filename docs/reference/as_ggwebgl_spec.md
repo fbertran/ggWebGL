@@ -36,7 +36,7 @@ spec <- ggwebgl_spec(layers = list(point_layer))
 
 as_ggwebgl_spec(spec)
 #> $package_version
-#> [1] "0.4.0"
+#> [1] "0.6.0"
 #> 
 #> $labels
 #> named list()

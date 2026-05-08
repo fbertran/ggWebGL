@@ -131,7 +131,7 @@ ggwebgl_magnify_region(
   display = "panel"
 )
 #> $package_version
-#> [1] "0.4.0"
+#> [1] "0.6.0"
 #> 
 #> $labels
 #> named list()

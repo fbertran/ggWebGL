@@ -1,39 +1,44 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggWebGL, Browser-Native ‘WebGL’ Rendering for R Graphics <img src="man/figures/logo_ggWebGL.png" align="right" width="200"/>
-
+# ggWebGL, Browser-Native 'WebGL' Rendering for R Graphics <img src="man/figures/logo_ggWebGL.png" align="right" width="200"/>
 ## Frédéric Bertrand
 
-`ggWebGL` is an R package for browser-native `WebGL` rendering of R
-graphics through `htmlwidgets`. It supports grammar-style graphics
-workflows and renderer-ready specifications for dense analytical and
-scientific scenes. The stable current scope covers point, line,
-trajectory, raster, fixed-scale facet, shader, pan/zoom/hover, `Shiny`,
-and publication-oriented static export paths. Vector, mesh, surface,
-timeline, brush/lasso, and structured 3D view support are implemented
-`ggWebGL` public APIs and optional GeoXGL extension classes.
+`ggWebGL` is an R package for browser-native `WebGL` rendering of R graphics
+through `htmlwidgets`. It supports grammar-style graphics workflows and
+renderer-ready specifications for dense analytical and scientific scenes. The
+stable current scope covers point, line, trajectory, raster, fixed-scale facet,
+shader, pan/zoom/hover, `Shiny`, and publication-oriented static export paths.
+Vector, mesh, surface, timeline, brush/lasso, and structured 3D view support are
+implemented `ggWebGL` public APIs and optional GeoXGL extension classes.
 
-The package keeps rendering in the browser and avoids any mandatory
-`CUDA`, `Metal`, or `OpenCL` toolchain. Heavier preprocessing,
-large-data preparation, and device-specific acceleration are left to
-companion packages.
+The package keeps rendering in the browser and avoids any mandatory `CUDA`,
+`Metal`, or `OpenCL` toolchain. Heavier preprocessing, large-data preparation,
+and device-specific acceleration are left to companion packages.
+
+Suggested integrations extend this renderer boundary without becoming core
+requirements: `XGeoRTR` can provide explainable-geometry state that is adapted
+to renderer-ready primitives, and `boids4R` can provide swarm simulation frames
+rendered as animated point/vector timelines. These packages own their domain
+semantics; `ggWebGL` owns the browser renderer and widget behavior.
 
 ## Scope
 
 `ggWebGL` provides two complementary interfaces:
 
 - grammar-style layers for selected `ggplot2` workflows;
-- renderer-ready layer and specification helpers for downstream packages
-  or custom visualization pipelines.
+- renderer-ready layer and specification helpers for downstream packages or
+  custom visualization pipelines.
 
 The package provides browser-native rendering, widget construction,
-renderer-ready specifications, shader modes, interaction contracts,
-optional extension classes, and static export surfaces. It does not
-implement downstream scientific, simulation, topological,
-model-explanation, or domain-specific semantics. Those semantics should
-enter `ggWebGL` through explicit adapter boundaries such as
-backend-neutral tables, renderer-ready primitive layers, or
+renderer-ready specifications, shader modes, interaction contracts, optional
+extension classes, and static export surfaces. It does not implement downstream
+scientific, simulation, topological, model-explanation, or domain-specific
+semantics. Those semantics should enter `ggWebGL` through explicit adapter
+boundaries such as backend-neutral tables, renderer-ready primitive layers, or
 `ggwebgl_spec` payloads.
 
 ## Stable current scope
@@ -41,7 +46,7 @@ backend-neutral tables, renderer-ready primitive layers, or
 The current implementation supports:
 
 | Feature | Current status |
-|----|----|
+| --- | --- |
 | `geom_point_webgl()` | Rendered in `WebGL` |
 | `geom_line_webgl()` | Rendered in `WebGL` |
 | `geom_raster_webgl()` | Rendered in `WebGL` |
@@ -55,39 +60,38 @@ The current implementation supports:
 
 ## Implemented optional extension classes
 
-These are implemented `ggWebGL` public APIs and are covered by package
-tests, examples, or vignettes. They are optional GeoXGL extension
-classes rather than requirements of the minimal stable GeoXGL scene
-contract.
+These are implemented `ggWebGL` public APIs and are covered by package tests,
+examples, or vignettes. They are optional GeoXGL extension classes rather than
+requirements of the minimal stable GeoXGL scene contract.
 
 | Feature | Evidence |
-|----|----|
+| --- | --- |
 | `geom_vector_webgl()` and `ggwebgl_layer_vectors()` for vector-arrow layers | `tests/testthat/test-future-work-roadmap.R`, `vignettes/renderer-capabilities.Rmd` |
 | `geom_mesh_webgl()`, `geom_surface_webgl()`, `ggwebgl_layer_mesh()`, and `ggwebgl_layer_surface()` for mesh/surface payloads | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 | `ggwebgl_timeline()` for exact/cumulative frame controls | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 | `ggwebgl_selection()` for brush/lasso selection metadata and browser interaction | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 | `ggwebgl_view()` for structured 2D/3D view and camera metadata | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 
-`ggWebGL` is not a full replacement for `ggplot2`. It is a
-browser-native `WebGL` rendering backend with both grammar-style front
-ends and explicit renderer-ready adapter boundaries.
+`ggWebGL` is not a full replacement for `ggplot2`. It is a browser-native
+`WebGL` rendering backend with both grammar-style front ends and explicit
+renderer-ready adapter boundaries.
 
 ## Installation
 
-``` r
+```r
 install.packages("ggWebGL")
 ```
 
 For the development version:
 
-``` r
+```r
 # install.packages("remotes")
 remotes::install_github("fbertran/ggWebGL")
 ```
 
 ## Basic use
 
-``` r
+```r
 library(ggplot2)
 library(ggWebGL)
 
@@ -103,10 +107,10 @@ ggplot_webgl(plot, height = 520)
 
 ## Renderer-ready specifications
 
-`ggWebGL` can also render explicit primitive layers without requiring
-the input to originate from a `ggplot2` object.
+`ggWebGL` can also render explicit primitive layers without requiring the input
+to originate from a `ggplot2` object.
 
-``` r
+```r
 library(ggWebGL)
 
 points <- ggwebgl_layer_points(
@@ -131,22 +135,19 @@ ggWebGL(spec, height = 420)
 
 ## Architecture
 
-1.  Parse stable grammar-style point, line, raster, and fixed-scale
-    facet layers.
-2.  Normalize parsed layers into a renderer-scene contract.
-3.  Accept renderer-ready primitive payloads from explicit adapter
-    boundaries.
-4.  Accept implemented optional extension classes for vectors, meshes,
-    surfaces, timelines, selection metadata, and structured views when
-    callers opt in.
-5.  Resolve raster fills and styling metadata on the R side.
-6.  Bind panel-local payloads to browser-side `WebGL` buffers, textures,
-    attributes, and shader modes.
-7.  Render interactively through an `htmlwidgets` widget.
-8.  Reuse the same widget in `Shiny`.
+1. Parse stable grammar-style point, line, raster, and fixed-scale facet layers.
+2. Normalize parsed layers into a renderer-scene contract.
+3. Accept renderer-ready primitive payloads from explicit adapter boundaries.
+4. Accept implemented optional extension classes for vectors, meshes, surfaces,
+   timelines, selection metadata, and structured views when callers opt in.
+5. Resolve raster fills and styling metadata on the R side.
+6. Bind panel-local payloads to browser-side `WebGL` buffers, textures,
+   attributes, and shader modes.
+7. Render interactively through an `htmlwidgets` widget.
+8. Reuse the same widget in `Shiny`.
 
 For static capture and publication workflows, `ggWebGL` exposes:
 
 - `snapshot_ggwebgl()` for PNG/JPEG captures;
-- `compose_ggwebgl_figure()` for figure assembly, labels, and
-  lightweight annotations.
+- `compose_ggwebgl_figure()` for figure assembly, labels, and lightweight
+  annotations.

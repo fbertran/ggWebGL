@@ -19,6 +19,12 @@ The package keeps rendering in the browser and avoids any mandatory `CUDA`,
 `Metal`, or `OpenCL` toolchain. Heavier preprocessing, large-data preparation,
 and device-specific acceleration are left to companion packages.
 
+Suggested integrations extend this renderer boundary without becoming core
+requirements: `XGeoRTR` can provide explainable-geometry state that is adapted
+to renderer-ready primitives, and `boids4R` can provide swarm simulation frames
+rendered as animated point/vector timelines. These packages own their domain
+semantics; `ggWebGL` owns the browser renderer and widget behavior.
+
 ## Scope
 
 `ggWebGL` provides two complementary interfaces:

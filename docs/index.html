@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggWebGL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,6 +77,7 @@
 </h2>
 <p><code>ggWebGL</code> is an R package for browser-native <code>WebGL</code> rendering of R graphics through <code>htmlwidgets</code>. It supports grammar-style graphics workflows and renderer-ready specifications for dense analytical and scientific scenes. The stable current scope covers point, line, trajectory, raster, fixed-scale facet, shader, pan/zoom/hover, <code>Shiny</code>, and publication-oriented static export paths. Vector, mesh, surface, timeline, brush/lasso, and structured 3D view support are implemented <code>ggWebGL</code> public APIs and optional GeoXGL extension classes.</p>
 <p>The package keeps rendering in the browser and avoids any mandatory <code>CUDA</code>, <code>Metal</code>, or <code>OpenCL</code> toolchain. Heavier preprocessing, large-data preparation, and device-specific acceleration are left to companion packages.</p>
+<p>Suggested integrations extend this renderer boundary without becoming core requirements: <code>XGeoRTR</code> can provide explainable-geometry state that is adapted to renderer-ready primitives, and <code>boids4R</code> can provide swarm simulation frames rendered as animated point/vector timelines. These packages own their domain semantics; <code>ggWebGL</code> owns the browser renderer and widget behavior.</p>
 </div>
 <div class="section level2">
 <h2 id="scope">Scope<a class="anchor" aria-label="anchor" href="#scope"></a>

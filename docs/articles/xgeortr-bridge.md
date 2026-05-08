@@ -27,22 +27,17 @@ packages can target.
 
 ## Optional Dependency
 
-`XGeoRTR` is an optional development ecosystem package for `ggWebGL`,
-not a CRAN dependency. Live bridge widgets are disabled during standard
-vignette builds and can be enabled in development by setting
-`GGWEBGL_BUILD_OPTIONAL_BRIDGES=true` before rendering this article.
-When the bridge is disabled or `XGeoRTR` is unavailable, the package
-still builds and this vignette degrades to documentation-only mode.
+`XGeoRTR` is a suggested package for `ggWebGL`. When it is unavailable,
+the package still builds and this vignette degrades to
+documentation-only mode.
 
 ``` r
-if (!build_optional_bridges) {
-  cat("Optional XGeoRTR live bridge widgets are disabled for this vignette build.\n")
-} else if (!bridge_available) {
+if (!bridge_available) {
   cat("XGeoRTR is unavailable, so the live bridge widgets are skipped in this vignette.\n")
 } else {
   cat("XGeoRTR bridge widgets are available.\n")
 }
-#> Optional XGeoRTR live bridge widgets are disabled for this vignette build.
+#> XGeoRTR bridge widgets are available.
 ```
 
 ## Representative Scene
@@ -56,7 +51,6 @@ if (!bridge_available) {
 } else {
   bridge_widgets$representative
 }
-#> Representative widget skipped.
 ```
 
 ## Multiscale Scene
@@ -71,7 +65,6 @@ if (!bridge_available) {
 } else {
   bridge_widgets$multiscale
 }
-#> Multiscale widget skipped.
 ```
 
 ## Attribution Scene
@@ -82,7 +75,6 @@ if (!bridge_available) {
 } else {
   bridge_widgets$attribution
 }
-#> Attribution widget skipped.
 ```
 
 ## Structure Scene
@@ -93,7 +85,6 @@ if (!bridge_available) {
 } else {
   bridge_widgets$structure
 }
-#> Structure widget skipped.
 ```
 
 ## Regeneration

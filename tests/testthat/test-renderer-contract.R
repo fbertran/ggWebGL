@@ -94,7 +94,7 @@ test_that("ggwebgl_spec preserves publication-mode renderer options", {
   expect_false(spec[["webgl"]][["transparent"]])
 })
 
-test_that("ggWebGL keeps GitHub-only ecosystem packages out of dependencies", {
+test_that("ggWebGL keeps suggested integrations out of hard dependencies", {
   description_path <- testthat::test_path("..", "..", "DESCRIPTION")
 
   if (!file.exists(description_path)) {
@@ -104,13 +104,14 @@ test_that("ggWebGL keeps GitHub-only ecosystem packages out of dependencies", {
   expect_true(file.exists(description_path))
 
   description <- read.dcf(description_path)
-  dependency_fields <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests"), colnames(description))
-  dependencies <- paste(description[, dependency_fields, drop = TRUE], collapse = "\n")
+  hard_dependency_fields <- intersect(c("Depends", "Imports", "LinkingTo"), colnames(description))
+  hard_dependencies <- paste(description[, hard_dependency_fields, drop = TRUE], collapse = "\n")
   suggests <- if ("Suggests" %in% colnames(description)) description[, "Suggests"] else ""
-  optional_ecosystem <- c("XGeoRTR", "boids4R", "shapViz3D")
 
-  for (pkg in optional_ecosystem) {
-    expect_false(grepl(pkg, dependencies, fixed = TRUE), info = pkg)
-    expect_false(grepl(pkg, suggests, fixed = TRUE), info = pkg)
+  for (pkg in c("XGeoRTR", "boids4R", "shapViz3D")) {
+    expect_false(grepl(pkg, hard_dependencies, fixed = TRUE), info = pkg)
   }
+  expect_true(grepl("XGeoRTR", suggests, fixed = TRUE))
+  expect_true(grepl("boids4R", suggests, fixed = TRUE))
+  expect_false(grepl("shapViz3D", suggests, fixed = TRUE))
 })

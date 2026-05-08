@@ -11,7 +11,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggWebGL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,15 +50,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.4.0" id="ggwebgl-040">ggWebGL 0.4.0<a class="anchor" aria-label="anchor" href="#ggwebgl-040"></a></h2><p class="text-muted">CRAN release: 2026-05-04</p>
+<h2 class="pkg-version" data-toc-text="0.6.0" id="ggwebgl-060">ggWebGL 0.6.0<a class="anchor" aria-label="anchor" href="#ggwebgl-060"></a></h2>
+<ul><li>Added <code>XGeoRTR</code> and <code>boids4R</code> to <code>Suggests</code> as optional integrations while keeping them out of hard dependencies.</li>
+<li>Restored the richer <code>boids4R</code> animation and swarm-art vignette plus the matching htmlwidget example, using installed suggested packages instead of sibling-repository loading.</li>
+<li>Restored live <code>XGeoRTR</code> bridge vignette behavior with neutral renderer/backend ownership wording and guarded example code.</li>
+<li>Kept <code>shapViz3D</code> as a guarded optional ecosystem example without adding it to package dependencies.</li>
+<li>Updated dependency and bridge tests to allow <code>XGeoRTR</code> and <code>boids4R</code> in <code>Suggests</code> while continuing to reject hard dependencies on optional ecosystem packages.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="ggwebgl-050">ggWebGL 0.5.0<a class="anchor" aria-label="anchor" href="#ggwebgl-050"></a></h2>
 <ul><li>Froze the experimental renderer API around structured <code><a href="../reference/ggwebgl_view.html">ggwebgl_view()</a></code>, <code><a href="../reference/ggwebgl_selection.html">ggwebgl_selection()</a></code>, and <code><a href="../reference/ggwebgl_material.html">ggwebgl_material()</a></code> contracts.</li>
 <li>Extended vector layers to support 3D <code>z</code>/<code>zend</code> coordinates while preserving renderer-owned ids, frame/time metadata, and browser selection behavior.</li>
 <li>Added distinct orbit and trackball camera control paths with normalized rotation-based camera state.</li>
 <li>Upgraded mesh and surface payloads with generated normals, Lambert material metadata, picking ids, wireframe/culling controls, and GPU payload caching hooks.</li>
 <li>Expanded the interaction-frame benchmark artifact schema so fixed frame-rate performance statements require device, browser, GPU, commit, primitive-count, and artifact metadata.</li>
-<li>Added a guarded optional downstream <code>boids4R</code> animation vignette and htmlwidget example that render renderer-neutral swarm frames as exact-timeline point and vector primitives. The examples keep <code>boids4R</code> as an optional development ecosystem package and avoid attaching its namespace during ggWebGL tests.</li>
-<li>Reframed the optional <code>boids4R</code> documentation as browser-native swarm art, clarifying that <code>boids4R</code> owns simulation semantics while <code>ggWebGL</code> owns WebGL rendering and timeline interaction.</li>
-<li>Prepared CRAN self-containment by removing GitHub-only ecosystem packages from <code>DESCRIPTION</code>, gating live optional bridge vignettes behind an explicit development environment variable, and documenting that <code>XGeoRTR</code>, <code>boids4R</code>, and <code>shapViz3D</code> are optional integrations rather than installation requirements.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="ggwebgl-030">ggWebGL 0.3.0<a class="anchor" aria-label="anchor" href="#ggwebgl-030"></a></h2>

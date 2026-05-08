@@ -11,7 +11,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ggWebGL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -142,6 +142,27 @@ overrides metadata-derived defaults.</p></dd>
 <span class="r-in"><span>  metadata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Toy backend state"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">toy_state</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"xgeo_state"</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">xgeo_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="as_ggwebgl_spec.html">as_ggwebgl_spec</a></span><span class="op">(</span><span class="va">toy_state</span>, primitive <span class="op">=</span> <span class="st">"points"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">xgeo_spec</span><span class="op">$</span><span class="va">render</span><span class="op">$</span><span class="va">primitives</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "points"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">toy_state</span> <span class="op">&lt;-</span> <span class="fu">XGeoRTR</span><span class="fu">::</span><span class="fu"><a href="https://fbertran.github.io/XGeoRTR/reference/as_xgeo_state.html" class="external-link">as_xgeo_state</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    point_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"p"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    feature <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1"</span>, <span class="st">"f2"</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2</span>, <span class="fl">0.7</span>, <span class="fl">0.4</span>, <span class="fl">0.1</span>, <span class="fl">0.8</span>, <span class="fl">0.6</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    z <span class="op">=</span> <span class="fl">0</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x_col <span class="op">=</span> <span class="st">"x"</span>,</span></span>
+<span class="r-in"><span>  y_col <span class="op">=</span> <span class="st">"y"</span>,</span></span>
+<span class="r-in"><span>  z_col <span class="op">=</span> <span class="st">"z"</span>,</span></span>
+<span class="r-in"><span>  value_col <span class="op">=</span> <span class="st">"value"</span>,</span></span>
+<span class="r-in"><span>  feature_col <span class="op">=</span> <span class="st">"feature"</span>,</span></span>
+<span class="r-in"><span>  point_id_col <span class="op">=</span> <span class="st">"point_id"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">xgeo_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="as_ggwebgl_spec.html">as_ggwebgl_spec</a></span><span class="op">(</span><span class="va">toy_state</span>, primitive <span class="op">=</span> <span class="st">"points"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">xgeo_spec</span><span class="op">$</span><span class="va">render</span><span class="op">$</span><span class="va">primitives</span></span></span>

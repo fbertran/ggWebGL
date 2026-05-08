@@ -9,27 +9,6 @@ load_renderer_and_boids4r_packages <- function() {
     return(invisible(TRUE))
   }
 
-  sibling_candidates <- normalizePath(
-    c("../boids4R", "../../boids4R", "../../../boids4R"),
-    winslash = "/",
-    mustWork = FALSE
-  )
-  sibling_repo <- sibling_candidates[file.exists(file.path(sibling_candidates, "DESCRIPTION"))][1L]
-  if (is.na(sibling_repo)) {
-    return(FALSE)
-  }
-  if (requireNamespace("pkgload", quietly = TRUE) && file.exists(file.path(sibling_repo, "DESCRIPTION"))) {
-    loaded <- tryCatch({
-      pkgload::load_all(sibling_repo, export_all = FALSE, helpers = FALSE, quiet = TRUE)
-      requireNamespace("boids4R", quietly = TRUE)
-    }, error = function(e) {
-      FALSE
-    })
-    if (isTRUE(loaded)) {
-      return(invisible(TRUE))
-    }
-  }
-
   FALSE
 }
 

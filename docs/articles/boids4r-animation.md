@@ -2,76 +2,312 @@
 
 ## Swarm Art in the Browser
 
-This article documents an optional downstream bridge from `boids4R` into
-`ggWebGL`. The creative use case is generative browser art: compact
-schools, predator avoidance, obstacle corridors, murmurations, and
-mixed-species swarms become animated point/vector timelines that can be
-panned, zoomed, scrubbed, and inspected in WebGL.
+This article shows how `ggWebGL` can render swarm art in the browser
+from renderer-neutral `boids4R` simulations. The visual idea is
+generative rather than statistical: compact schools, predator avoidance,
+obstacle corridors, murmurations, and mixed-species flocks become
+animated point/vector timelines that can be panned, zoomed, scrubbed,
+and inspected in WebGL.
 
-The CRAN-built vignette is documentation-only. It does not load
-`boids4R`, does not execute GitHub-only package code, and does not
-require optional ecosystem packages to be installed. The runnable bridge
-remains in the package example script named below.
+The examples are deliberately browser-native. `boids4R` computes the
+flocking frames, and `ggWebGL` turns those frames into animated
+primitives with shader and camera controls. The same handoff can be used
+for gallery pieces, teaching demonstrations, or stress tests of timeline
+rendering.
 
 ## Boundary
 
 The ownership split is deliberately narrow:
 
 - `boids4R` owns simulation semantics: flocking state, rules, scenarios,
-  and frame export.
-- The optional downstream bridge translates simulation frames into
-  renderer primitives when `boids4R` is installed separately.
+  and frame export
+- [`boids4R::as_ggwebgl_spec()`](https://fbertran.github.io/boids4R/reference/as_ggwebgl_spec.html)
+  translates simulation frames into renderer primitives
 - `ggWebGL` owns WebGL rendering: the htmlwidget, point and vector
   primitives, shader choice, timeline controls, hover, pan, zoom, and 3D
-  orbit interaction.
+  orbit interaction
 
-This keeps the core `ggWebGL` package self-contained for CRAN while
-preserving a clear optional integration path for development
-installations.
+`boids4R` is a suggested package for `ggWebGL`. When it is unavailable,
+this vignette still builds and reports that the live animation widgets
+were skipped.
 
-## Runnable Optional Demo
-
-The optional example script is:
-
-``` text
-inst/examples/htmlwidget/downstream-boids4r-animation.R
+``` r
+if (!boids4r_available) {
+  cat("boids4R is unavailable, so live boids animations are skipped in this vignette.\n")
+} else {
+  cat("boids4R is available; live boids animations will be rendered below.\n")
+}
+#> boids4R is available; live boids animations will be rendered below.
 ```
 
-When `boids4R` is installed separately, the script builds two widgets:
+## Scenario Gallery: Swarm Art Motifs
 
-- a 2D schooling scene rendered as exact-frame animated points and
-  vectors
-- a 3D murmuration scene rendered with the structured 3D view path
+These examples mirror the `boids4R` scenario gallery: compact schools,
+obstacle corridors, predator avoidance, murmurations, and mixed-species
+3D flocks. Each widget is built from a renderer-neutral
+`boids_simulation` object and animated by the `ggWebGL` timeline.
 
-To run it in a development checkout or installed package, use:
+``` r
+if (!boids4r_available) {
+  cat("Scenario gallery widgets skipped.\n")
+} else {
+  scenario_gallery <- list(
+    schooling_2d = boids4R::boids_scenario(
+      "schooling_2d",
+      n = 180L,
+      steps = 80L,
+      record_every = 2L,
+      seed = 111L
+    ),
+    obstacle_corridor_2d = boids4R::boids_scenario(
+      "obstacle_corridor_2d",
+      n = 160L,
+      steps = 90L,
+      record_every = 2L,
+      seed = 112L
+    ),
+    predator_avoidance_2d = boids4R::boids_scenario(
+      "predator_avoidance_2d",
+      n = 170L,
+      steps = 90L,
+      record_every = 2L,
+      seed = 113L
+    ),
+    murmuration_3d = boids4R::boids_scenario(
+      "murmuration_3d",
+      n = 240L,
+      steps = 90L,
+      record_every = 3L,
+      seed = 114L
+    ),
+    mixed_species_3d = boids4R::boids_scenario(
+      "mixed_species_3d",
+      n = 210L,
+      steps = 90L,
+      record_every = 3L,
+      seed = 115L
+    )
+  )
 
-``` text
-source(system.file("examples", "htmlwidget", "downstream-boids4r-animation.R", package = "ggWebGL"))
-widgets <- downstream_boids4r_widgets()
-widgets$schooling_2d
-widgets$murmuration_3d
+  scenario_widgets <- lapply(names(scenario_gallery), function(name) {
+    sim <- scenario_gallery[[name]]
+    spec <- boids4R::as_ggwebgl_spec(
+      sim,
+      vector_every = if (identical(sim$dimension, "3d")) 16L else 12L,
+      vector_scale = if (identical(sim$dimension, "3d")) 0.11 else 0.13,
+      shader = "density_splat"
+    )
+    spec$labels$title <- paste("boids4R", name)
+    spec$render$timeline$autoplay <- TRUE
+    spec$render$timeline$loop <- TRUE
+    spec$render$timeline$speed <- 1.4
+    ggWebGL::ggWebGL(spec, height = if (identical(sim$dimension, "3d")) 540 else 500)
+  })
+  names(scenario_widgets) <- names(scenario_gallery)
+}
 ```
 
-The script is guarded: if `boids4R` is absent, it reports that the
-optional demo was skipped instead of failing package checks.
+### Schooling 2D
 
-## What To Inspect
+``` r
+if (!boids4r_available) {
+  cat("Schooling widget skipped.\n")
+} else {
+  scenario_widgets$schooling_2d
+}
+```
 
-The optional widgets are intended to demonstrate renderer capabilities
-rather than package-specific simulation interpretation:
+### Obstacle Corridor 2D
 
-- point primitives carry boid positions for each frame
-- vector primitives show local velocity direction
-- exact timeline filtering makes each scrubbed frame visually distinct
-- 3D view metadata enables the murmuration scene to use browser camera
-  controls
-- shader settings remain owned by `ggWebGL`, not by the simulation
-  package
+``` r
+if (!boids4r_available) {
+  cat("Obstacle corridor widget skipped.\n")
+} else {
+  scenario_widgets$obstacle_corridor_2d
+}
+```
 
-## CRAN Position
+### Predator Avoidance 2D
 
-`boids4R` is an optional development ecosystem package. It is not listed
-in `ggWebGL` dependencies and is not required for installation,
-examples, tests, or vignettes. This article is retained as a
-documentation entry so downstream packages can see the intended adapter
-boundary without making CRAN checks depend on GitHub-only packages.
+``` r
+if (!boids4r_available) {
+  cat("Predator avoidance widget skipped.\n")
+} else {
+  scenario_widgets$predator_avoidance_2d
+}
+```
+
+### Murmuration 3D
+
+``` r
+if (!boids4r_available) {
+  cat("Murmuration widget skipped.\n")
+} else {
+  scenario_widgets$murmuration_3d
+}
+```
+
+### Mixed Species 3D
+
+``` r
+if (!boids4r_available) {
+  cat("Mixed-species widget skipped.\n")
+} else {
+  scenario_widgets$mixed_species_3d
+}
+```
+
+## Custom Workflow Animations
+
+The custom workflow builds a corridor from low-level `boids4R`
+constructors, then compares a baseline run with a stronger
+obstacle/predator avoidance run.
+
+``` r
+if (!boids4r_available) {
+  cat("Custom workflow widgets skipped.\n")
+} else {
+  bounds <- matrix(
+    c(-2.4, -1.35, 2.4, 1.35),
+    ncol = 2,
+    dimnames = list(c("x", "y"), c("min", "max"))
+  )
+
+  n_school <- 96L
+  n_scout <- 32L
+  n_boids <- n_school + n_scout
+  school_axis <- seq(0, 1, length.out = n_school)
+  scout_axis <- seq(0, 1, length.out = n_scout)
+  positions <- rbind(
+    cbind(-2.18 + 0.83 * school_axis, -0.70 + 0.95 * abs(sin(pi * school_axis))),
+    cbind(-2.22 + 0.77 * scout_axis, 0.28 + 0.64 * abs(cos(pi * scout_axis)))
+  )
+  velocity_phase <- seq(0, 2 * pi, length.out = n_boids)
+  velocities <- cbind(
+    0.35 + 0.20 * cos(velocity_phase),
+    0.08 * sin(velocity_phase)
+  )
+
+  custom_state <- boids4R::boids_state(
+    n_boids,
+    "2d",
+    bounds = bounds,
+    positions = positions,
+    velocities = velocities,
+    species = c(rep("school", n_school), rep("scout", n_scout))
+  )
+
+  custom_world <- boids4R::boids_world(
+    "2d",
+    bounds = bounds,
+    boundary = "reflect",
+    obstacles = data.frame(
+      x = c(-0.82, -0.05, 0.72),
+      y = c(0.42, -0.36, 0.48),
+      radius = c(0.30, 0.36, 0.31)
+    ),
+    predators = data.frame(
+      x = -0.25,
+      y = 0.92,
+      radius = 0.58,
+      strength = 1.2
+    ),
+    attractors = data.frame(
+      x = 2.08,
+      y = -0.86,
+      strength = 0.95
+    )
+  )
+
+  baseline_params <- boids4R::boids_params(
+    "2d",
+    separation_weight = 1.35,
+    alignment_weight = 0.94,
+    cohesion_weight = 0.62,
+    obstacle_weight = 2.5,
+    predator_weight = 2.3,
+    goal_weight = 0.16,
+    max_speed = 1.18,
+    max_force = 0.12,
+    noise = 0.001
+  )
+
+  avoidance_params <- boids4R::boids_params(
+    "2d",
+    separation_weight = 1.35,
+    alignment_weight = 0.94,
+    cohesion_weight = 0.62,
+    obstacle_weight = 2.8,
+    predator_weight = 3.2,
+    goal_weight = 0.20,
+    max_speed = 1.18,
+    max_force = 0.12,
+    noise = 0.001
+  )
+
+  custom_runs <- list(
+    baseline = boids4R::simulate_boids(
+      custom_state,
+      custom_world,
+      baseline_params,
+      steps = 95L,
+      record_every = 2L,
+      seed = 221L
+    ),
+    stronger_avoidance = boids4R::simulate_boids(
+      custom_state,
+      custom_world,
+      avoidance_params,
+      steps = 95L,
+      record_every = 2L,
+      seed = 222L
+    )
+  )
+
+  custom_widgets <- lapply(names(custom_runs), function(name) {
+    spec <- boids4R::as_ggwebgl_spec(
+      custom_runs[[name]],
+      vector_every = 10L,
+      vector_scale = 0.14,
+      shader = "density_splat"
+    )
+    spec$labels$title <- paste("boids4R custom corridor:", name)
+    spec$render$timeline$autoplay <- TRUE
+    spec$render$timeline$loop <- TRUE
+    spec$render$timeline$speed <- 1.5
+    ggWebGL::ggWebGL(spec, height = 500)
+  })
+  names(custom_widgets) <- names(custom_runs)
+}
+```
+
+### Baseline Corridor
+
+``` r
+if (!boids4r_available) {
+  cat("Baseline corridor widget skipped.\n")
+} else {
+  custom_widgets$baseline
+}
+```
+
+### Stronger Avoidance Corridor
+
+``` r
+if (!boids4r_available) {
+  cat("Stronger avoidance corridor widget skipped.\n")
+} else {
+  custom_widgets$stronger_avoidance
+}
+```
+
+## Regeneration
+
+The same pattern can be used from an installed package:
+
+``` r
+sim <- boids4R::boids_scenario("mixed_species_3d", n = 210, steps = 90, seed = 115)
+spec <- boids4R::as_ggwebgl_spec(sim, vector_every = 16, shader = "density_splat")
+spec$render$timeline$autoplay <- TRUE
+ggWebGL::ggWebGL(spec, height = 540)
+```

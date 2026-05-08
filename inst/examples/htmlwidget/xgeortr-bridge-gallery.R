@@ -17,19 +17,6 @@ load_renderer_and_xgeortr_packages <- function() {
     return(invisible(TRUE))
   }
 
-  sibling_repo <- normalizePath("../XGeoRTR", winslash = "/", mustWork = FALSE)
-  if (requireNamespace("pkgload", quietly = TRUE) && file.exists(file.path(sibling_repo, "DESCRIPTION"))) {
-    loaded <- tryCatch({
-      pkgload::load_all(sibling_repo, export_all = FALSE, helpers = FALSE, quiet = TRUE)
-      requireNamespace("XGeoRTR", quietly = TRUE)
-    }, error = function(e) {
-      FALSE
-    })
-    if (isTRUE(loaded)) {
-      return(invisible(TRUE))
-    }
-  }
-
   FALSE
 }
 
@@ -40,7 +27,7 @@ xgeortr_bridge_available <- function() {
 require_xgeortr_bridge <- function() {
   if (!xgeortr_bridge_available()) {
     stop(
-      "XGeoRTR is unavailable. Install it or make the sibling repo available to run the XGeoRTR bridge examples.",
+      "XGeoRTR is unavailable. Install it to run the XGeoRTR bridge examples.",
       call. = FALSE
     )
   }

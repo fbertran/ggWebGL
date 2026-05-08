@@ -44,15 +44,38 @@ test_that("optional ecosystem examples do not attach GitHub-only packages", {
   }
 })
 
-test_that("CRAN-built optional bridge vignettes are gated by default", {
+test_that("suggested bridge packages remain out of hard dependencies", {
+  description_path <- cran_repo_path("DESCRIPTION")
+  if (is.na(description_path)) {
+    description_path <- system.file("DESCRIPTION", package = "ggWebGL")
+  }
+  if (!nzchar(description_path) || !file.exists(description_path)) {
+    skip("DESCRIPTION is unavailable in this test context.")
+  }
+
+  description <- read.dcf(description_path)
+  hard_dependency_fields <- intersect(c("Depends", "Imports", "LinkingTo"), colnames(description))
+  hard_dependencies <- paste(description[, hard_dependency_fields, drop = TRUE], collapse = "\n")
+  suggests <- if ("Suggests" %in% colnames(description)) description[, "Suggests"] else ""
+
+  expect_false(grepl("XGeoRTR", hard_dependencies, fixed = TRUE))
+  expect_false(grepl("boids4R", hard_dependencies, fixed = TRUE))
+  expect_false(grepl("shapViz3D", hard_dependencies, fixed = TRUE))
+  expect_true(grepl("XGeoRTR", suggests, fixed = TRUE))
+  expect_true(grepl("boids4R", suggests, fixed = TRUE))
+  expect_false(grepl("shapViz3D", suggests, fixed = TRUE))
+})
+
+test_that("suggested bridge vignettes degrade cleanly when packages are absent", {
   xgeo <- cran_read_text("vignettes/xgeortr-bridge.Rmd")
   boids <- cran_read_text("vignettes/boids4r-animation.Rmd")
 
-  expect_match(xgeo, "GGWEBGL_BUILD_OPTIONAL_BRIDGES", fixed = TRUE)
-  expect_match(boids, "documentation-only", fixed = TRUE)
-  expect_false(grepl("boids4R::", boids, fixed = TRUE))
-  expect_match(xgeo, "not a\nCRAN dependency", fixed = TRUE)
-  expect_match(boids, "not required for installation, examples, tests, or\nvignettes", fixed = TRUE)
+  expect_match(xgeo, "requireNamespace(\"XGeoRTR\"", fixed = TRUE)
+  expect_match(boids, "requireNamespace(\"boids4R\"", fixed = TRUE)
+  expect_match(xgeo, "XGeoRTR is unavailable, so the live bridge widgets are skipped", fixed = TRUE)
+  expect_match(boids, "boids4R is unavailable, so live boids animations are skipped", fixed = TRUE)
+  expect_true(grepl("boids4R::", boids, fixed = TRUE))
+  expect_false(grepl("GGWEBGL_BUILD_OPTIONAL_BRIDGES", xgeo, fixed = TRUE))
 })
 
 # test_that("README describes ecosystem bridges as optional development integrations", {

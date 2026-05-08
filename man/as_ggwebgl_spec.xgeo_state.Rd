@@ -70,4 +70,26 @@ class(toy_state) <- "xgeo_state"
 
 xgeo_spec <- as_ggwebgl_spec(toy_state, primitive = "points")
 xgeo_spec$render$primitives
+
+\dontshow{if (requireNamespace("XGeoRTR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+toy_state <- XGeoRTR::as_xgeo_state(
+  data.frame(
+    point_id = rep(paste0("p", 1:4), each = 2),
+    feature = rep(c("f1", "f2"), times = 4),
+    value = c(0.2, 0.7, 0.4, 0.1, 0.8, 0.6, 0.5, 0.3),
+    x = c(0, 0, 1, 1, 0, 0, 1, 1),
+    y = c(0, 0, 0, 0, 1, 1, 1, 1),
+    z = 0
+  ),
+  x_col = "x",
+  y_col = "y",
+  z_col = "z",
+  value_col = "value",
+  feature_col = "feature",
+  point_id_col = "point_id"
+)
+
+xgeo_spec <- as_ggwebgl_spec(toy_state, primitive = "points")
+xgeo_spec$render$primitives
+\dontshow{\}) # examplesIf}
 }
