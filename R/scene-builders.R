@@ -20,6 +20,8 @@ ggwebgl_enrich_scene_render <- function(render, webgl) {
     projection = webgl$view$projection %||% webgl$projection %||% "orthographic",
     state = webgl$view$state %||% webgl$camera_state %||% list()
   ))
+  render$depth_test <- isTRUE(webgl$depth_test)
+  render$blend_mode <- webgl$blend_mode %||% "auto"
   render$selection <- webgl$selection %||% list(mode = "none", highlight = TRUE, emit = TRUE)
   if (!is.null(webgl$timeline)) {
     render$timeline <- webgl$timeline

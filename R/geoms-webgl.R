@@ -8,7 +8,10 @@ GeomPointWebGL <- ggplot2::ggproto(
     "tooltip",
     "key",
     "sample_id",
-    "point_id"
+    "point_id",
+    "z",
+    "frame",
+    "time"
   )
 )
 GeomLineWebGL <- ggplot2::ggproto(

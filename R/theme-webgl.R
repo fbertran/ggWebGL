@@ -27,6 +27,10 @@
 #'   selection contract.
 #' @param dimension,camera,projection,camera_state Legacy view fields retained as
 #'   an internal migration shim.
+#' @param depth_test Logical scalar. `NULL` uses the renderer default: disabled
+#'   for 2D scenes and enabled for 3D scenes. Set explicitly to override.
+#' @param blend_mode Primitive blending mode: `"auto"`, `"alpha"`,
+#'   `"additive"`, or `"premultiplied"`.
 #' @param timeline Optional `ggwebgl_timeline()` specification for runtime
 #'   playback controls.
 #' @param ... Reserved for future backend-specific options.
@@ -56,8 +60,12 @@ theme_webgl <- function(shader = "default",
                         camera = "orbit",
                         projection = "orthographic",
                         camera_state = list(),
+                        depth_test = NULL,
+                        blend_mode = "auto",
                         timeline = NULL,
                         ...) {
+  inferred_3d_dimension <- missing(dimension) &&
+    (!missing(camera) || (!missing(projection) && identical(normalise_projection(projection), "perspective")))
   explicit_fields <- c(
     if (!missing(shader)) "shader",
     if (!missing(antialias)) "antialias",
@@ -68,10 +76,12 @@ theme_webgl <- function(shader = "default",
     if (!missing(panel_overlay)) "panel_overlay",
     if (!missing(view)) "view",
     if (!missing(selection)) "selection",
-    if (!missing(dimension)) "dimension",
+    if (!missing(dimension) || inferred_3d_dimension) "dimension",
     if (!missing(camera)) "camera",
     if (!missing(projection)) "projection",
     if (!missing(camera_state)) "camera_state",
+    if (!missing(depth_test)) "depth_test",
+    if (!missing(blend_mode)) "blend_mode",
     if (!missing(timeline)) "timeline",
     names(list(...))
   )
@@ -85,10 +95,12 @@ theme_webgl <- function(shader = "default",
     panel_overlay = if (!missing(panel_overlay)) panel_overlay else NULL,
     view = if (!missing(view)) view else NULL,
     selection = if (!missing(selection)) selection else NULL,
-    dimension = if (!missing(dimension)) dimension else NULL,
+    dimension = if (!missing(dimension)) dimension else if (inferred_3d_dimension) "3d" else NULL,
     camera = if (!missing(camera)) camera else NULL,
     projection = if (!missing(projection)) projection else NULL,
     camera_state = if (!missing(camera_state)) camera_state else NULL,
+    depth_test = if (!missing(depth_test)) depth_test else NULL,
+    blend_mode = if (!missing(blend_mode)) blend_mode else NULL,
     timeline = if (!missing(timeline)) timeline else NULL,
     extra = list(...)
   )), explicit_fields = explicit_fields)

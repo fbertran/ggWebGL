@@ -18,6 +18,8 @@ theme_webgl(
   camera = "orbit",
   projection = "orthographic",
   camera_state = list(),
+  depth_test = NULL,
+  blend_mode = "auto",
   timeline = NULL,
   ...
 )
@@ -55,6 +57,12 @@ selection contract.}
 
 \item{dimension, camera, projection, camera_state}{Legacy view fields retained as
 an internal migration shim.}
+
+\item{depth_test}{Logical scalar. \code{NULL} uses the renderer default: disabled
+for 2D scenes and enabled for 3D scenes. Set explicitly to override.}
+
+\item{blend_mode}{Primitive blending mode: \code{"auto"}, \code{"alpha"},
+\code{"additive"}, or \code{"premultiplied"}.}
 
 \item{timeline}{Optional \code{ggwebgl_timeline()} specification for runtime
 playback controls.}

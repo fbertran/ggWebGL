@@ -60,7 +60,10 @@ HTMLWidgets.widget({
         distance: 2.8,
         target: [0, 0, 0],
         rotation: [0, 0, 0, 1],
-        up: [0, 1, 0]
+        up: [0, 1, 0],
+        fov: 45,
+        near: 0.01,
+        far: 1000
       }
     };
 
@@ -241,6 +244,24 @@ HTMLWidgets.widget({
       "  float clipX = ((a_position.x - u_domain.x) / xSpan) * 2.0 - 1.0;",
       "  float clipY = ((a_position.y - u_domain.z) / ySpan) * 2.0 - 1.0;",
       "  gl_Position = vec4(clipX, clipY, 0.0, 1.0);",
+      "  gl_PointSize = max(u_min_point_size, a_size * u_point_scale);",
+      "  v_color = a_color;",
+      "  v_age = a_age;",
+      "}"
+    ].join("\n");
+
+    var primitive3dVertexShaderSource = [
+      "attribute vec3 a_position3;",
+      "attribute float a_size;",
+      "attribute vec4 a_color;",
+      "attribute float a_age;",
+      "uniform mat4 u_view_projection;",
+      "uniform float u_point_scale;",
+      "uniform float u_min_point_size;",
+      "varying vec4 v_color;",
+      "varying float v_age;",
+      "void main() {",
+      "  gl_Position = u_view_projection * vec4(a_position3, 1.0);",
       "  gl_PointSize = max(u_min_point_size, a_size * u_point_scale);",
       "  v_color = a_color;",
       "  v_age = a_age;",
@@ -492,6 +513,8 @@ HTMLWidgets.widget({
       var dimension = view.dimension;
       var camera = view.controller === "panzoom" ? "orbit" : view.controller;
       var projection = view.projection;
+      var depthTest = source.depth_test === undefined ? dimension === "3d" : source.depth_test !== false;
+      var blendMode = String(source.blend_mode || extra.blend_mode || "auto").toLowerCase();
       var interactions = normalizeStringArray(source.interactions);
       var selection = normalizeSelection(source.selection, interactions);
 
@@ -529,6 +552,8 @@ HTMLWidgets.widget({
         camera: camera,
         projection: projection,
         camera_state: view.state,
+        depth_test: depthTest,
+        blend_mode: ["auto", "alpha", "additive", "premultiplied"].indexOf(blendMode) !== -1 ? blendMode : "auto",
         timeline: normalizeTimeline(source.timeline),
         line_mode: ["auto", "native", "quad"].indexOf(lineMode) !== -1 ? lineMode : "auto",
         line_join: ["bevel", "round"].indexOf(lineJoin) !== -1 ? lineJoin : "bevel",
@@ -1127,7 +1152,20 @@ HTMLWidgets.widget({
     }
 
     function sceneDimension(x) {
-      return x && x.render && x.render.dimension === "3d" ? "3d" : "2d";
+      return x && x.render && (x.render.dimension === "3d" || x.render.coordinate_system === "cartesian3d") ? "3d" : "2d";
+    }
+
+    function sceneProjection(x) {
+      return x && x.webgl && x.webgl.projection === "perspective" ? "perspective" : "orthographic";
+    }
+
+    function depthTestEnabled(x) {
+      return sceneDimension(x) === "3d" && x && x.webgl && x.webgl.depth_test !== false;
+    }
+
+    function blendMode(x) {
+      var mode = x && x.webgl ? String(x.webgl.blend_mode || "auto").toLowerCase() : "auto";
+      return ["auto", "alpha", "additive", "premultiplied"].indexOf(mode) === -1 ? "auto" : mode;
     }
 
     function sceneTimeline(x) {
@@ -1380,6 +1418,9 @@ HTMLWidgets.widget({
       state.camera.target = cameraState.target.slice();
       state.camera.rotation = cameraState.rotation.slice();
       state.camera.up = cameraState.up.slice();
+      state.camera.fov = cameraState.fov;
+      state.camera.near = cameraState.near;
+      state.camera.far = cameraState.far;
     }
 
     function cameraController(x) {
@@ -1417,7 +1458,7 @@ HTMLWidgets.widget({
       }
 
       if (sceneDimension(x) === "3d" || currentTimelineFrame(x) !== null) {
-        return "quad";
+        return sceneDimension(x) === "3d" ? "native" : "quad";
       }
 
       return requested === "auto" ? (total <= 100000 ? "quad" : "native") : requested;
@@ -2654,6 +2695,7 @@ HTMLWidgets.widget({
       }
 
       var primitiveProgram = createProgram(gl, primitiveVertexShaderSource, primitiveFragmentShaderSource);
+      var primitive3dProgram = createProgram(gl, primitive3dVertexShaderSource, primitiveFragmentShaderSource);
       var rasterProgram = createProgram(gl, rasterVertexShaderSource, rasterFragmentShaderSource);
 
       state.programs = {
@@ -2674,6 +2716,24 @@ HTMLWidgets.widget({
 	            densityAlphaBoost: gl.getUniformLocation(primitiveProgram, "u_density_alpha_boost"),
 	            densityAlphaCeiling: gl.getUniformLocation(primitiveProgram, "u_density_alpha_ceiling")
 	          }
+        },
+        primitive3d: {
+          program: primitive3dProgram,
+          attributes: {
+            position3: gl.getAttribLocation(primitive3dProgram, "a_position3"),
+            size: gl.getAttribLocation(primitive3dProgram, "a_size"),
+            color: gl.getAttribLocation(primitive3dProgram, "a_color"),
+            age: gl.getAttribLocation(primitive3dProgram, "a_age")
+          },
+          uniforms: {
+            viewProjection: gl.getUniformLocation(primitive3dProgram, "u_view_projection"),
+            pointScale: gl.getUniformLocation(primitive3dProgram, "u_point_scale"),
+            minPointSize: gl.getUniformLocation(primitive3dProgram, "u_min_point_size"),
+            shaderMode: gl.getUniformLocation(primitive3dProgram, "u_shader_mode"),
+            isPointLayer: gl.getUniformLocation(primitive3dProgram, "u_is_point_layer"),
+            densityAlphaBoost: gl.getUniformLocation(primitive3dProgram, "u_density_alpha_boost"),
+            densityAlphaCeiling: gl.getUniformLocation(primitive3dProgram, "u_density_alpha_ceiling")
+          }
         },
         raster: {
           program: rasterProgram,
@@ -2927,6 +2987,107 @@ HTMLWidgets.widget({
       return { x: rx * scale, y: ry * scale, z: rz };
     }
 
+    function layerZRange(zs) {
+      var zMin = Infinity;
+      var zMax = -Infinity;
+      zs = Array.isArray(zs) ? zs : [];
+      for (var i = 0; i < zs.length; i += 1) {
+        var value = Number(zs[i]);
+        if (isFinite(value)) {
+          zMin = Math.min(zMin, value);
+          zMax = Math.max(zMax, value);
+        }
+      }
+      if (!isFinite(zMin) || !isFinite(zMax)) {
+        zMin = -1;
+        zMax = 1;
+      }
+      if (zMin === zMax) {
+        zMin -= 0.5;
+        zMax += 0.5;
+      }
+      return [zMin, zMax];
+    }
+
+    function normalizePosition3(xValue, yValue, zValue, viewport, zRange) {
+      var xMid = (viewport.x[0] + viewport.x[1]) * 0.5;
+      var yMid = (viewport.y[0] + viewport.y[1]) * 0.5;
+      var zMid = (zRange[0] + zRange[1]) * 0.5;
+      var span = Math.max(
+        1e-6,
+        viewport.x[1] - viewport.x[0],
+        viewport.y[1] - viewport.y[0],
+        zRange[1] - zRange[0]
+      );
+      return [
+        (Number(xValue) - xMid) / span,
+        (Number(yValue) - yMid) / span,
+        (Number(zValue || 0) - zMid) / span
+      ];
+    }
+
+    function cameraViewProjectionMatrix(x, box) {
+      var cameraModule = window.ggWebGLCamera;
+      if (!cameraModule || typeof cameraModule.cameraMatrices !== "function") {
+        return window.ggWebGLMat4 ? window.ggWebGLMat4.identity() : [
+          1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1
+        ];
+      }
+      var camera = {
+        distance: state.camera.distance,
+        target: state.camera.target,
+        rotation: state.camera.rotation,
+        up: state.camera.up,
+        fov: state.camera.fov,
+        near: state.camera.near,
+        far: state.camera.far
+      };
+      var aspect = box && box.plotHeight ? Math.max(1e-6, box.plotWidth / box.plotHeight) : 1;
+      return cameraModule.cameraMatrices(camera, sceneProjection(x), aspect).viewProjection;
+    }
+
+    function flattenPointLayer3d(layer, x, viewport) {
+      var n = layer.rows || 0;
+      var xs = layer.x || [];
+      var ys = layer.y || [];
+      var zs = layer.z || [];
+      var sizes = layer.size || [];
+      var ages = layer.age || [];
+      var rgba = layer.rgba || [];
+      var zRange = layerZRange(zs);
+      var positions = [];
+      var pointSizes = [];
+      var pointAges = [];
+      var colors = [];
+
+      for (var i = 0; i < n; i += 1) {
+        if (x && !layerIndexVisible(layer, i, x)) {
+          continue;
+        }
+        var point = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+        positions.push(point[0], point[1], point[2]);
+        pointSizes.push(isFinite(sizes[i]) ? Number(sizes[i]) : 1.0);
+        pointAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
+        colors.push(
+          normalizeColorComponent(rgba[i * 4 + 0], 0.0),
+          normalizeColorComponent(rgba[i * 4 + 1], 0.0),
+          normalizeColorComponent(rgba[i * 4 + 2], 0.0),
+          normalizeColorComponent(rgba[i * 4 + 3], 1.0)
+        );
+      }
+
+      return {
+        count: pointSizes.length,
+        positions: new Float32Array(positions),
+        sizes: new Float32Array(pointSizes),
+        ages: new Float32Array(pointAges),
+        colors: new Float32Array(colors)
+      };
+    }
+
     function flattenPointLayer(layer, x, viewport) {
       var n = layer.rows || 0;
       var xs = layer.x || [];
@@ -3044,13 +3205,52 @@ HTMLWidgets.widget({
 			}
 		  }
 		
-		  return {
-			count: n,
-			positions: positions,
-			ages: pathAges,
-			colors: colors
-		  };
-		}
+		return {
+		  count: n,
+		  positions: positions,
+		  ages: pathAges,
+		  colors: colors
+		};
+	}
+
+    function flattenLinePath3d(path, x, viewport) {
+      var xs = Array.isArray(path.x) ? path.x : [];
+      var ys = Array.isArray(path.y) ? path.y : [];
+      var zs = Array.isArray(path.z) ? path.z : [];
+      var ages = Array.isArray(path.age) ? path.age : [];
+      var rgba = Array.isArray(path.rgba) ? path.rgba : [];
+      var n = Math.min(xs.length, ys.length);
+      var zRange = layerZRange(zs);
+      var positions = [];
+      var pathAges = [];
+      var colors = [];
+
+      for (var i = 0; i < n; i += 1) {
+        if (x && !pathIndexVisible(path, i, x)) {
+          continue;
+        }
+        var point = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+        positions.push(point[0], point[1], point[2]);
+        pathAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
+        if (rgba.length >= (i * 4 + 4)) {
+          colors.push(
+            normalizeColorComponent(rgba[i * 4 + 0], 0.1),
+            normalizeColorComponent(rgba[i * 4 + 1], 0.1),
+            normalizeColorComponent(rgba[i * 4 + 2], 0.1),
+            normalizeColorComponent(rgba[i * 4 + 3], 1.0)
+          );
+        } else {
+          colors.push(0.1, 0.1, 0.1, 1.0);
+        }
+      }
+
+      return {
+        count: pathAges.length,
+        positions: new Float32Array(positions),
+        ages: new Float32Array(pathAges),
+        colors: new Float32Array(colors)
+      };
+    }
 
     function flattenLinePathToStyledQuads(path, viewport, plotWidthPx, plotHeightPx, joinMode, capMode, xScene, projectViewport) {
       var xs = Array.isArray(path.x) ? path.x : [];
@@ -3510,6 +3710,40 @@ HTMLWidgets.widget({
       };
     }
 
+    function configurePrimitiveBlending(gl, x, shaderMode, layerType) {
+      var mode = blendMode(x);
+      gl.enable(gl.BLEND);
+      gl.blendEquation(gl.FUNC_ADD);
+      if (mode === "additive") {
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      } else if (mode === "premultiplied") {
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      } else if (shaderMode === 1) {
+        if (layerType === "points" && mode === "auto") {
+          gl.blendFuncSeparate(
+            gl.SRC_ALPHA,
+            gl.ONE_MINUS_SRC_ALPHA,
+            gl.ONE,
+            gl.ONE_MINUS_SRC_ALPHA
+          );
+        } else {
+          gl.blendFuncSeparate(
+            gl.SRC_ALPHA,
+            gl.ONE_MINUS_SRC_ALPHA,
+            gl.ONE,
+            gl.ONE_MINUS_SRC_ALPHA
+          );
+        }
+      } else {
+        gl.blendFuncSeparate(
+          gl.SRC_ALPHA,
+          gl.ONE_MINUS_SRC_ALPHA,
+          gl.ONE,
+          gl.ONE_MINUS_SRC_ALPHA
+        );
+      }
+    }
+
     function configurePrimitiveLayerShader(gl, programInfo, x, layerType, viewport, layer) {
       var shaderMode = shaderModeForLayer(x, layerType);
       var isPointLayer = layerType === "points" ? 1.0 : 0.0;
@@ -3536,29 +3770,42 @@ HTMLWidgets.widget({
       gl.uniform1f(programInfo.uniforms.minPointSize, minPointSize);
       gl.uniform1f(programInfo.uniforms.densityAlphaBoost, densityAlphaBoost);
       gl.uniform1f(programInfo.uniforms.densityAlphaCeiling, densityAlphaCeiling);
+      configurePrimitiveBlending(gl, x, shaderMode, layerType);
+    }
 
-      if (layerType === "points") {
-        gl.enable(gl.BLEND);
+    function configurePrimitive3dLayerShader(gl, programInfo, x, layerType, matrix, layer) {
+      var shaderMode = shaderModeForLayer(x, layerType);
+      var densityTuning = densitySplatTuning(layer && layer.rows);
+      var pointScale = layerType === "points" && shaderMode === 1 ? densityTuning.pointScale : 1.6;
+      var minPointSize = layerType === "points" && shaderMode === 1 ? densityTuning.minPointSize : 1.0;
+      var densityAlphaBoost = layerType === "points" && shaderMode === 1 ? densityTuning.alphaBoost : 1.0;
+      var densityAlphaCeiling = layerType === "points" && shaderMode === 1 ? densityTuning.alphaCeiling : 0.90;
 
-        if (shaderMode === 1) {
-          gl.blendEquation(gl.FUNC_ADD);
-          gl.blendFuncSeparate(
-            gl.SRC_ALPHA,
-            gl.ONE_MINUS_SRC_ALPHA,
-            gl.ONE,
-            gl.ONE_MINUS_SRC_ALPHA
-          );
-        } else {
-          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        }
-      } else {
-        gl.blendFuncSeparate(
-          gl.SRC_ALPHA,
-          gl.ONE_MINUS_SRC_ALPHA,
-          gl.ONE,
-          gl.ONE_MINUS_SRC_ALPHA
-        );
+      gl.useProgram(programInfo.program);
+      gl.uniformMatrix4fv(programInfo.uniforms.viewProjection, false, new Float32Array(matrix));
+      gl.uniform1f(programInfo.uniforms.shaderMode, shaderMode);
+      gl.uniform1f(programInfo.uniforms.isPointLayer, layerType === "points" ? 1.0 : 0.0);
+      gl.uniform1f(programInfo.uniforms.pointScale, pointScale);
+      gl.uniform1f(programInfo.uniforms.minPointSize, minPointSize);
+      gl.uniform1f(programInfo.uniforms.densityAlphaBoost, densityAlphaBoost);
+      gl.uniform1f(programInfo.uniforms.densityAlphaCeiling, densityAlphaCeiling);
+      configurePrimitiveBlending(gl, x, shaderMode, layerType);
+    }
+
+    function draw3dPointLayer(gl, programs, layer, x, viewport, box) {
+      var payload = createPointLayerGpuPayloadFromFlat(gl, flattenPointLayer3d(layer, x, viewport));
+      if (!payload.count) {
+        disposeTransientPointPayload(payload);
+        return;
       }
+      var primitive = programs.primitive3d;
+      configurePrimitive3dLayerShader(gl, primitive, x, "points", cameraViewProjectionMatrix(x, box), layer);
+      bindAttributeBuffer(gl, primitive.attributes.position3, payload.positionBuffer, 3);
+      bindAttributeBuffer(gl, primitive.attributes.size, payload.sizeBuffer, 1);
+      bindAttributeBuffer(gl, primitive.attributes.age, payload.ageBuffer, 1);
+      bindAttributeBuffer(gl, primitive.attributes.color, payload.colorBuffer, 4);
+      gl.drawArrays(gl.POINTS, 0, payload.count);
+      disposeTransientPointPayload(payload);
     }
 
     function configureRasterProgram(gl, programInfo, viewport) {
@@ -3568,8 +3815,13 @@ HTMLWidgets.widget({
     }
 
     function drawPointLayer(gl, programs, layer, x, viewport) {
+      var box = arguments.length > 5 ? arguments[5] : null;
+      if (sceneDimension(x) === "3d") {
+        draw3dPointLayer(gl, programs, layer, x, viewport, box);
+        return;
+      }
       var dynamic = sceneDimension(x) === "3d" || currentTimelineFrame(x) !== null;
-      var drawViewport = sceneDimension(x) === "3d" ? { x: [-1.2, 1.2], y: [-1.2, 1.2] } : viewport;
+      var drawViewport = viewport;
       var payload = dynamic
         ? createPointLayerGpuPayloadFromFlat(gl, flattenPointLayer(layer, x, viewport))
         : ensurePointLayerGpuPayload(gl, layer);
@@ -3702,9 +3954,40 @@ HTMLWidgets.widget({
       );
     }
 
+    function drawLineLayer3d(gl, programs, layer, x, viewport, box) {
+      var paths = linePathList(layer.paths);
+      var primitive = programs.primitive3d;
+      configurePrimitive3dLayerShader(gl, primitive, x, "lines", cameraViewProjectionMatrix(x, box), layer);
+
+      if (primitive.attributes.size >= 0) {
+        gl.disableVertexAttribArray(primitive.attributes.size);
+        gl.vertexAttrib1f(primitive.attributes.size, 1.0);
+      }
+
+      paths.forEach(function(path) {
+        var payload = flattenLinePath3d(path, x, viewport);
+        if (!payload || payload.count < 2) {
+          return;
+        }
+        var positionBuffer = createBuffer(gl, payload.positions);
+        bindAttributeBuffer(gl, primitive.attributes.position3, positionBuffer, 3);
+        var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
+        var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+        gl.deleteBuffer(positionBuffer);
+        gl.deleteBuffer(ageBuffer);
+        gl.deleteBuffer(colorBuffer);
+      });
+    }
+
     function drawLineLayer(gl, programs, layer, x, viewport, box) {
       var mode = lineRenderMode(x);
       var drawViewport = sceneDimension(x) === "3d" ? { x: [-1.2, 1.2], y: [-1.2, 1.2] } : viewport;
+
+      if (sceneDimension(x) === "3d") {
+        drawLineLayer3d(gl, programs, layer, x, viewport, box);
+        return;
+      }
 
       if (mode === "native") {
         drawLineLayerNative(gl, programs, layer, x, drawViewport);
@@ -4068,7 +4351,7 @@ HTMLWidgets.widget({
     }
 
     function drawPointsLayer(gl, programs, layer, scene, panel, viewport, box) {
-      drawPointLayer(gl, programs, layer, scene, viewport);
+      drawPointLayer(gl, programs, layer, scene, viewport, box);
     }
 
     function drawLinesLayer(gl, programs, layer, scene, panel, viewport, box) {
@@ -4151,7 +4434,14 @@ HTMLWidgets.widget({
       gl.disable(gl.SCISSOR_TEST);
       gl.viewport(0, 0, state.canvas.width, state.canvas.height);
 	  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      if (depthTestEnabled(x)) {
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clearDepth(1.0);
+      } else {
+        gl.disable(gl.DEPTH_TEST);
+      }
+      gl.clear(depthTestEnabled(x) ? (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT) : gl.COLOR_BUFFER_BIT);
       gl.enable(gl.BLEND);
 
       boxes.forEach(function(box) {
@@ -4165,6 +4455,9 @@ HTMLWidgets.widget({
         gl.enable(gl.SCISSOR_TEST);
         gl.scissor(scissorX, scissorY, scissorWidth, scissorHeight);
         gl.viewport(scissorX, scissorY, scissorWidth, scissorHeight);
+        if (depthTestEnabled(x)) {
+          gl.clear(gl.DEPTH_BUFFER_BIT);
+        }
 
         (panel.layers || []).forEach(function(layer) {
           drawLayer(gl, programs, layer, x, panel, viewport, box);

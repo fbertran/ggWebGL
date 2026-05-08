@@ -61,6 +61,8 @@ default_theme_webgl <- function() {
     camera = "orbit",
     projection = "orthographic",
     camera_state = list(),
+    depth_test = NULL,
+    blend_mode = "auto",
     timeline = NULL,
     line_mode = "auto",
     line_join = "bevel",
@@ -183,6 +185,24 @@ normalise_projection <- function(projection) {
 
   if (!value %in% c("orthographic", "perspective")) {
     return(default_theme_webgl()[["projection"]])
+  }
+
+  value
+}
+
+normalise_depth_test <- function(depth_test = NULL, dimension = "2d") {
+  if (is.null(depth_test)) {
+    return(identical(normalise_dimension(dimension), "3d"))
+  }
+
+  isTRUE(depth_test)
+}
+
+normalise_blend_mode <- function(blend_mode) {
+  value <- tolower(as.character(blend_mode)[1] %||% default_theme_webgl()[["blend_mode"]])
+
+  if (!value %in% c("auto", "alpha", "additive", "premultiplied")) {
+    return(default_theme_webgl()[["blend_mode"]])
   }
 
   value
@@ -596,7 +616,8 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
 
   recognised_extra_fields <- c(
     "line_mode", "line_join", "line_cap",
-    "view", "selection", "dimension", "camera", "projection", "camera_state", "timeline"
+    "view", "selection", "dimension", "camera", "projection", "camera_state",
+    "depth_test", "blend_mode", "timeline"
   )
 
   for (field in recognised_extra_fields) {
@@ -643,6 +664,8 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
     camera = if (identical(view$controller, "panzoom")) "orbit" else view$controller,
     projection = view$projection,
     camera_state = view$state,
+    depth_test = normalise_depth_test(options[["depth_test"]] %||% defaults[["depth_test"]], view$dimension),
+    blend_mode = normalise_blend_mode(options[["blend_mode"]] %||% defaults[["blend_mode"]]),
     timeline = normalise_timeline(options[["timeline"]] %||% defaults[["timeline"]]),
     line_mode = normalise_line_mode(options[["line_mode"]] %||% defaults[["line_mode"]]),
     line_join = normalise_line_join(options[["line_join"]] %||% defaults[["line_join"]]),

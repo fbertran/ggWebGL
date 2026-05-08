@@ -48,7 +48,7 @@ backend-specific semantics:
 - Mesh and surface rendering as browser WebGL primitives with material and
   picking metadata.
 
-The shorthand API shape may evolve toward:
+The shorthand API shape is:
 
 ```r
 ggplot_webgl(
@@ -57,14 +57,14 @@ ggplot_webgl(
     camera = "orbit",
     shader = "density_splat",
     interactions = c("pan", "zoom", "hover", "brush", "select"),
-    animation = animation_spec(variable = "step", autoplay = FALSE)
+    timeline = ggwebgl_timeline(frames = 1:10, autoplay = FALSE)
   )
 )
 ```
 
-Current code should continue to use the implemented `theme_webgl()`,
-`ggwebgl_view()`, `ggwebgl_selection()`, and `ggwebgl_timeline()` helpers until
-that shorthand exists.
+Current code may use `webgl_spec()` for compact renderer options or the more
+structured `theme_webgl()`, `ggwebgl_view()`, `ggwebgl_selection()`, and
+`ggwebgl_timeline()` helpers when composing ggplot objects incrementally.
 
 ## Companion Package Boundary
 

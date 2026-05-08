@@ -3,6 +3,7 @@ dependencies:
     version: 0.6.0
     src: htmlwidgets
     script:
+      - lib/math-mat4.js
       - lib/scene.js
       - lib/camera.js
       - lib/program-registry.js

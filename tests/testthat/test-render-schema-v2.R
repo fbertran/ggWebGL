@@ -115,7 +115,9 @@ test_that("current ggwebgl_spec payloads satisfy the v2 top-level shape", {
     labels = list(title = "schema fixture"),
     webgl = list(
       view = ggwebgl_view(dimension = "3d", projection = "perspective", controller = "orbit"),
-      selection = ggwebgl_selection("brush_lasso")
+      selection = ggwebgl_selection("brush_lasso"),
+      depth_test = TRUE,
+      blend_mode = "alpha"
     ),
     timeline = ggwebgl_timeline(frames = 1:3, filter = "exact", autoplay = FALSE),
     messages = "schema fixture message"
@@ -130,9 +132,42 @@ test_that("current ggwebgl_spec payloads satisfy the v2 top-level shape", {
   expect_equal(schema_v2_coordinate_system(spec[["render"]]), "cartesian3d")
   expect_equal(spec[["render"]][["coordinate_system"]], "cartesian3d")
   expect_equal(spec[["render"]][["dimension"]], "3d")
+  expect_true(spec[["render"]][["depth_test"]])
+  expect_equal(spec[["render"]][["blend_mode"]], "alpha")
   expect_equal(spec[["render"]][["selection"]][["mode"]], "brush_lasso")
   expect_equal(spec[["render"]][["timeline"]][["filter"]], "exact")
   expect_setequal(spec[["render"]][["primitives"]], c("points", "lines", "raster", "vectors", "mesh"))
+})
+
+test_that("3D coordinate and webgl option helpers normalize camera contracts", {
+  options <- webgl_spec(camera = "orbit", projection = "perspective")
+
+  expect_equal(options[["dimension"]], "3d")
+  expect_equal(options[["view"]][["controller"]], "orbit")
+  expect_equal(options[["projection"]], "perspective")
+  expect_true(options[["depth_test"]])
+  expect_equal(options[["blend_mode"]], "auto")
+
+  theme_options <- theme_webgl(camera = "orbit", projection = "perspective", depth_test = TRUE)
+  expect_equal(theme_options[["dimension"]], "3d")
+  expect_equal(theme_options[["camera"]], "orbit")
+  expect_equal(theme_options[["projection"]], "perspective")
+  expect_true(theme_options[["depth_test"]])
+
+  plot <- ggplot2::ggplot(
+    data.frame(x = c(0, 1), y = c(0, 1), z = c(0.1, 0.9)),
+    ggplot2::aes(x, y, z = z)
+  ) +
+    geom_point_webgl() +
+    coord_webgl_3d(projection = "perspective", camera = "trackball") +
+    theme_webgl(interactions = character())
+
+  widget <- ggplot_webgl(plot)
+  expect_equal(widget$x[["render"]][["coordinate_system"]], "cartesian3d")
+  expect_equal(widget$x[["render"]][["camera"]][["controller"]], "trackball")
+  expect_equal(widget$x[["render"]][["camera"]][["projection"]], "perspective")
+  expect_true(widget$x[["render"]][["depth_test"]])
+  expect_false(is.null(widget$x[["render"]][["panels"]][[1]][["layers"]][[1]][["z"]]))
 })
 
 test_that("ggplot_webgl payloads include scene_version and validate typed panels", {
@@ -201,6 +236,7 @@ test_that("single-panel compatibility fields remain derived from render panels",
 test_that("htmlwidget dependencies register typed scene modules before the widget", {
   yaml <- read_schema_v2_text("inst/htmlwidgets/ggWebGL.yaml")
   expected <- c(
+    "lib/math-mat4.js",
     "lib/scene.js",
     "lib/camera.js",
     "lib/program-registry.js",
@@ -227,12 +263,22 @@ test_that("widget source routes drawing through a typed layer dispatcher", {
   expect_match(js, "function drawVectorsLayer", fixed = TRUE)
   expect_match(js, "function drawMeshLayer", fixed = TRUE)
   expect_match(js, "function drawSurfaceLayer", fixed = TRUE)
+  expect_match(js, "attribute vec3 a_position3", fixed = TRUE)
+  expect_match(js, "function draw3dPointLayer", fixed = TRUE)
+  expect_match(js, "function drawLineLayer3d", fixed = TRUE)
+  expect_match(js, "depthTestEnabled", fixed = TRUE)
   expect_match(js, "function getProgramForLayer", fixed = TRUE)
   expect_match(js, "ggWebGLScene.finalizeScene", fixed = TRUE)
 
   scene_lib <- read_schema_v2_text("inst/htmlwidgets/lib/scene.js")
+  mat4_lib <- read_schema_v2_text("inst/htmlwidgets/lib/math-mat4.js")
+  camera_lib <- read_schema_v2_text("inst/htmlwidgets/lib/camera.js")
   program_lib <- read_schema_v2_text("inst/htmlwidgets/lib/program-registry.js")
   expect_match(scene_lib, "Scene.VERSION = 2", fixed = TRUE)
   expect_match(scene_lib, "Scene.finalizeScene", fixed = TRUE)
+  expect_match(mat4_lib, "perspective", fixed = TRUE)
+  expect_match(mat4_lib, "orthographic", fixed = TRUE)
+  expect_match(mat4_lib, "lookAt", fixed = TRUE)
+  expect_match(camera_lib, "cameraMatrices", fixed = TRUE)
   expect_match(program_lib, "getProgramForLayer", fixed = TRUE)
 })

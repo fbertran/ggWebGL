@@ -46,6 +46,7 @@ single-panel compatibility fields under `render$layers`, `render$viewport`, and
 - `unsupported_layers`: unsupported source-layer metadata.
 - `messages`: exact field name for renderer messages.
 - optional `camera`, `selection`, `timeline`, `links`, and `legends`.
+- render-state controls such as `depth_test` and `blend_mode`.
 
 The compatibility rule is:
 
@@ -123,6 +124,9 @@ preserve this lowering path for compatibility.
 - `rendering = "visualization"` or `"publication"`.
 - `panel_overlay`.
 - antialiasing, transparency, buffer size, line options, and unknown extras.
+- `depth_test`, enabled by default for `cartesian3d` and disabled by default
+  for `cartesian2d`.
+- `blend_mode = "auto" | "alpha" | "additive" | "premultiplied"`.
 - structured `view`, `selection`, and `timeline` options.
 
 Unknown extras remain isolated in `webgl$extra` and are not a backend contract.
