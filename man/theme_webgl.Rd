@@ -27,7 +27,8 @@ theme_webgl(
 \arguments{
 \item{shader}{Shader preset name or path identifier. Built-in modes are
 \code{"default"}, \code{"density_splat"}, \code{"trajectory_age"}, and
-\code{"trajectory_age_glow"}.}
+\code{"trajectory_age_glow"}, \code{"trajectory_velocity"}, and
+\code{"trajectory_direction"}.}
 
 \item{antialias}{Logical scalar; whether antialiasing should be requested.}
 

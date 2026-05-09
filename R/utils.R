@@ -86,6 +86,12 @@ normalise_shader_name <- function(shader) {
     trajectory_age_glow = "trajectory_age_glow",
     `trajectory-glow` = "trajectory_age_glow",
     glow = "trajectory_age_glow",
+    trajectory_velocity = "trajectory_velocity",
+    `trajectory-velocity` = "trajectory_velocity",
+    velocity = "trajectory_velocity",
+    trajectory_direction = "trajectory_direction",
+    `trajectory-direction` = "trajectory_direction",
+    direction = "trajectory_direction",
     default = "default",
     shader
   )

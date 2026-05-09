@@ -6,7 +6,8 @@
 #'
 #' @param shader Shader preset name or path identifier. Built-in modes are
 #'   `"default"`, `"density_splat"`, `"trajectory_age"`, and
-#'   `"trajectory_age_glow"`.
+#'   `"trajectory_age_glow"`, `"trajectory_velocity"`, and
+#'   `"trajectory_direction"`.
 #' @param antialias Logical scalar; whether antialiasing should be requested.
 #' @param transparent Logical scalar; whether the drawing surface should allow
 #'   transparency.

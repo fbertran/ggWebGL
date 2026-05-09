@@ -34,7 +34,8 @@ theme_webgl(
 - shader:
 
   Shader preset name or path identifier. Built-in modes are `"default"`,
-  `"density_splat"`, `"trajectory_age"`, and `"trajectory_age_glow"`.
+  `"density_splat"`, `"trajectory_age"`, and `"trajectory_age_glow"`,
+  `"trajectory_velocity"`, and `"trajectory_direction"`.
 
 - antialias:
 
