@@ -10,6 +10,7 @@
 <url><loc>https://fbertran.github.io/ggWebGL/authors.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/index.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/news/index.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/animation_spec.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.xgeo_state.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/as_mesh_webgl.html</loc></url>
@@ -17,6 +18,7 @@
 <url><loc>https://fbertran.github.io/ggWebGL/reference/coord_webgl_3d.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_path3d_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.html</loc></url>
@@ -42,6 +44,7 @@
 <url><loc>https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/index.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/renderGgWebGL.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/scale_time_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/snapshot_ggwebgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/stat_surface_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/surface_matrix.html</loc></url>

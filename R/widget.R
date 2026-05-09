@@ -722,15 +722,17 @@ build_render_plan <- function(scene_source) {
 
 build_ggwebgl_spec <- function(plot) {
   scene_source <- extract_ggplot_scene_source(plot)
+  render <- build_render_plan(scene_source)
+  webgl <- ggwebgl_complete_timeline(scene_source$webgl, render)
 
   validate_ggwebgl_scene(compact_list(list(
     scene_version = ggwebgl_scene_version(),
     package_version = as.character(utils::packageVersion("ggWebGL")),
     labels = scene_source$labels,
-    webgl = scene_source$webgl,
+    webgl = webgl,
     layer_count = scene_source$layer_count,
     layers = scene_source$layer_metadata,
-    render = ggwebgl_enrich_render(build_render_plan(scene_source), scene_source$webgl)
+    render = ggwebgl_enrich_render(render, webgl)
   )), allow_legacy = FALSE)
 }
 

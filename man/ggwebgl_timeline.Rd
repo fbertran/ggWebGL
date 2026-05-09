@@ -12,7 +12,11 @@ ggwebgl_timeline(
   autoplay = FALSE,
   speed = 1,
   controls = TRUE,
-  filter = c("exact", "cumulative")
+  filter = c("exact", "cumulative"),
+  values = NULL,
+  source = c("auto", "frame", "time"),
+  mode = NULL,
+  fps = NULL
 )
 }
 \arguments{
@@ -33,6 +37,16 @@ ggwebgl_timeline(
 \item{filter}{Timeline visibility mode. \code{"exact"} shows only samples matching
 the current frame or time. \code{"cumulative"} keeps samples up to the current
 frame or time.}
+
+\item{values}{Optional frame or time values. Use \code{source} to choose whether
+they populate the frame or time axis.}
+
+\item{source}{Timeline value source for \code{values}. \code{"auto"} uses frame values
+unless \code{time} is supplied.}
+
+\item{mode}{Optional alias for \code{filter}.}
+
+\item{fps}{Optional frames-per-second metadata for downstream controls.}
 }
 \value{
 A \code{ggwebgl_timeline} list.

@@ -70,7 +70,11 @@ ggWebGL scenes. Layers can opt into timeline filtering with <code>frame</code> o
 <span>  autoplay <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  speed <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  controls <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"cumulative"</span><span class="op">)</span></span>
+<span>  filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"cumulative"</span><span class="op">)</span>,</span>
+<span>  values <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"frame"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
+<span>  mode <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fps <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,6 +115,24 @@ ggWebGL scenes. Layers can opt into timeline filtering with <code>frame</code> o
 the current frame or time. <code>"cumulative"</code> keeps samples up to the current
 frame or time.</p></dd>
 
+
+<dt id="arg-values">values<a class="anchor" aria-label="anchor" href="#arg-values"></a></dt>
+<dd><p>Optional frame or time values. Use <code>source</code> to choose whether
+they populate the frame or time axis.</p></dd>
+
+
+<dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
+<dd><p>Timeline value source for <code>values</code>. <code>"auto"</code> uses frame values
+unless <code>time</code> is supplied.</p></dd>
+
+
+<dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
+<dd><p>Optional alias for <code>filter</code>.</p></dd>
+
+
+<dt id="arg-fps">fps<a class="anchor" aria-label="anchor" href="#arg-fps"></a></dt>
+<dd><p>Optional frames-per-second metadata for downstream controls.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -122,6 +144,12 @@ frame or time.</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">ggwebgl_timeline</span><span class="op">(</span>frames <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, autoplay <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $frames</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1 2 3 4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $values</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1 2 3 4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $source</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "frame"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $loop</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
@@ -136,6 +164,9 @@ frame or time.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $filter</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "exact"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $mode</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "exact"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>

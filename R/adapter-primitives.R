@@ -419,7 +419,9 @@ ggwebgl_spec <- function(layers,
   if (!is.null(timeline)) {
     webgl$timeline <- normalise_timeline(timeline)
   }
-  render <- ggwebgl_enrich_render(ggwebgl_build_render(panel_specs, messages = messages), webgl)
+  render <- ggwebgl_build_render(panel_specs, messages = messages)
+  webgl <- ggwebgl_complete_timeline(webgl, render)
+  render <- ggwebgl_enrich_render(render, webgl)
   layer_metadata <- lapply(seq_along(layers), function(i) {
     compact_list(list(
       index = as.integer(i),

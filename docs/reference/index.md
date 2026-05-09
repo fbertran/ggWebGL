@@ -2,6 +2,9 @@
 
 ## All functions
 
+- [`animation_spec()`](https://fbertran.github.io/ggWebGL/reference/animation_spec.md)
+  : Build Animation Timeline Metadata
+
 - [`as_ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.md)
   : Convert backend objects to a ggWebGL renderer specification
 
@@ -24,6 +27,9 @@
 
 - [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md)
   : WebGL Unstructured Mesh Layer
+
+- [`geom_path3d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_path3d_webgl.md)
+  : WebGL Ordered 3D Path Layer
 
 - [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md)
   : WebGL Point Layer
@@ -93,6 +99,9 @@
 
 - [`renderGgWebGL()`](https://fbertran.github.io/ggWebGL/reference/renderGgWebGL.md)
   : Render a ggWebGL Widget in Shiny
+
+- [`scale_time_webgl()`](https://fbertran.github.io/ggWebGL/reference/scale_time_webgl.md)
+  : Add Timeline Metadata to a ggplot
 
 - [`snapshot_ggwebgl()`](https://fbertran.github.io/ggWebGL/reference/snapshot_ggwebgl.md)
   : Capture a ggWebGL Scene as a Static Image

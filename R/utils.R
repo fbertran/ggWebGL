@@ -64,6 +64,7 @@ default_theme_webgl <- function() {
     depth_test = NULL,
     blend_mode = "auto",
     timeline = NULL,
+    time_scale = NULL,
     line_mode = "auto",
     line_join = "bevel",
     line_cap = "round",
@@ -507,6 +508,12 @@ normalise_material <- function(material = NULL, wireframe = NULL) {
 #' @param filter Timeline visibility mode. `"exact"` shows only samples matching
 #'   the current frame or time. `"cumulative"` keeps samples up to the current
 #'   frame or time.
+#' @param values Optional frame or time values. Use `source` to choose whether
+#'   they populate the frame or time axis.
+#' @param source Timeline value source for `values`. `"auto"` uses frame values
+#'   unless `time` is supplied.
+#' @param mode Optional alias for `filter`.
+#' @param fps Optional frames-per-second metadata for downstream controls.
 #'
 #' @return A `ggwebgl_timeline` list.
 #'
@@ -520,17 +527,39 @@ ggwebgl_timeline <- function(frames = NULL,
                              autoplay = FALSE,
                              speed = 1,
                              controls = TRUE,
-                             filter = c("exact", "cumulative")) {
-  filter <- match.arg(filter)
+                             filter = c("exact", "cumulative"),
+                             values = NULL,
+                             source = c("auto", "frame", "time"),
+                             mode = NULL,
+                             fps = NULL) {
+  source <- match.arg(source)
+  filter <- normalise_timeline_filter(mode %||% filter)
+  speed <- normalise_timeline_speed(speed)
+  if (!is.null(values)) {
+    value_source <- normalise_timeline_value_source(source, values = values, frames = frames, time = time)
+    if (identical(value_source, "time") && is.null(time)) {
+      time <- values
+    } else if (is.null(frames)) {
+      frames <- values
+    }
+  }
+  frames <- normalise_timeline_values(frames, "frame")
+  time <- normalise_timeline_values(time, "time")
+  values <- if (length(time)) time else frames
+  source <- if (length(time)) "time" else if (length(frames)) "frame" else NULL
   out <- compact_list(list(
-    frames = if (is.null(frames)) NULL else unname(as.integer(frames)),
-    time = if (is.null(time)) NULL else unname(as.numeric(time)),
+    frames = if (!length(frames)) NULL else unname(frames),
+    time = if (!length(time)) NULL else unname(time),
+    values = if (!length(values)) NULL else unname(values),
+    source = source,
     duration = if (is.null(duration)) NULL else as.numeric(duration)[[1]],
     loop = isTRUE(loop),
     autoplay = isTRUE(autoplay),
-    speed = as.numeric(speed)[[1]],
+    speed = speed,
     controls = isTRUE(controls),
-    filter = filter
+    filter = filter,
+    mode = filter,
+    fps = if (is.null(fps)) NULL else normalise_timeline_fps(fps)
   ))
   class(out) <- c("ggwebgl_timeline", "list")
   out
@@ -551,20 +580,36 @@ normalise_timeline <- function(timeline) {
 
   frames <- timeline[["frames"]] %||% NULL
   time <- timeline[["time"]] %||% NULL
-  filter <- tolower(as.character(timeline[["filter"]] %||% "exact")[[1L]])
-  if (!filter %in% c("cumulative", "exact")) {
-    filter <- "exact"
+  values <- timeline[["values"]] %||% NULL
+  source <- normalise_timeline_value_source(timeline[["source"]] %||% "auto", values = values, frames = frames, time = time)
+  filter <- normalise_timeline_filter(timeline[["mode"]] %||% timeline[["filter"]] %||% "exact")
+  if (is.null(frames) && is.null(time) && !is.null(values)) {
+    if (identical(source, "time")) {
+      time <- values
+    } else {
+      frames <- values
+    }
   }
+  frames <- normalise_timeline_values(frames, "frame")
+  time <- normalise_timeline_values(time, "time")
+  values <- if (length(time)) time else frames
+  source <- if (length(time)) "time" else if (length(frames)) "frame" else NULL
 
   compact_list(list(
-    frames = if (is.null(frames)) NULL else unique(stats::na.omit(as.integer(frames))),
-    time = if (is.null(time)) NULL else unique(stats::na.omit(as.numeric(time))),
+    frames = if (!length(frames)) NULL else frames,
+    time = if (!length(time)) NULL else time,
+    values = if (!length(values)) NULL else values,
+    source = source,
     duration = as.numeric(timeline[["duration"]] %||% max(1, length(frames %||% time %||% 1)))[[1]],
     loop = isTRUE(timeline[["loop"]] %||% TRUE),
     autoplay = isTRUE(timeline[["autoplay"]] %||% FALSE),
-    speed = as.numeric(timeline[["speed"]] %||% 1)[[1]],
+    speed = normalise_timeline_speed(timeline[["speed"]] %||% 1),
     controls = isTRUE(timeline[["controls"]] %||% TRUE),
-    filter = filter
+    filter = filter,
+    mode = filter,
+    fps = if (is.null(timeline[["fps"]])) NULL else normalise_timeline_fps(timeline[["fps"]]),
+    label = timeline[["label"]] %||% NULL,
+    format = timeline[["format"]] %||% NULL
   ))
 }
 
@@ -627,7 +672,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
   recognised_extra_fields <- c(
     "line_mode", "line_join", "line_cap",
     "view", "selection", "dimension", "camera", "projection", "camera_state",
-    "depth_test", "blend_mode", "timeline"
+    "depth_test", "blend_mode", "timeline", "time_scale"
   )
 
   for (field in recognised_extra_fields) {
@@ -677,6 +722,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
     depth_test = normalise_depth_test(options[["depth_test"]] %||% defaults[["depth_test"]], view$dimension),
     blend_mode = normalise_blend_mode(options[["blend_mode"]] %||% defaults[["blend_mode"]]),
     timeline = normalise_timeline(options[["timeline"]] %||% defaults[["timeline"]]),
+    time_scale = normalise_time_scale(options[["time_scale"]] %||% defaults[["time_scale"]]),
     line_mode = normalise_line_mode(options[["line_mode"]] %||% defaults[["line_mode"]]),
     line_join = normalise_line_join(options[["line_join"]] %||% defaults[["line_join"]]),
     line_cap = normalise_line_cap(options[["line_cap"]] %||% defaults[["line_cap"]]),
