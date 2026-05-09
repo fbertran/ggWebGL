@@ -57,7 +57,7 @@ test_that("JavaScript timeline milestone preserves scoped feature boundaries", {
 
   expect_match(js, "trajectory_age", fixed = TRUE)
   expect_match(js, "trajectory_age_glow", fixed = TRUE)
-  expect_false(grepl("updateGgWebGLTimeline", js, fixed = TRUE))
+  expect_match(js, "function createTimelineState(spec, previous)", fixed = TRUE)
 })
 
 test_that("non-timeline draw paths remain available", {

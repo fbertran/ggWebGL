@@ -80,9 +80,9 @@ test_that("JavaScript routes trajectory shader modes through primitive line shad
   expect_match(js, "bindMetricAttribute(gl, primitive, payload.metrics)", fixed = TRUE)
 })
 
-test_that("trajectory shader milestone does not add deferred timeline APIs", {
+test_that("trajectory shader milestone does not add additional trajectory modes", {
   js <- read_trajectory_shader_js()
 
-  expect_false(grepl("updateGgWebGLTimeline", js, fixed = TRUE))
-  expect_false(grepl("setInputValue(el.id + \"_timeline\"", js, fixed = TRUE))
+  expect_false(grepl("trajectory_acceleration", js, fixed = TRUE))
+  expect_false(grepl("trajectory_curvature", js, fixed = TRUE))
 })

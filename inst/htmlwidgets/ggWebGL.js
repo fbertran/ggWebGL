@@ -3,6 +3,7 @@ HTMLWidgets.widget({
   type: "output",
 
   factory: function(el, width, height) {
+    var TIMELINE_UPDATE_MESSAGE_TYPE = "ggWebGL:updateTimeline";
     var state = {
       root: null,
       title: null,
@@ -1543,6 +1544,120 @@ HTMLWidgets.widget({
       return state.timeline && state.timeline.enabled ? state.timeline.value : null;
     }
 
+    function buildTimelinePayload(timeline, reason) {
+      if (!timeline || !timeline.enabled) {
+        return null;
+      }
+
+      var payload = {
+        value: timeline.value,
+        index: Number(timeline.index || 0) + 1,
+        playing: timeline.playing === true,
+        speed: isFinite(Number(timeline.speed)) ? Number(timeline.speed) : 1,
+        loop: timeline.loop === true,
+        source: timeline.source === "time" ? "time" : "frame",
+        filter: timeline.filter === "cumulative" ? "cumulative" : "exact"
+      };
+
+      if (reason) {
+        payload.reason = String(reason);
+      }
+
+      return payload;
+    }
+
+    function emitTimelineState(el, state, reason) {
+      if (!el || !el.id || !state || !state.timeline || !state.timeline.enabled) {
+        return;
+      }
+      if (!(window.Shiny && typeof window.Shiny.setInputValue === "function")) {
+        return;
+      }
+
+      var payload = buildTimelinePayload(state.timeline, reason);
+      if (!payload) {
+        return;
+      }
+
+      window.Shiny.setInputValue(el.id + "_timeline", payload, { priority: "event" });
+    }
+
+    function applyTimelineUpdate(message) {
+      if (!state.timeline || !state.timeline.enabled) {
+        return;
+      }
+
+      var changed = false;
+      var incoming = message && typeof message === "object" ? message : {};
+
+      if (incoming.index !== undefined && incoming.index !== null) {
+        setTimelineIndex(state.timeline, Number(incoming.index) - 1);
+        changed = true;
+      } else if (incoming.value !== undefined && incoming.value !== null) {
+        setTimelineValue(state.timeline, incoming.value);
+        changed = true;
+      }
+
+      if (incoming.speed !== undefined && incoming.speed !== null) {
+        var nextSpeed = Number(incoming.speed);
+        if (isFinite(nextSpeed) && nextSpeed > 0) {
+          state.timeline.speed = Math.max(0.05, nextSpeed);
+          changed = true;
+        }
+      }
+
+      if (incoming.loop !== undefined && incoming.loop !== null) {
+        state.timeline.loop = incoming.loop === true;
+        changed = true;
+      }
+
+      if (incoming.playing !== undefined && incoming.playing !== null) {
+        state.timeline.playing = incoming.playing === true;
+        state.timeline.lastTick = null;
+        changed = true;
+      }
+
+      if (!changed) {
+        return;
+      }
+
+      redrawCurrent();
+      emitTimelineState(el, state, "update");
+      if (state.timeline.playing) {
+        scheduleTimelineTick();
+      }
+    }
+
+    function registerShinyTimelineHandler() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      var registry = window.ggWebGLTimelineRegistry || { instances: {}, handlerRegistered: false };
+      registry.instances = registry.instances || {};
+      if (el.id) {
+        registry.instances[el.id] = {
+          updateTimeline: applyTimelineUpdate
+        };
+      }
+      window.ggWebGLTimelineRegistry = registry;
+
+      if (registry.handlerRegistered || !(window.Shiny && typeof window.Shiny.addCustomMessageHandler === "function")) {
+        return;
+      }
+
+      window.Shiny.addCustomMessageHandler(TIMELINE_UPDATE_MESSAGE_TYPE, function(message) {
+        var incoming = message && typeof message === "object" ? message : {};
+        var id = incoming.id || incoming.outputId;
+        var currentRegistry = window.ggWebGLTimelineRegistry;
+        var instance = id && currentRegistry && currentRegistry.instances ? currentRegistry.instances[id] : null;
+        if (instance && typeof instance.updateTimeline === "function") {
+          instance.updateTimeline(incoming);
+        }
+      });
+      registry.handlerRegistered = true;
+    }
+
     function layerHasTimelineValues(layer, timeline) {
       if (!timeline || !timeline.enabled || !layer) {
         return false;
@@ -2933,6 +3048,7 @@ HTMLWidgets.widget({
           state.timeline.playing = !state.timeline.playing;
           state.timeline.lastTick = null;
           updateTimelineUi(state.x);
+          emitTimelineState(el, state, state.timeline.playing ? "play" : "pause");
           scheduleTimelineTick();
         });
       }
@@ -2943,12 +3059,14 @@ HTMLWidgets.widget({
           }
           setTimelineIndex(state.timeline, Number(scrub.value) || 0);
           redrawCurrent();
+          emitTimelineState(el, state, "scrub");
         });
       }
       if (speed) {
         speed.addEventListener("change", function() {
           if (state.timeline) {
             state.timeline.speed = Math.max(0.05, Number(speed.value) || 1);
+            emitTimelineState(el, state, "speed");
           }
         });
       }
@@ -2957,6 +3075,7 @@ HTMLWidgets.widget({
           setTimelineIndex(state.timeline, 0);
           state.timeline.playing = false;
           redrawCurrent();
+          emitTimelineState(el, state, "reset");
         });
       }
     }
@@ -2986,6 +3105,7 @@ HTMLWidgets.widget({
           setTimelineIndex(state.timeline, idx);
           state.timeline.lastTick = timestamp;
           redrawCurrent();
+          emitTimelineState(el, state, "tick");
         }
         scheduleTimelineTick();
       });
@@ -5812,6 +5932,7 @@ HTMLWidgets.widget({
         state.selection.active = false;
         state.selection.result = null;
         state.timeline = createTimelineState(next, state.timeline);
+        registerShinyTimelineHandler();
         applyWidgetSize(width, height);
         resetViewport(null);
         initialiseCameraFromScene(next);

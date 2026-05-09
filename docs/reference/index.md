@@ -115,5 +115,8 @@
 - [`theme_webgl()`](https://fbertran.github.io/ggWebGL/reference/theme_webgl.md)
   : Add WebGL Rendering Options to a ggplot
 
+- [`updateGgWebGLTimeline()`](https://fbertran.github.io/ggWebGL/reference/updateGgWebGLTimeline.md)
+  : Update a ggWebGL Timeline from Shiny
+
 - [`webgl_spec()`](https://fbertran.github.io/ggWebGL/reference/webgl_spec.md)
   : Build ggWebGL Renderer Options
