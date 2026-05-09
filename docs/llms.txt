@@ -1,4 +1,4 @@
-# ggWebGL, Browser-Native ‘WebGL’ Rendering for R Graphics ![](reference/figures/logo_ggWebGL.png)
+# ggWebGL, Browser-Native ‘WebGL’ Rendering for R Graphics ![logo ggWebGL](reference/figures/logo_ggWebGL.png)
 
 ## Frédéric Bertrand
 

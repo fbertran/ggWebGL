@@ -50,8 +50,17 @@ HTMLWidgets.widget({
         result: null
       },
       timeline: {
-        frame: null,
+        values: [],
+        value: null,
+        index: 0,
+        source: "frame",
+        filter: "exact",
         playing: false,
+        speed: 1,
+        loop: false,
+        fps: null,
+        enabled: false,
+        controls: false,
         lastTick: null
       },
       camera: {
@@ -614,15 +623,34 @@ HTMLWidgets.widget({
       }
       var frames = normalizeNumberArray(source.frames).map(function(value) { return Math.round(value); });
       var times = normalizeNumberArray(source.time);
+      var sourceValues = normalizeNumberArray(source.values);
+      var sourceName = String(source.source || (times.length ? "time" : "frame")).toLowerCase();
+      if (["frame", "time"].indexOf(sourceName) === -1) {
+        sourceName = times.length ? "time" : "frame";
+      }
+      if (!frames.length && !times.length && sourceValues.length) {
+        if (sourceName === "time") {
+          times = sourceValues.slice();
+        } else {
+          frames = sourceValues.map(function(value) { return Math.round(value); });
+        }
+      }
+      var values = times.length ? times.slice() : frames.slice();
+      sourceName = times.length ? "time" : (frames.length ? "frame" : sourceName);
+      var filter = String(source.mode || source.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact";
       return {
         frames: frames,
         time: times,
+        values: values,
+        source: sourceName,
         duration: isFinite(Number(source.duration)) ? Math.max(0.1, Number(source.duration)) : Math.max(1, frames.length || times.length || 1),
         loop: source.loop !== false,
         autoplay: source.autoplay === true,
         speed: isFinite(Number(source.speed)) ? Math.max(0.05, Number(source.speed)) : 1,
         controls: source.controls !== false,
-        filter: String(source.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact"
+        filter: filter,
+        mode: filter,
+        fps: isFinite(Number(source.fps)) ? Math.max(0.05, Number(source.fps)) : null
       };
     }
 
@@ -1371,64 +1399,200 @@ HTMLWidgets.widget({
     }
 
     function sceneTimeline(x) {
-      return x && x.render ? x.render.timeline : null;
+      return x && x.render ? (x.render.timeline || (x.webgl && x.webgl.timeline) || null) : null;
+    }
+
+    function uniqueSortedTimelineValues(values, source) {
+      var seen = {};
+      return normalizeNumberArray(values)
+        .map(function(value) { return source === "frame" ? Math.round(value) : value; })
+        .filter(function(value) {
+          var key = source === "frame" ? String(Math.round(value)) : String(value);
+          if (seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
+        })
+        .sort(function(a, b) { return a - b; });
+    }
+
+    function createTimelineState(spec, previous) {
+      var source = spec && typeof spec === "object" ? spec : {};
+      var timeline = sceneTimeline(source);
+      if (!timeline) {
+        return {
+          values: [],
+          value: null,
+          index: 0,
+          source: "frame",
+          filter: "exact",
+          playing: false,
+          speed: 1,
+          loop: false,
+          fps: null,
+          enabled: false,
+          controls: false,
+          lastTick: null
+        };
+      }
+      var sourceName = String(timeline.source || (timeline.time && timeline.time.length ? "time" : "frame")).toLowerCase();
+      if (["frame", "time"].indexOf(sourceName) === -1) {
+        sourceName = timeline.time && timeline.time.length ? "time" : "frame";
+      }
+      var values = uniqueSortedTimelineValues(
+        timeline.values && timeline.values.length
+          ? timeline.values
+          : (sourceName === "time" ? timeline.time : timeline.frames),
+        sourceName
+      );
+      var filter = String(timeline.mode || timeline.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact";
+      var speed = isFinite(Number(timeline.speed)) ? Math.max(0.05, Number(timeline.speed)) : 1;
+      var fps = isFinite(Number(timeline.fps)) ? Math.max(0.05, Number(timeline.fps)) : null;
+      var previousValue = previous && previous.enabled ? previous.value : null;
+      var index = findTimelineIndex(values, previousValue, sourceName);
+      if (index < 0) {
+        index = 0;
+      }
+      return {
+        values: values,
+        value: values.length ? values[index] : null,
+        index: index,
+        source: sourceName,
+        filter: filter,
+        playing: values.length > 1 && timeline.autoplay === true,
+        speed: speed,
+        loop: timeline.loop === true,
+        fps: fps,
+        enabled: values.length > 0,
+        controls: timeline.controls !== false && values.length > 1,
+        lastTick: null
+      };
+    }
+
+    function findTimelineIndex(values, value, source) {
+      if (!Array.isArray(values) || !values.length || value === null || value === undefined) {
+        return -1;
+      }
+      var target = Number(value);
+      if (!isFinite(target)) {
+        return -1;
+      }
+      for (var i = 0; i < values.length; i += 1) {
+        if (source === "frame") {
+          if (Math.round(Number(values[i])) === Math.round(target)) {
+            return i;
+          }
+        } else if (Math.abs(Number(values[i]) - target) < 1e-9) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    function setTimelineIndex(timeline, index) {
+      if (!timeline || !timeline.enabled || !timeline.values.length) {
+        return null;
+      }
+      var nextIndex = Math.max(0, Math.min(timeline.values.length - 1, Math.floor(Number(index)) || 0));
+      timeline.index = nextIndex;
+      timeline.value = timeline.values[nextIndex];
+      return timeline.value;
+    }
+
+    function setTimelineValue(timeline, value) {
+      if (!timeline || !timeline.enabled) {
+        return null;
+      }
+      var idx = findTimelineIndex(timeline.values, value, timeline.source);
+      if (idx < 0) {
+        idx = 0;
+      }
+      return setTimelineIndex(timeline, idx);
     }
 
     function currentTimelineFrame(x) {
-      var timeline = sceneTimeline(x);
-      if (!timeline) {
+      return state.timeline && state.timeline.enabled ? state.timeline.value : null;
+    }
+
+    function layerHasTimelineValues(layer, timeline) {
+      if (!timeline || !timeline.enabled || !layer) {
+        return false;
+      }
+      if (timeline.source === "time") {
+        return (Array.isArray(layer.time) && layer.time.length) || (Array.isArray(layer.frame) && layer.frame.length);
+      }
+      return (Array.isArray(layer.frame) && layer.frame.length) || (Array.isArray(layer.time) && layer.time.length);
+    }
+
+    function getTimelineValue(layer, rowOrVertexIndex, timeline) {
+      if (!timeline || !timeline.enabled || !layer) {
         return null;
       }
-      if (state.timeline.frame !== null && state.timeline.frame !== undefined) {
-        return state.timeline.frame;
+      var preferred = timeline.source === "time" ? layer.time : layer.frame;
+      var fallback = timeline.source === "time" ? layer.frame : layer.time;
+      var value;
+      if (Array.isArray(preferred) && rowOrVertexIndex < preferred.length) {
+        value = Number(preferred[rowOrVertexIndex]);
+      } else if (Array.isArray(fallback) && rowOrVertexIndex < fallback.length) {
+        value = Number(fallback[rowOrVertexIndex]);
+      } else {
+        return null;
       }
-      if (timeline.frames && timeline.frames.length) {
-        return timeline.frames[0];
+      if (!isFinite(value)) {
+        return null;
       }
-      if (timeline.time && timeline.time.length) {
-        return timeline.time[0];
+      return timeline.source === "frame" ? Math.round(value) : value;
+    }
+
+    function isTimelineVisible(value, timeline) {
+      if (!timeline || !timeline.enabled || value === null || value === undefined) {
+        return true;
       }
-      return null;
+      var current = Number(timeline.value);
+      var candidate = Number(value);
+      if (!isFinite(current) || !isFinite(candidate)) {
+        return true;
+      }
+      if (timeline.filter === "cumulative") {
+        return timeline.source === "frame"
+          ? Math.round(candidate) <= Math.round(current)
+          : candidate <= current + 1e-9;
+      }
+      return timeline.source === "frame"
+        ? Math.round(candidate) === Math.round(current)
+        : Math.abs(candidate - current) < 1e-9;
     }
 
     function layerIndexVisible(layer, index, x) {
-      var frame = currentTimelineFrame(x);
-      var timeline = sceneTimeline(x);
-      var exact = timeline && timeline.filter === "exact";
-      if (frame === null || frame === undefined) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(layer, timeline)) {
         return true;
       }
-      if (Array.isArray(layer.frame) && layer.frame.length) {
-        return exact
-          ? Math.round(Number(layer.frame[index])) === Math.round(Number(frame))
-          : Math.round(Number(layer.frame[index])) <= Math.round(Number(frame));
-      }
-      if (Array.isArray(layer.time) && layer.time.length) {
-        return exact
-          ? Math.abs(Number(layer.time[index]) - Number(frame)) < 1e-9
-          : Number(layer.time[index]) <= Number(frame);
-      }
-      return true;
+      var value = getTimelineValue(layer, index, timeline);
+      return value === null ? false : isTimelineVisible(value, timeline);
     }
 
     function pathIndexVisible(path, index, x) {
-      var frame = currentTimelineFrame(x);
-      var timeline = sceneTimeline(x);
-      var exact = timeline && timeline.filter === "exact";
-      if (frame === null || frame === undefined) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(path, timeline)) {
         return true;
       }
-      if (Array.isArray(path.frame) && path.frame.length) {
-        return exact
-          ? Math.round(Number(path.frame[index])) === Math.round(Number(frame))
-          : Math.round(Number(path.frame[index])) <= Math.round(Number(frame));
+      var value = getTimelineValue(path, index, timeline);
+      return value === null ? false : isTimelineVisible(value, timeline);
+    }
+
+    function pathSegmentVisible(path, i0, i1, x) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(path, timeline)) {
+        return true;
       }
-      if (Array.isArray(path.time) && path.time.length) {
-        return exact
-          ? Math.abs(Number(path.time[index]) - Number(frame)) < 1e-9
-          : Number(path.time[index]) <= Number(frame);
+      var v0 = getTimelineValue(path, i0, timeline);
+      var v1 = getTimelineValue(path, i1, timeline);
+      if (v0 === null || v1 === null) {
+        return false;
       }
-      return true;
+      return isTimelineVisible(v0, timeline) && isTimelineVisible(v1, timeline);
     }
 
     function normaliseAxisRange(range, fallback) {
@@ -2685,26 +2849,15 @@ HTMLWidgets.widget({
     }
 
     function timelineValues(x) {
-      var timeline = sceneTimeline(x);
-      if (!timeline) {
-        return [];
-      }
-      if (timeline.frames && timeline.frames.length) {
-        return timeline.frames.slice();
-      }
-      if (timeline.time && timeline.time.length) {
-        return timeline.time.slice();
-      }
-      return [];
+      return state.timeline && state.timeline.enabled ? state.timeline.values.slice() : [];
     }
 
     function updateTimelineUi(x) {
       if (!state.timelineControls) {
         return;
       }
-      var timeline = sceneTimeline(x);
       var values = timelineValues(x);
-      var visible = !!(timeline && timeline.controls && values.length > 1);
+      var visible = !!(state.timeline && state.timeline.controls && values.length > 1);
       el.ggwebglTimelineFrame = currentTimelineFrame(x);
       state.timelineControls.style.display = visible ? "flex" : "none";
       if (!visible) {
@@ -2713,13 +2866,16 @@ HTMLWidgets.widget({
 
       var scrub = state.timelineControls.querySelector(".ggwebgl__timeline-scrub");
       var play = state.timelineControls.querySelector(".ggwebgl__timeline-play");
+      var speed = state.timelineControls.querySelector(".ggwebgl__timeline-speed");
       if (scrub) {
         scrub.max = String(values.length - 1);
-        var idx = values.indexOf(currentTimelineFrame(x));
-        scrub.value = String(Math.max(0, idx));
+        scrub.value = String(Math.max(0, state.timeline.index || 0));
       }
       if (play) {
         play.textContent = state.timeline.playing ? "Pause" : "Play";
+      }
+      if (speed) {
+        speed.value = String(state.timeline.speed || 1);
       }
     }
 
@@ -2735,6 +2891,9 @@ HTMLWidgets.widget({
 
       if (play) {
         play.addEventListener("click", function() {
+          if (!state.timeline.enabled) {
+            return;
+          }
           state.timeline.playing = !state.timeline.playing;
           state.timeline.lastTick = null;
           updateTimelineUi(state.x);
@@ -2743,23 +2902,23 @@ HTMLWidgets.widget({
       }
       if (scrub) {
         scrub.addEventListener("input", function() {
-          var values = timelineValues(state.x);
-          var idx = Math.max(0, Math.min(values.length - 1, Number(scrub.value) || 0));
-          state.timeline.frame = values[idx];
+          if (!state.timeline.enabled) {
+            return;
+          }
+          setTimelineIndex(state.timeline, Number(scrub.value) || 0);
           redrawCurrent();
         });
       }
       if (speed) {
         speed.addEventListener("change", function() {
-          if (state.x && state.x.render && state.x.render.timeline) {
-            state.x.render.timeline.speed = Math.max(0.05, Number(speed.value) || 1);
+          if (state.timeline) {
+            state.timeline.speed = Math.max(0.05, Number(speed.value) || 1);
           }
         });
       }
       if (reset) {
         reset.addEventListener("click", function() {
-          var values = timelineValues(state.x);
-          state.timeline.frame = values.length ? values[0] : null;
+          setTimelineIndex(state.timeline, 0);
           state.timeline.playing = false;
           redrawCurrent();
         });
@@ -2774,24 +2933,21 @@ HTMLWidgets.widget({
         if (!state.timeline.playing || !state.x) {
           return;
         }
-        var values = timelineValues(state.x);
-        if (values.length <= 1) {
+        if (!state.timeline.enabled || state.timeline.values.length <= 1) {
           state.timeline.playing = false;
           updateTimelineUi(state.x);
           return;
         }
-        var timeline = sceneTimeline(state.x);
-        var speed = timeline && timeline.speed ? timeline.speed : 1;
+        var speed = state.timeline.speed || 1;
         if (state.timeline.lastTick === null || timestamp - state.timeline.lastTick > (500 / speed)) {
-          var idx = values.indexOf(currentTimelineFrame(state.x));
-          idx = idx < 0 ? 0 : idx + 1;
-          if (idx >= values.length) {
-            idx = timeline && timeline.loop ? 0 : values.length - 1;
-            if (!(timeline && timeline.loop)) {
+          var idx = state.timeline.index + 1;
+          if (idx >= state.timeline.values.length) {
+            idx = state.timeline.loop ? 0 : state.timeline.values.length - 1;
+            if (!state.timeline.loop) {
               state.timeline.playing = false;
             }
           }
-          state.timeline.frame = values[idx];
+          setTimelineIndex(state.timeline, idx);
           state.timeline.lastTick = timestamp;
           redrawCurrent();
         }
@@ -3690,22 +3846,58 @@ HTMLWidgets.widget({
       return layer._ggwebglPointPayload;
     }
 
-		function flattenLinePath(path) {
+		function flattenLinePath(path, xScene) {
 		  var xs = Array.isArray(path.x) ? path.x : [];
 		  var ys = Array.isArray(path.y) ? path.y : [];
 		  var ages = Array.isArray(path.age) ? path.age : [];
 		  var rgba = Array.isArray(path.rgba) ? path.rgba : [];
 		
 		  var n = Math.min(xs.length, ys.length);
+      var timelineClipped = xScene && state.timeline && state.timeline.enabled && layerHasTimelineValues(path, state.timeline);
 		
-		  if (!n) {
+		  if (!n || (timelineClipped && n < 2)) {
 			return {
 			  count: 0,
+        mode: "line_strip",
 			  positions: new Float32Array(0),
 			  ages: new Float32Array(0),
 			  colors: new Float32Array(0)
 			};
 		  }
+
+      if (timelineClipped) {
+        var segmentPositions = [];
+        var segmentAges = [];
+        var segmentColors = [];
+        function pushSegmentVertex(index) {
+          segmentPositions.push(Number(xs[index]), Number(ys[index]));
+          segmentAges.push(isFinite(ages[index]) ? Number(ages[index]) : 1.0);
+          if (rgba.length >= (index * 4 + 4)) {
+            segmentColors.push(
+              Number(rgba[index * 4 + 0]),
+              Number(rgba[index * 4 + 1]),
+              Number(rgba[index * 4 + 2]),
+              Number(rgba[index * 4 + 3])
+            );
+          } else {
+            segmentColors.push(0.1, 0.1, 0.1, 1.0);
+          }
+        }
+        for (var s = 0; s < n - 1; s += 1) {
+          if (!pathSegmentVisible(path, s, s + 1, xScene)) {
+            continue;
+          }
+          pushSegmentVertex(s);
+          pushSegmentVertex(s + 1);
+        }
+        return {
+          count: segmentAges.length,
+          mode: "lines",
+          positions: new Float32Array(segmentPositions),
+          ages: new Float32Array(segmentAges),
+          colors: new Float32Array(segmentColors)
+        };
+      }
 		
 		  var positions = new Float32Array(n * 2);
 		  var pathAges = new Float32Array(n);
@@ -3732,6 +3924,7 @@ HTMLWidgets.widget({
 		
 		return {
 		  count: n,
+      mode: "line_strip",
 		  positions: positions,
 		  ages: pathAges,
 		  colors: colors
@@ -3749,28 +3942,51 @@ HTMLWidgets.widget({
       var positions = [];
       var pathAges = [];
       var colors = [];
+      var timelineClipped = x && state.timeline && state.timeline.enabled && layerHasTimelineValues(path, state.timeline);
 
-      for (var i = 0; i < n; i += 1) {
-        if (x && !pathIndexVisible(path, i, x)) {
-          continue;
-        }
-        var point = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+      function push3dVertex(index) {
+        var point = normalizePosition3(xs[index], ys[index], zs[index] || 0, viewport, zRange);
         positions.push(point[0], point[1], point[2]);
-        pathAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
-        if (rgba.length >= (i * 4 + 4)) {
+        pathAges.push(isFinite(ages[index]) ? Number(ages[index]) : 1.0);
+        if (rgba.length >= (index * 4 + 4)) {
           colors.push(
-            normalizeColorComponent(rgba[i * 4 + 0], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 1], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 2], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 3], 1.0)
+            normalizeColorComponent(rgba[index * 4 + 0], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 1], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 2], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 3], 1.0)
           );
         } else {
           colors.push(0.1, 0.1, 0.1, 1.0);
         }
       }
 
+      if (timelineClipped) {
+        for (var s = 0; s < n - 1; s += 1) {
+          if (!pathSegmentVisible(path, s, s + 1, x)) {
+            continue;
+          }
+          push3dVertex(s);
+          push3dVertex(s + 1);
+        }
+        return {
+          count: pathAges.length,
+          mode: "lines",
+          positions: new Float32Array(positions),
+          ages: new Float32Array(pathAges),
+          colors: new Float32Array(colors)
+        };
+      }
+
+      for (var i = 0; i < n; i += 1) {
+        if (x && !pathIndexVisible(path, i, x)) {
+          continue;
+        }
+        push3dVertex(i);
+      }
+
       return {
         count: pathAges.length,
+        mode: "line_strip",
         positions: new Float32Array(positions),
         ages: new Float32Array(pathAges),
         colors: new Float32Array(colors)
@@ -3862,7 +4078,7 @@ HTMLWidgets.widget({
       }
 
       function addSegmentQuad(i0, i1) {
-        if (!pathIndexVisible(path, i0, xScene) || !pathIndexVisible(path, i1, xScene)) {
+        if (!pathSegmentVisible(path, i0, i1, xScene)) {
           return;
         }
         var p0 = pointAt(i0);
@@ -3894,7 +4110,7 @@ HTMLWidgets.widget({
       }
 
       function addBevelJoin(i) {
-        if (!pathIndexVisible(path, i, xScene)) {
+        if (!pathSegmentVisible(path, i - 1, i, xScene) || !pathSegmentVisible(path, i, i + 1, xScene)) {
           return;
         }
         if (joinMode !== "bevel" || i <= 0 || i >= n - 1) {
@@ -3938,6 +4154,9 @@ HTMLWidgets.widget({
 
         var neighbor = atEnd ? index - 1 : index + 1;
         if (neighbor < 0 || neighbor >= n) {
+          return;
+        }
+        if (!pathSegmentVisible(path, Math.min(index, neighbor), Math.max(index, neighbor), xScene)) {
           return;
         }
 
@@ -4455,7 +4674,7 @@ HTMLWidgets.widget({
       }
 
       paths.forEach(function(path) {
-        var payload = flattenLinePath(path);
+        var payload = flattenLinePath(path, x);
 
         if (!payload || payload.count < 2) {
           return;
@@ -4466,7 +4685,7 @@ HTMLWidgets.widget({
         if (primitive.attributes.color >= 0) {
           gl.vertexAttrib4f(primitive.attributes.color, 0.1, 0.1, 0.1, 1.0);
         }
-        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+        gl.drawArrays(payload.mode === "lines" ? gl.LINES : gl.LINE_STRIP, 0, payload.count);
 
         gl.deleteBuffer(positionBuffer);
       });
@@ -4499,7 +4718,7 @@ HTMLWidgets.widget({
         bindAttributeBuffer(gl, primitive.attributes.position3, positionBuffer, 3);
         var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
         var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
-        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+        gl.drawArrays(payload.mode === "lines" ? gl.LINES : gl.LINE_STRIP, 0, payload.count);
         gl.deleteBuffer(positionBuffer);
         gl.deleteBuffer(ageBuffer);
         gl.deleteBuffer(colorBuffer);
@@ -5357,12 +5576,10 @@ HTMLWidgets.widget({
         state.x = next;
         state.selection.active = false;
         state.selection.result = null;
+        state.timeline = createTimelineState(next, state.timeline);
         applyWidgetSize(width, height);
         resetViewport(null);
         initialiseCameraFromScene(next);
-        var values = timelineValues(next);
-        state.timeline.frame = values.length ? values[0] : null;
-        state.timeline.playing = !!(next.render.timeline && next.render.timeline.autoplay);
         
 		requestAnimationFrame(function() {
     	  redrawCurrent();

@@ -4,7 +4,7 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ggWebGL, Browser-Native 'WebGL' Rendering for R Graphics <img src="man/figures/logo_ggWebGL.png" align="right" width="200"/>
+# ggWebGL, Browser-Native 'WebGL' Rendering for R Graphics <img src="man/figures/logo_ggWebGL.png" alt="logo ggWebGL" align="right" width="200"/>
 ## Frédéric Bertrand
 
 `ggWebGL` is an R package for browser-native `WebGL` rendering of R graphics
