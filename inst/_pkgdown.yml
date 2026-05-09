@@ -38,6 +38,7 @@ articles:
     contents:
       - getting-started
       - renderer-capabilities
+      - temporal-trajectories
       - renderer-showcase-examples
       - real-data-evidence
   - title: Optional downstream bridges

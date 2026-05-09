@@ -6,6 +6,8 @@
   ggWebGL](https://fbertran.github.io/ggWebGL/articles/getting-started.md):
 - [Experiment with Renderer
   Capabilities](https://fbertran.github.io/ggWebGL/articles/renderer-capabilities.md):
+- [Temporal and 3D trajectories with
+  ggWebGL](https://fbertran.github.io/ggWebGL/articles/temporal-trajectories.md):
 - [Renderer Showcase
   Examples](https://fbertran.github.io/ggWebGL/articles/renderer-showcase-examples.md):
 - [Real-Data

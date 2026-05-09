@@ -29,6 +29,17 @@ test_that("JavaScript defines one normalized timeline state contract", {
   expect_match(js, "state.timeline = createTimelineState(next, state.timeline)", fixed = TRUE)
 })
 
+test_that("JavaScript initializes timeline UI before deferred redraw", {
+  js <- read_timeline_js()
+
+  expect_match(
+    js,
+    "initialiseCameraFromScene\\(next\\);[[:space:]]+redrawCurrent\\(\\);[[:space:]]+requestAnimationFrame\\(function\\(\\)",
+    perl = TRUE
+  )
+  expect_match(js, "requestAnimationFrame(function()", fixed = TRUE)
+})
+
 test_that("JavaScript centralizes timeline access and visibility helpers", {
   js <- read_timeline_js()
 

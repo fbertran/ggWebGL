@@ -51,7 +51,7 @@ The current implementation supports:
 | [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md) | Rendered in `WebGL` |
 | Renderer-ready stable layers | Points, lines, and rasters through `ggwebgl_layer_*()` helpers |
 | Renderer specification | [`ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_spec.md) and [`as_ggwebgl_spec()`](https://fbertran.github.io/ggWebGL/reference/as_ggwebgl_spec.md) adapter boundaries |
-| Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow` |
+| Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow`, `trajectory_velocity`, `trajectory_direction` |
 | Interaction | `pan`, `zoom`, and `hover` |
 | Output targets | R Markdown / Quarto HTML, `Shiny`, and static image export helpers |
 | `ggplot2` compatibility | Focused grammar-preserving paths for dense scenes and fixed-scale facets |
@@ -68,7 +68,7 @@ contract.
 |----|----|
 | [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md) and [`ggwebgl_layer_vectors()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_vectors.md) for vector-arrow layers | `tests/testthat/test-future-work-roadmap.R`, `vignettes/renderer-capabilities.Rmd` |
 | [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md), [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md), [`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md), and [`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md) for mesh/surface payloads | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
-| [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md) for exact/cumulative frame controls | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
+| [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md) for exact/cumulative frame controls and timeline-aware trajectories | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `tests/testthat/test-timeline-metadata.R`, `vignettes/renderer-capabilities.Rmd`, `vignettes/temporal-trajectories.Rmd` |
 | [`ggwebgl_selection()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_selection.md) for brush/lasso selection metadata and browser interaction | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 | [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md) for structured 2D/3D view and camera metadata | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 

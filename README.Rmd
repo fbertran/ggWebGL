@@ -52,7 +52,7 @@ The current implementation supports:
 | `geom_raster_webgl()` | Rendered in `WebGL` |
 | Renderer-ready stable layers | Points, lines, and rasters through `ggwebgl_layer_*()` helpers |
 | Renderer specification | `ggwebgl_spec()` and `as_ggwebgl_spec()` adapter boundaries |
-| Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow` |
+| Shader modes | `default`, `density_splat`, `trajectory_age`, `trajectory_age_glow`, `trajectory_velocity`, `trajectory_direction` |
 | Interaction | `pan`, `zoom`, and `hover` |
 | Output targets | R Markdown / Quarto HTML, `Shiny`, and static image export helpers |
 | `ggplot2` compatibility | Focused grammar-preserving paths for dense scenes and fixed-scale facets |
@@ -68,7 +68,7 @@ requirements of the minimal stable GeoXGL scene contract.
 | --- | --- |
 | `geom_vector_webgl()` and `ggwebgl_layer_vectors()` for vector-arrow layers | `tests/testthat/test-future-work-roadmap.R`, `vignettes/renderer-capabilities.Rmd` |
 | `geom_mesh_webgl()`, `geom_surface_webgl()`, `ggwebgl_layer_mesh()`, and `ggwebgl_layer_surface()` for mesh/surface payloads | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
-| `ggwebgl_timeline()` for exact/cumulative frame controls | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
+| `ggwebgl_timeline()` for exact/cumulative frame controls and timeline-aware trajectories | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `tests/testthat/test-timeline-metadata.R`, `vignettes/renderer-capabilities.Rmd`, `vignettes/temporal-trajectories.Rmd` |
 | `ggwebgl_selection()` for brush/lasso selection metadata and browser interaction | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 | `ggwebgl_view()` for structured 2D/3D view and camera metadata | `tests/testthat/test-future-work-roadmap.R`, `tests/testthat/test-interaction-runtime.R`, `vignettes/renderer-capabilities.Rmd` |
 

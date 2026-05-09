@@ -1,0 +1,139 @@
+---
+title: "Temporal and 3D trajectories with ggWebGL"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Temporal and 3D trajectories with ggWebGL}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else if (file.exists("../DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else {
+  library(ggWebGL)
+}
+
+example_candidates <- c(
+  "inst/examples/htmlwidget/temporal-trajectories.R",
+  file.path("..", "inst", "examples", "htmlwidget", "temporal-trajectories.R"),
+  system.file("examples", "htmlwidget", "temporal-trajectories.R", package = "ggWebGL")
+)
+example_candidates <- example_candidates[nzchar(example_candidates) & file.exists(example_candidates)]
+if (!length(example_candidates)) {
+  stop("Could not find temporal-trajectories.R")
+}
+sys.source(example_candidates[[1L]], envir = knitr::knit_global())
+```
+
+# Purpose
+
+`ggWebGL` can render ordered trajectory/path layers with timeline metadata. The
+examples below use deterministic in-memory data and browser-side WebGL through
+`htmlwidgets`; they do not download data or report performance numbers.
+The widgets autoplay by default and can be paused, scrubbed, or reset with the
+timeline controls. If a browser throttles a background tab, pressing **Play**
+resumes the timeline.
+
+The relevant renderer pieces are:
+
+- `geom_path3d_webgl()` for ordered paths with optional `z`, `frame`, and `time`
+  aesthetics.
+- `animation_spec()` / `ggwebgl_timeline()` for exact or cumulative timeline
+  metadata.
+- `trajectory_age`, `trajectory_velocity`, and `trajectory_direction` shader
+  modes for renderer-side trajectory visual encodings.
+- `input$<outputId>_timeline` and `updateGgWebGLTimeline()` for Shiny timeline
+  integration.
+
+# 2D Cumulative Trajectory
+
+This spiral is rendered as an ordered path with `frame` metadata and cumulative
+timeline filtering. The `trajectory_age` shader makes the time prefix visible
+as the timeline is scrubbed.
+
+```{r spiral-trajectory, out.width='100%'}
+temporal_spiral_widget(height = 460)
+```
+
+# 3D Trajectory
+
+The helix uses the same path contract, but supplies `z` and `time` values. The
+view is opt-in 3D with an orbit camera.
+
+```{r helix-trajectory, out.width='100%'}
+temporal_helix_widget(height = 460)
+```
+
+# Velocity and Direction Encodings
+
+Trajectory velocity and direction are renderer-side visual encodings computed
+from the serialized path coordinates and timeline values. They do not add
+application semantics to the data.
+
+```{r velocity-trajectory, out.width='100%'}
+temporal_velocity_widget(height = 460)
+```
+
+```{r direction-trajectory, out.width='100%'}
+temporal_direction_widget(height = 460)
+```
+
+# Exact Frame Samples
+
+Exact filtering is useful for point-like animated samples. This example shows
+only the samples whose `frame` equals the selected timeline value.
+
+```{r exact-particles, out.width='100%'}
+temporal_exact_particles_widget(height = 460)
+```
+
+# Shiny Timeline Integration
+
+In Shiny, the browser emits the current timeline state as
+`input$<outputId>_timeline`. Server code can update the browser-side timeline
+with `updateGgWebGLTimeline()`.
+
+```{r shiny-timeline-snippet, eval = FALSE}
+library(shiny)
+library(ggWebGL)
+
+ui <- fluidPage(
+  actionButton("restart", "Reset"),
+  ggWebGLOutput("plot", height = "420px"),
+  verbatimTextOutput("timeline_state")
+)
+
+server <- function(input, output, session) {
+  output$plot <- renderGgWebGL({
+    temporal_helix_widget(height = 460)
+  })
+
+  observeEvent(input$restart, {
+    updateGgWebGLTimeline(session, "plot", index = 1L, playing = FALSE)
+  })
+
+  output$timeline_state <- renderPrint({
+    input$plot_timeline
+  })
+}
+
+if (interactive()) {
+  shinyApp(ui, server)
+}
+```
+
+The repository also includes a compact optional app at
+`inst/examples/shiny/timeline-control-demo.R`.
+
+# Limitations
+
+Missing values and group boundaries break paths. Cumulative timeline filtering
+draws complete visible prefixes; exact path filtering does not interpolate
+partial hidden segments. Velocity and direction are renderer-side visual
+encodings. Shiny timeline events report renderer time/frame state; downstream
+applications remain responsible for interpreting those values.
