@@ -482,84 +482,9 @@ ggwebgl_layer_mesh <- function(vertices,
   ))
 }
 
-#' Renderer-Ready Surface Layer
-#'
-#' Build a triangulated surface from a regular z matrix.
-#'
-#' @param z Numeric matrix of height values.
-#' @param x,y Optional coordinate vectors. Defaults to matrix column and row
-#'   indices.
-#' @param palette HCL palette name used when `colour` or `rgba` is omitted.
-#' @param normals Normal-generation mode. `"auto"` computes vertex normals.
-#' @param material Surface material created by [ggwebgl_material()].
-#' @param pick_id Optional face picking ids.
-#' @inheritParams ggwebgl_layer_mesh
-#'
-#' @return A normalized mesh layer list.
-#'
-#' @examples
-#' ggwebgl_layer_surface(volcano[1:4, 1:4])
-#' @export
-ggwebgl_layer_surface <- function(z,
-                                  x = NULL,
-                                  y = NULL,
-                                  colour = NULL,
-                                  rgba = NULL,
-                                  alpha = NULL,
-                                  palette = "Terrain 2",
-                                  normals = "auto",
-                                  material = ggwebgl_material(shading = "lambert"),
-                                  pick_id = NULL,
-                                  panel_id = 1L,
-                                  geom = "adapter_surface",
-                                  wireframe = NULL) {
-  z <- as.matrix(z)
-  storage.mode(z) <- "double"
-  nr <- nrow(z)
-  nc <- ncol(z)
-  if (!nr || !nc) {
-    rlang::abort("`z` must be a non-empty numeric matrix.")
-  }
-
-  x <- as.numeric(x %||% seq_len(nc))
-  y <- as.numeric(y %||% seq_len(nr))
-  if (length(x) != nc || length(y) != nr) {
-    rlang::abort("`x` and `y` must match the matrix columns and rows.")
-  }
-
-  vertices <- expand.grid(x = x, y = y)
-  vertices$z <- as.numeric(t(z))
-  n <- nrow(vertices)
-
-  if (is.null(rgba) && is.null(colour)) {
-    rng <- range(vertices$z, finite = TRUE)
-    scaled <- if (diff(rng) > 0) (vertices$z - rng[[1]]) / diff(rng) else rep(0.5, n)
-    ramp <- grDevices::colorRampPalette(grDevices::hcl.colors(9L, palette))
-    colour <- ramp(256L)[pmax(1L, pmin(256L, as.integer(round(scaled * 255)) + 1L))]
-  }
-
-  tri <- ggwebgl_surface_triangles(nr, nc)
-  ggwebgl_layer_mesh(
-    vertices = vertices,
-    x = "x",
-    y = "y",
-    z = "z",
-    triangles = tri,
-    colour = colour,
-    rgba = rgba,
-    alpha = alpha %||% 1,
-    normals = normals,
-    material = material,
-    pick_id = pick_id,
-    panel_id = panel_id,
-    geom = geom,
-    wireframe = wireframe
-  )
-}
-
 #' Build a ggWebGL Specification from Renderer-Ready Layers
 #'
-#' @param layers A list of normalized point, line, raster, vector, or mesh
+#' @param layers A list of normalized point, line, raster, vector, mesh, or surface
 #'   layers.
 #' @param labels Optional labels list (`title`, `subtitle`, `x`, `y`).
 #' @param webgl Optional renderer options passed to [theme_webgl()].
@@ -752,32 +677,6 @@ ggwebgl_scalar_number <- function(value, name) {
   value
 }
 
-ggwebgl_surface_triangles <- function(nr, nc) {
-  if (nr < 2L || nc < 2L) {
-    return(data.frame(i = integer(), j = integer(), k = integer()))
-  }
-
-  cells <- expand.grid(row = seq_len(nr - 1L), col = seq_len(nc - 1L))
-  index <- function(row, col) {
-    as.integer((col - 1L) * nr + row)
-  }
-
-  tris <- do.call(rbind, lapply(seq_len(nrow(cells)), function(row_id) {
-    row <- cells$row[[row_id]]
-    col <- cells$col[[row_id]]
-    v00 <- index(row, col)
-    v10 <- index(row + 1L, col)
-    v01 <- index(row, col + 1L)
-    v11 <- index(row + 1L, col + 1L)
-    rbind(
-      c(i = v00, j = v10, k = v11),
-      c(i = v00, j = v11, k = v01)
-    )
-  }))
-
-  as.data.frame(tris)
-}
-
 ggwebgl_resolve_pick_id <- function(pick_id, triangle_count) {
   if (is.null(pick_id)) {
     return(NULL)
@@ -844,8 +743,8 @@ ggwebgl_mesh_normals <- function(xs, ys, zs, indices) {
 
 ggwebgl_validate_layer <- function(layer) {
   if (!is.list(layer) || is.null(layer$type) ||
-      !layer$type %in% c("points", "lines", "raster", "vectors", "mesh")) {
-    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, or mesh layer.")
+      !layer$type %in% c("points", "lines", "raster", "vectors", "mesh", "surface")) {
+    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, mesh, or surface layer.")
   }
 
   layer
@@ -935,6 +834,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
   raster_layers <- Filter(function(x) identical(x$type, "raster"), layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), layers)
+  surface_layers <- Filter(function(x) identical(x$type, "surface"), layers)
 
   compact_list(list(
     panel_id = panel$panel_id,
@@ -951,6 +851,8 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
+    surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
+    surface_triangle_count = sum(vapply(surface_layers, `[[`, integer(1), "triangle_count")),
     layers = layers
   ))
 }
@@ -986,6 +888,11 @@ ggwebgl_viewport_from_layers <- function(layers) {
       extend(c(layer$x, layer$xend), c(layer$y, layer$yend))
     } else if (identical(layer$type, "mesh")) {
       extend(layer$x, layer$y)
+    } else if (identical(layer$type, "surface")) {
+      positions <- matrix(as.numeric(layer$positions %||% numeric()), ncol = 3L, byrow = TRUE)
+      if (nrow(positions)) {
+        extend(positions[, 1L], positions[, 2L])
+      }
     }
   }
 
@@ -1004,6 +911,8 @@ ggwebgl_build_render <- function(panels, messages = character()) {
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
+  surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
+  surface_triangle_count <- sum(vapply(panels, `[[`, integer(1), "surface_triangle_count"))
   primitives <- unique(unlist(lapply(panels, `[[`, "primitives"), use.names = FALSE))
   has_layers <- any(vapply(panels, function(panel) length(panel$layers), integer(1)) > 0L)
   grid <- attr(panels, "grid", exact = TRUE) %||% list(
@@ -1023,6 +932,8 @@ ggwebgl_build_render <- function(panels, messages = character()) {
     vector_count = vector_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
+    surface_vertex_count = surface_vertex_count,
+    surface_triangle_count = surface_triangle_count,
     unsupported_layers = list(),
     messages = unname(as.character(messages))
   )))

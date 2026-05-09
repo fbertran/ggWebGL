@@ -15,7 +15,7 @@ ggwebgl_spec(
 )
 }
 \arguments{
-\item{layers}{A list of normalized point, line, raster, vector, or mesh
+\item{layers}{A list of normalized point, line, raster, vector, mesh, or surface
 layers.}
 
 \item{labels}{Optional labels list (\code{title}, \code{subtitle}, \code{x}, \code{y}).}

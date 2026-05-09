@@ -136,7 +136,8 @@ test_that("current ggwebgl_spec payloads satisfy the v2 top-level shape", {
   expect_equal(spec[["render"]][["blend_mode"]], "alpha")
   expect_equal(spec[["render"]][["selection"]][["mode"]], "brush_lasso")
   expect_equal(spec[["render"]][["timeline"]][["filter"]], "exact")
-  expect_setequal(spec[["render"]][["primitives"]], c("points", "lines", "raster", "vectors", "mesh"))
+  expect_setequal(spec[["render"]][["primitives"]], c("points", "lines", "raster", "vectors", "surface"))
+  expect_equal(spec[["render"]][["surface_triangle_count"]], 2L)
 })
 
 test_that("3D coordinate and webgl option helpers normalize camera contracts", {
@@ -197,7 +198,7 @@ test_that("ggplot_webgl payloads include scene_version and validate typed panels
   expect_error(ggWebGL(invalid), "panel_id")
 })
 
-test_that("v2 aliases map to current line and surface payloads without new runtime primitives", {
+test_that("v2 aliases map path3d while surfaces are first-class structured primitives", {
   path3d_layer <- ggwebgl_layer_lines(
     data.frame(x = c(0, 1), y = c(0, 1), z = c(0.1, 0.9), group = "a"),
     x = "x",
@@ -209,10 +210,11 @@ test_that("v2 aliases map to current line and surface payloads without new runti
 
   expect_equal(path3d_layer[["type"]], "lines")
   expect_false(is.null(path3d_layer[["paths"]][[1]][["z"]]))
-  expect_equal(surface_layer[["type"]], "mesh")
+  expect_equal(surface_layer[["type"]], "surface")
   expect_equal(surface_layer[["geom"]], "adapter_surface")
   expect_true(surface_layer[["triangle_count"]] > 0L)
-  expect_false(is.null(surface_layer[["normal"]]))
+  expect_false(is.null(surface_layer[["normals"]]))
+  expect_false(is.null(surface_layer[["surface_meta"]]))
 })
 
 test_that("single-panel compatibility fields remain derived from render panels", {
@@ -263,6 +265,8 @@ test_that("widget source routes drawing through a typed layer dispatcher", {
   expect_match(js, "function drawVectorsLayer", fixed = TRUE)
   expect_match(js, "function drawMeshLayer", fixed = TRUE)
   expect_match(js, "function drawSurfaceLayer", fixed = TRUE)
+  expect_false(grepl("lowered_type === \"mesh\"", js, fixed = TRUE))
+  expect_match(js, "gl.drawElements(gl.TRIANGLES", fixed = TRUE)
   expect_match(js, "attribute vec3 a_position3", fixed = TRUE)
   expect_match(js, "function draw3dPointLayer", fixed = TRUE)
   expect_match(js, "function drawLineLayer3d", fixed = TRUE)

@@ -1,7 +1,8 @@
-# WebGL Triangulated Surface Layer
+# WebGL Structured Grid Surface Layer
 
-Add a regular-grid surface layer tagged for the `ggWebGL` mesh renderer.
-The built grid is triangulated before being sent to WebGL.
+Add a rectilinear grid surface layer tagged for the `ggWebGL` structured
+surface renderer. Surface layers are sent to WebGL as indexed triangles
+with per-vertex positions, normals, colours, and surface metadata.
 
 ## Usage
 
@@ -9,12 +10,18 @@ The built grid is triangulated before being sent to WebGL.
 geom_surface_webgl(
   mapping = NULL,
   data = NULL,
-  stat = "identity",
+  stat = StatSurfaceWebGL,
   position = "identity",
   ...,
+  shading = c("surface_lambert", "surface_flat", "surface_height_colormap",
+    "surface_uncertainty_alpha"),
   wireframe = FALSE,
-  material = ggwebgl_material(shading = "lambert", wireframe = wireframe),
+  material = NULL,
   normals = "auto",
+  contours = FALSE,
+  contour_levels = NULL,
+  contour_colour = "#1f2937",
+  contour_width = 1,
   pick_id = NULL,
   na.rm = FALSE,
   show.legend = NA,
@@ -128,22 +135,45 @@ geom_surface_webgl(
     glyphs](https://ggplot2.tidyverse.org/reference/draw_key.html), to
     change the display of the layer in the legend.
 
+- shading:
+
+  Surface shader mode. One of `"surface_lambert"`, `"surface_flat"`,
+  `"surface_height_colormap"`, or `"surface_uncertainty_alpha"`.
+
 - wireframe:
 
-  Whether to request a wireframe overlay.
+  Whether to draw a wireframe overlay.
 
 - material:
 
-  Surface material created by
+  Surface material metadata created by
   [`ggwebgl_material()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_material.md).
 
 - normals:
 
   Normal-generation mode. `"auto"` computes vertex normals.
 
+- contours:
+
+  Whether to generate contour-line overlays on the R side.
+
+- contour_levels:
+
+  Optional numeric contour levels. Defaults to
+  [`pretty()`](https://rdrr.io/r/base/pretty.html) levels across the
+  surface z range when `contours = TRUE`.
+
+- contour_colour:
+
+  Contour line colour.
+
+- contour_width:
+
+  Contour line width in renderer pixels.
+
 - pick_id:
 
-  Optional face picking ids.
+  Optional triangle picking ids.
 
 - na.rm:
 

@@ -22,6 +22,8 @@ theme_webgl(
   camera = "orbit",
   projection = "orthographic",
   camera_state = list(),
+  depth_test = NULL,
+  blend_mode = "auto",
   timeline = NULL,
   ...
 )
@@ -79,6 +81,16 @@ theme_webgl(
 - dimension, camera, projection, camera_state:
 
   Legacy view fields retained as an internal migration shim.
+
+- depth_test:
+
+  Logical scalar. `NULL` uses the renderer default: disabled for 2D
+  scenes and enabled for 3D scenes. Set explicitly to override.
+
+- blend_mode:
+
+  Primitive blending mode: `"auto"`, `"alpha"`, `"additive"`, or
+  `"premultiplied"`.
 
 - timeline:
 
@@ -214,6 +226,12 @@ plot$ggwebgl
 #> $camera_state$far
 #> [1] 1000
 #> 
+#> 
+#> $depth_test
+#> [1] FALSE
+#> 
+#> $blend_mode
+#> [1] "auto"
 #> 
 #> $line_mode
 #> [1] "auto"

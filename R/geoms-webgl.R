@@ -32,12 +32,6 @@ GeomMeshWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPoint$optional_aes, "z", "i", "j", "k", "id", "frame", "time"),
   extra_params = c(ggplot2::GeomPoint$extra_params, "wireframe", "material", "normals", "pick_id")
 )
-GeomSurfaceWebGL <- ggplot2::ggproto(
-  "GeomSurfaceWebGL",
-  ggplot2::GeomRaster,
-  optional_aes = c(ggplot2::GeomRaster$optional_aes, "z", "frame", "time"),
-  extra_params = c(ggplot2::GeomRaster$extra_params, "wireframe", "material", "normals", "pick_id")
-)
 
 #' WebGL Point Layer
 #'
@@ -257,49 +251,6 @@ geom_mesh_webgl <- function(mapping = NULL,
     mapping = mapping,
     stat = stat,
     geom = GeomMeshWebGL,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(wireframe = wireframe, material = material, normals = normals, pick_id = pick_id, na.rm = na.rm, ...)
-  )
-}
-
-#' WebGL Triangulated Surface Layer
-#'
-#' Add a regular-grid surface layer tagged for the `ggWebGL` mesh
-#' renderer. The built grid is triangulated before being sent to WebGL.
-#'
-#' @inheritParams ggplot2::geom_raster
-#' @param wireframe Whether to request a wireframe overlay.
-#' @param material Surface material created by [ggwebgl_material()].
-#' @param normals Normal-generation mode. `"auto"` computes vertex normals.
-#' @param pick_id Optional face picking ids.
-#'
-#' @return A `Layer` ready for `ggplot2`.
-#'
-#' @examples
-#' surface <- expand.grid(x = 1:3, y = 1:3)
-#' surface$z <- with(surface, sin(x) + cos(y))
-#' ggplot2::ggplot(surface, ggplot2::aes(x, y, z = z, fill = z)) +
-#'   geom_surface_webgl()
-#' @export
-geom_surface_webgl <- function(mapping = NULL,
-                               data = NULL,
-                               stat = "identity",
-                               position = "identity",
-                               ...,
-                               wireframe = FALSE,
-                               material = ggwebgl_material(shading = "lambert", wireframe = wireframe),
-                               normals = "auto",
-                               pick_id = NULL,
-                               na.rm = FALSE,
-                               show.legend = NA,
-                               inherit.aes = TRUE) {
-  ggplot2::layer(
-    data = data,
-    mapping = mapping,
-    stat = stat,
-    geom = GeomSurfaceWebGL,
     position = position,
     show.legend = show.legend,
     inherit.aes = inherit.aes,

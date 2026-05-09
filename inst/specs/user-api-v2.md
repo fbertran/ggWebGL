@@ -23,7 +23,7 @@ The current core already accepts these renderer-ready layer helpers:
 - `ggwebgl_layer_raster()`
 - `ggwebgl_layer_vectors()`
 - `ggwebgl_layer_mesh()`
-- `ggwebgl_layer_surface()`, which lowers regular grids to mesh payloads
+- `ggwebgl_layer_surface()`, which emits first-class structured-grid surface payloads
 
 The current grammar-style geoms include:
 

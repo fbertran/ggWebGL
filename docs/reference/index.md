@@ -13,6 +13,9 @@
 - [`compose_ggwebgl_figure()`](https://fbertran.github.io/ggWebGL/reference/compose_ggwebgl_figure.md)
   : Compose a Publication Figure from ggWebGL Panels
 
+- [`coord_webgl_3d()`](https://fbertran.github.io/ggWebGL/reference/coord_webgl_3d.md)
+  : Request a 3D WebGL Coordinate System
+
 - [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
   : WebGL Line Layer
 
@@ -26,7 +29,7 @@
   : WebGL Raster Layer
 
 - [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md)
-  : WebGL Triangulated Surface Layer
+  : WebGL Structured Grid Surface Layer
 
 - [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md)
   : WebGL Vector Arrow Layer
@@ -56,7 +59,7 @@
   : Renderer-Ready Raster Layer
 
 - [`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md)
-  : Renderer-Ready Surface Layer
+  : Renderer-Ready Structured Surface Layer
 
 - [`ggwebgl_layer_vectors()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_vectors.md)
   : Renderer-Ready Vector Arrow Layer
@@ -88,5 +91,14 @@
 - [`snapshot_ggwebgl()`](https://fbertran.github.io/ggWebGL/reference/snapshot_ggwebgl.md)
   : Capture a ggWebGL Scene as a Static Image
 
+- [`stat_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/stat_surface_webgl.md)
+  : WebGL Structured Grid Surface Stat
+
+- [`surface_matrix()`](https://fbertran.github.io/ggWebGL/reference/surface_matrix.md)
+  : Structured Surface Matrix
+
 - [`theme_webgl()`](https://fbertran.github.io/ggWebGL/reference/theme_webgl.md)
   : Add WebGL Rendering Options to a ggplot
+
+- [`webgl_spec()`](https://fbertran.github.io/ggWebGL/reference/webgl_spec.md)
+  : Build ggWebGL Renderer Options

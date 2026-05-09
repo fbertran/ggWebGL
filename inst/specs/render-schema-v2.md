@@ -40,8 +40,9 @@ single-panel compatibility fields under `render$layers`, `render$viewport`, and
 - `grid`: panel grid with `rows` and `cols`.
 - `panels`: ordered panel contracts.
 - aggregate counts: `point_count`, `line_vertex_count`, `path_count`,
-  `raster_cell_count`, `vector_count`, `mesh_vertex_count`, and
-  `mesh_triangle_count`.
+  `raster_cell_count`, `vector_count`, `mesh_vertex_count`,
+  `mesh_triangle_count`, `surface_vertex_count`, and
+  `surface_triangle_count`.
 - `primitives`: primitive kinds present in panel-local layers.
 - `unsupported_layers`: unsupported source-layer metadata.
 - `messages`: exact field name for renderer messages.
@@ -111,10 +112,11 @@ optional vertex `normal`, per-vertex or per-face `rgba`, optional stable vertex
 
 ### surface
 
-API/source-level convenience for regular rectilinear grids. In the current core
-runtime, surfaces lower to `type = "mesh"` with generated triangle indices and
-normals. A future renderer may add a distinct `surface` primitive, but it must
-preserve this lowering path for compatibility.
+First-class structured-grid primitive for regular rectilinear surfaces. Fields:
+flat `positions` (`x`, `y`, `z` triples), generated or supplied `normals`,
+per-vertex `colors`, zero-based triangle `indices`, `bbox3d`,
+`surface_meta`, and optional `wire_indices`, `contours`, and `uncertainty`.
+Arbitrary triangle data remains `type = "mesh"`.
 
 ## Renderer Options
 

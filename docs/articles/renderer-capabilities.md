@@ -14,7 +14,8 @@ The showcased paths are:
 - linked magnifier metadata for brush-driven local zoom views
 - timeline metadata for frame-filtered rendering
 - opt-in 3D camera options for point, line, and vector layers
-- mesh payloads produced directly or through surface helpers
+- first-class structured-grid surface payloads and arbitrary mesh
+  payloads
 
 The live widgets are sourced from `future_work_vector_field_demo()`,
 `future_work_selection_demo()`, `future_work_timeline_demo()`,
@@ -156,10 +157,11 @@ renderer_capability_widgets$camera_3d
 
 ## Mesh and Surface Helpers
 
-**Primitive contract.** The surface demo lowers a regular height field
-to an indexed mesh payload through
+**Primitive contract.** The surface demo sends a regular height field as
+a first-class `surface` payload through
 [`ggwebgl_layer_surface()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_surface.md).
-Direct mesh payloads can be created with
+Direct arbitrary triangle payloads remain the separate `mesh` contract
+through
 [`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md).
 
 **What to inspect.** The surface is rendered as indexed triangle

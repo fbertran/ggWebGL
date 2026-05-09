@@ -15,7 +15,7 @@ must resolve semantics before the widget consumes the payload."><style>
 
     <a class="navbar-brand me-2" href="../index.html">ggWebGL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,8 +92,11 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-in"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="ggwebgl_spec.html">ggwebgl_spec</a></span><span class="op">(</span>layers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">point_layer</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">as_ggwebgl_spec</span><span class="op">(</span><span class="va">spec</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $scene_version</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $package_version</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0.6.0"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "0.7.0"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $labels</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> named list()</span>
@@ -209,6 +212,12 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $webgl$depth_test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $webgl$blend_mode</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $webgl$line_mode</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -318,6 +327,12 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$mesh_triangle_count</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$surface_vertex_count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$surface_triangle_count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$layers</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$layers[[1]]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$panels[[1]]$layers[[1]]$panel_id</span>
@@ -383,6 +398,12 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$mesh_triangle_count</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$surface_vertex_count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$surface_triangle_count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$unsupported_layers</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> list()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -435,6 +456,9 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$dimension</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2d"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$coordinate_system</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "cartesian2d"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$camera</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$camera$mode</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "panzoom"</span>
@@ -474,6 +498,12 @@ must resolve semantics before the widget consumes the payload.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$depth_test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $render$blend_mode</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$selection</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $render$selection$mode</span>

@@ -130,8 +130,11 @@ ggwebgl_magnify_region(
   region = list(x = c(0.75, 2.25), y = c(0.75, 2.25)),
   display = "panel"
 )
+#> $scene_version
+#> [1] 2
+#> 
 #> $package_version
-#> [1] "0.6.0"
+#> [1] "0.7.0"
 #> 
 #> $labels
 #> named list()
@@ -246,6 +249,12 @@ ggwebgl_magnify_region(
 #> $webgl$camera_state$far
 #> [1] 1000
 #> 
+#> 
+#> $webgl$depth_test
+#> [1] FALSE
+#> 
+#> $webgl$blend_mode
+#> [1] "auto"
 #> 
 #> $webgl$line_mode
 #> [1] "auto"
@@ -399,6 +408,12 @@ ggwebgl_magnify_region(
 #> $render$panels[[1]]$mesh_triangle_count
 #> [1] 0
 #> 
+#> $render$panels[[1]]$surface_vertex_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$surface_triangle_count
+#> [1] 0
+#> 
 #> $render$panels[[1]]$layers
 #> $render$panels[[1]]$layers[[1]]
 #> $render$panels[[1]]$layers[[1]]$panel_id
@@ -536,6 +551,12 @@ ggwebgl_magnify_region(
 #> $render$panels[[2]]$mesh_triangle_count
 #> [1] 0
 #> 
+#> $render$panels[[2]]$surface_vertex_count
+#> [1] 0
+#> 
+#> $render$panels[[2]]$surface_triangle_count
+#> [1] 0
+#> 
 #> $render$panels[[2]]$layers
 #> $render$panels[[2]]$layers[[1]]
 #> $render$panels[[2]]$layers[[1]]$panel_id
@@ -602,6 +623,12 @@ ggwebgl_magnify_region(
 #> $render$mesh_triangle_count
 #> [1] 0
 #> 
+#> $render$surface_vertex_count
+#> [1] 0
+#> 
+#> $render$surface_triangle_count
+#> [1] 0
+#> 
 #> $render$unsupported_layers
 #> list()
 #> 
@@ -610,6 +637,9 @@ ggwebgl_magnify_region(
 #> 
 #> $render$dimension
 #> [1] "2d"
+#> 
+#> $render$coordinate_system
+#> [1] "cartesian2d"
 #> 
 #> $render$camera
 #> $render$camera$mode
@@ -650,6 +680,12 @@ ggwebgl_magnify_region(
 #> [1] 1000
 #> 
 #> 
+#> 
+#> $render$depth_test
+#> [1] FALSE
+#> 
+#> $render$blend_mode
+#> [1] "auto"
 #> 
 #> $render$selection
 #> $render$selection$mode

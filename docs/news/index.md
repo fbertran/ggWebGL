@@ -1,5 +1,7 @@
 # Changelog
 
+## ggWebGL 0.7.0
+
 ## ggWebGL 0.6.0
 
 - Added `XGeoRTR` and `boids4R` to `Suggests` as optional integrations

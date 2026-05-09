@@ -215,7 +215,7 @@ future_work_mesh_surface_demo <- function() {
   ggWebGL(
     ggwebgl_spec(
       list(layer),
-      labels = list(title = "Lit triangulated surface mesh"),
+      labels = list(title = "Lit structured surface grid"),
       webgl = list(
         view = ggwebgl_view(
           dimension = "3d",

@@ -423,30 +423,50 @@ extract_surface_payloads <- function(layer, data) {
     z_values <- if ("z" %in% names(panel_data)) as.numeric(panel_data$z) else seq_len(nrow(panel_data))
     z_matrix <- matrix(NA_real_, nrow = length(y_values), ncol = length(x_values))
     colour_matrix <- matrix(NA_character_, nrow = length(y_values), ncol = length(x_values))
+    alpha_matrix <- matrix(NA_real_, nrow = length(y_values), ncol = length(x_values))
+    uncertainty_matrix <- if ("uncertainty" %in% names(panel_data)) {
+      matrix(NA_real_, nrow = length(y_values), ncol = length(x_values))
+    } else {
+      NULL
+    }
     x_index <- match(as.numeric(panel_data$x), x_values)
     y_index <- match(as.numeric(panel_data$y), y_values)
     colours <- coalesce_colour(panel_data)
+    alpha_values <- as.numeric(panel_data$alpha %||% rep(1, nrow(panel_data)))
 
     for (i in seq_len(nrow(panel_data))) {
       if (is.finite(x_index[[i]]) && is.finite(y_index[[i]])) {
         z_matrix[y_index[[i]], x_index[[i]]] <- z_values[[i]]
         colour_matrix[y_index[[i]], x_index[[i]]] <- colours[[i]]
+        alpha_matrix[y_index[[i]], x_index[[i]]] <- alpha_values[[i]]
+        if (!is.null(uncertainty_matrix)) {
+          uncertainty_matrix[y_index[[i]], x_index[[i]]] <- as.numeric(panel_data$uncertainty[[i]])
+        }
       }
     }
 
-    z_matrix[!is.finite(z_matrix)] <- stats::median(z_matrix, na.rm = TRUE)
+    if (any(!is.finite(z_matrix))) {
+      rlang::abort("Surface layers require a complete regular x/y grid; missing cells are not interpolated.")
+    }
+
     ggwebgl_layer_surface(
       z = z_matrix,
       x = x_values,
       y = y_values,
       colour = as.vector(t(colour_matrix)),
-      alpha = 1,
+      alpha = as.vector(t(alpha_matrix)),
+      shading = layer$geom_params$shading %||% "surface_lambert",
       normals = layer$geom_params$normals %||% "auto",
       material = layer$geom_params$material %||% ggwebgl_material(shading = "lambert", wireframe = isTRUE(layer$geom_params$wireframe %||% FALSE)),
+      uncertainty = if (is.null(uncertainty_matrix)) NULL else as.vector(t(uncertainty_matrix)),
       pick_id = layer$geom_params$pick_id %||% NULL,
       panel_id = as.integer(id),
       geom = class(layer$geom)[1],
-      wireframe = layer$geom_params$wireframe %||% NULL
+      wireframe = layer$geom_params$wireframe %||% FALSE,
+      contours = layer$geom_params$contours %||% FALSE,
+      contour_levels = layer$geom_params$contour_levels %||% NULL,
+      contour_colour = layer$geom_params$contour_colour %||% "#1f2937",
+      contour_width = layer$geom_params$contour_width %||% 1
     )
   })
   names(payloads) <- names(split_index)
@@ -475,7 +495,7 @@ extract_supported_layer_source <- function(layer, data, index) {
   if (is_surface_geom(layer)) {
     return(compact_list(list(
       index = index,
-      type = "mesh",
+      type = "surface",
       geom = class(layer$geom)[1],
       payloads = extract_surface_payloads(layer, data)
     )))
@@ -569,6 +589,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
   raster_layers <- Filter(function(x) identical(x$type, "raster"), render_layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), render_layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), render_layers)
+  surface_layers <- Filter(function(x) identical(x$type, "surface"), render_layers)
 
   compact_list(list(
     panel_id = panel_contract$panel_id,
@@ -585,6 +606,8 @@ build_panel_spec <- function(panel_contract, layer_sources) {
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
+    surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
+    surface_triangle_count = sum(vapply(surface_layers, `[[`, integer(1), "triangle_count")),
     layers = render_layers
   ))
 }
@@ -605,6 +628,8 @@ empty_panel_render <- function(panel_contract) {
     vector_count = 0L,
     mesh_vertex_count = 0L,
     mesh_triangle_count = 0L,
+    surface_vertex_count = 0L,
+    surface_triangle_count = 0L,
     layers = list()
   ))
 }
@@ -635,6 +660,8 @@ build_render_plan <- function(scene_source) {
       vector_count = 0L,
       mesh_vertex_count = 0L,
       mesh_triangle_count = 0L,
+      surface_vertex_count = 0L,
+      surface_triangle_count = 0L,
       unsupported_layers = scene_source$unsupported_layers,
       messages = unname(messages)
     ))))
@@ -651,13 +678,15 @@ build_render_plan <- function(scene_source) {
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
+  surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
+  surface_triangle_count <- sum(vapply(panels, `[[`, integer(1), "surface_triangle_count"))
   primitives <- unique(unlist(lapply(panels, `[[`, "primitives"), use.names = FALSE))
   has_renderable_content <- any(vapply(panels, function(panel) length(panel$layers), integer(1)) > 0L)
 
   if (!has_renderable_content) {
     messages <- c(
       messages,
-      "No supported point, line, raster, vector, or mesh layers are currently available for the WebGL renderer."
+      "No supported point, line, raster, vector, mesh, or surface layers are currently available for the WebGL renderer."
     )
   }
 
@@ -673,6 +702,8 @@ build_render_plan <- function(scene_source) {
     vector_count = vector_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
+    surface_vertex_count = surface_vertex_count,
+    surface_triangle_count = surface_triangle_count,
     unsupported_layers = scene_source$unsupported_layers,
     messages = unname(messages)
   ))
