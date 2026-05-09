@@ -5,7 +5,8 @@
 \title{Define ggWebGL Mesh Material}
 \usage{
 ggwebgl_material(
-  shading = c("flat", "lambert"),
+  shading = c("flat", "lambert", "mesh_flat", "mesh_lambert", "mesh_phong_simple",
+    "mesh_scalar_colormap", "mesh_selection_highlight"),
   ambient = 0.35,
   diffuse = 0.75,
   specular = 0,
@@ -15,7 +16,9 @@ ggwebgl_material(
 )
 }
 \arguments{
-\item{shading}{Shading model, \code{"flat"} or \code{"lambert"}.}
+\item{shading}{Shading model. \code{"flat"} and \code{"lambert"} are the stable
+material aliases; mesh shader aliases such as \code{"mesh_lambert"} and
+\code{"mesh_scalar_colormap"} are also accepted by mesh layers.}
 
 \item{ambient, diffuse, specular}{Lighting coefficients.}
 

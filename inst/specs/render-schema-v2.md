@@ -107,8 +107,11 @@ Fields: `x`, `y`, optional `z`, `xend`, `yend`, optional `zend`, `width`,
 ### mesh
 
 Fields: vertex coordinates `x`, `y`, `z`, zero-based triangle `indices`,
-optional vertex `normal`, per-vertex or per-face `rgba`, optional stable vertex
-`id`, optional face `pick_id`, and optional `material`.
+optional `wire_indices`, optional vertex `normal`, per-vertex `rgba`, optional
+per-vertex `scalar` plus `scalar_range`, optional stable vertex `id`, optional
+face `pick_id`, optional `bbox3d`, and optional `material`. Mesh material
+shader modes are `mesh_flat`, `mesh_lambert`, `mesh_phong_simple`,
+`mesh_scalar_colormap`, and `mesh_selection_highlight`.
 
 ### surface
 

@@ -45,8 +45,10 @@ backend-specific semantics:
 - Timeline controls as renderer-owned frame or time filters.
 - Brush, lasso, hover, and linked magnification as renderer-owned interaction
   events that report primitive ids.
-- Mesh and surface rendering as browser WebGL primitives with material and
-  picking metadata.
+- Mesh and surface rendering as browser WebGL primitives with material,
+  scalar-colour, wireframe, and picking metadata. Structured surfaces use the
+  `surface` primitive; arbitrary indexed triangle data uses the `mesh`
+  primitive through `as_mesh_webgl()` or `ggwebgl_layer_mesh()`.
 
 The shorthand API shape is:
 

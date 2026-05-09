@@ -375,6 +375,90 @@ HTMLWidgets.widget({
       "}"
     ].join("\n");
 
+    var meshVertexShaderSource = [
+      "attribute vec3 a_position3;",
+      "attribute vec3 a_normal;",
+      "attribute vec4 a_color;",
+      "attribute float a_scalar;",
+      "uniform mat4 u_view_projection;",
+      "varying vec3 v_normal;",
+      "varying vec4 v_color;",
+      "varying float v_scalar;",
+      "varying float v_z;",
+      "void main() {",
+      "  gl_Position = u_view_projection * vec4(a_position3, 1.0);",
+      "  v_normal = normalize(a_normal);",
+      "  v_color = a_color;",
+      "  v_scalar = a_scalar;",
+      "  v_z = a_position3.z;",
+      "}"
+    ].join("\n");
+
+    var meshFragmentShaderSource = [
+      "precision mediump float;",
+      "uniform float u_shading_mode;",
+      "uniform vec3 u_light_dir;",
+      "uniform vec2 u_scalar_range;",
+      "uniform float u_ambient;",
+      "uniform float u_diffuse;",
+      "uniform float u_specular;",
+      "varying vec3 v_normal;",
+      "varying vec4 v_color;",
+      "varying float v_scalar;",
+      "varying float v_z;",
+      "vec3 meshScalarColor(float t) {",
+      "  vec3 low = vec3(0.12, 0.22, 0.52);",
+      "  vec3 mid = vec3(0.10, 0.68, 0.58);",
+      "  vec3 high = vec3(0.97, 0.75, 0.22);",
+      "  return mix(mix(low, mid, smoothstep(0.0, 0.58, t)), high, smoothstep(0.45, 1.0, t));",
+      "}",
+      "void main() {",
+      "  vec4 color = v_color;",
+      "  if (u_shading_mode > 2.5 && u_shading_mode < 3.5) {",
+      "    float t = clamp((v_scalar - u_scalar_range.x) / max(1e-6, u_scalar_range.y - u_scalar_range.x), 0.0, 1.0);",
+      "    color.rgb = meshScalarColor(t);",
+      "  }",
+      "  if (u_shading_mode > 0.5 && u_shading_mode < 2.5) {",
+      "    vec3 normal = normalize(v_normal);",
+      "    vec3 light = normalize(u_light_dir);",
+      "    float lambert = max(dot(normal, light), 0.0);",
+      "    float shade = clamp(u_ambient + u_diffuse * lambert, 0.0, 1.8);",
+      "    if (u_shading_mode > 1.5) {",
+      "      vec3 viewDir = vec3(0.0, 0.0, 1.0);",
+      "      vec3 halfDir = normalize(light + viewDir);",
+      "      float spec = pow(max(dot(normal, halfDir), 0.0), 18.0) * u_specular;",
+      "      color.rgb = color.rgb * shade + vec3(spec);",
+      "    } else {",
+      "      color.rgb *= shade;",
+      "    }",
+      "  }",
+      "  if (u_shading_mode > 3.5) {",
+      "    color.rgb = mix(color.rgb, vec3(0.04, 0.08, 0.14), 0.22);",
+      "    color.a = max(color.a, 0.95);",
+      "  }",
+      "  gl_FragColor = color;",
+      "}"
+    ].join("\n");
+
+    var meshPickVertexShaderSource = [
+      "attribute vec3 a_position3;",
+      "attribute vec4 a_pick_color;",
+      "uniform mat4 u_view_projection;",
+      "varying vec4 v_pick_color;",
+      "void main() {",
+      "  gl_Position = u_view_projection * vec4(a_position3, 1.0);",
+      "  v_pick_color = a_pick_color;",
+      "}"
+    ].join("\n");
+
+    var meshPickFragmentShaderSource = [
+      "precision mediump float;",
+      "varying vec4 v_pick_color;",
+      "void main() {",
+      "  gl_FragColor = v_pick_color;",
+      "}"
+    ].join("\n");
+
     var rasterVertexShaderSource = [
       "attribute vec2 a_position;",
       "attribute vec2 a_texcoord;",
@@ -669,7 +753,7 @@ HTMLWidgets.widget({
       source = source && typeof source === "object" ? source : {};
       var shading = String(source.shading || "flat").toLowerCase();
       var cull = String(source.cull || "back").toLowerCase();
-      if (["flat", "lambert"].indexOf(shading) === -1) {
+      if (["flat", "lambert", "mesh_flat", "mesh_lambert", "mesh_phong_simple", "mesh_scalar_colormap", "mesh_selection_highlight"].indexOf(shading) === -1) {
         shading = "flat";
       }
       if (["back", "none"].indexOf(cull) === -1) {
@@ -810,7 +894,9 @@ HTMLWidgets.widget({
         var meshZ = Array.isArray(source.z) ? source.z.map(Number) : [];
         var meshNormal = Array.isArray(source.normal) ? source.normal.map(Number) : [];
         var meshIndices = Array.isArray(source.indices) ? source.indices.map(function(value) { return Math.max(0, Math.floor(Number(value))); }) : [];
+        var meshWireIndices = Array.isArray(source.wire_indices) ? source.wire_indices.map(function(value) { return Math.max(0, Math.floor(Number(value))); }) : [];
         var meshRgba = Array.isArray(source.rgba) ? source.rgba.map(Number) : [];
+        var meshScalar = Array.isArray(source.scalar) ? source.scalar.map(Number) : [];
         var meshVertexCount = Math.min(
           isFinite(Number(source.vertex_count)) ? Number(source.vertex_count) : Number.MAX_SAFE_INTEGER,
           meshX.length,
@@ -832,12 +918,16 @@ HTMLWidgets.widget({
           y: meshY.slice(0, meshVertexCount),
           z: meshZ.slice(0, meshVertexCount),
           indices: meshIndices.slice(0, meshTriangleCount * 3),
+          wire_indices: meshWireIndices,
           normal: meshNormal.slice(0, meshVertexCount * 3),
           rgba: meshRgba.slice(0, meshVertexCount * 4),
+          scalar: meshScalar.slice(0, meshVertexCount),
+          scalar_range: Array.isArray(source.scalar_range) ? source.scalar_range.map(Number).slice(0, 2) : [],
           id: Array.isArray(source.id) ? source.id.map(String).slice(0, meshVertexCount) : [],
           pick_id: Array.isArray(source.pick_id) ? source.pick_id.map(String).slice(0, meshTriangleCount) : [],
           material: normalizeMaterial(source.material, source.wireframe),
-          wireframe: source.wireframe === true || (source.material && source.material.wireframe === true)
+          wireframe: source.wireframe === true || (source.material && source.material.wireframe === true),
+          bbox3d: source.bbox3d && typeof source.bbox3d === "object" ? source.bbox3d : null
         };
       }
 
@@ -1632,9 +1722,17 @@ HTMLWidgets.widget({
     }
 
     function hoverHtml(target) {
+      var title = "Trajectory sample";
+      if (target.type === "point") {
+        title = "Point sample";
+      } else if (target.type === "mesh_vertex") {
+        title = "Mesh vertex";
+      } else if (target.type === "mesh_face") {
+        title = "Mesh face";
+      }
       var lines = [
         "<div class='ggwebgl__tooltip-title'>" +
-          escapeHtml(target.type === "point" ? "Point sample" : (target.type === "mesh_vertex" ? "Mesh vertex" : "Trajectory sample")) +
+          escapeHtml(title) +
           "</div>"
       ];
 
@@ -1653,6 +1751,9 @@ HTMLWidgets.widget({
       }
       if (target.id) {
         lines.push("<div><strong>id</strong>: " + escapeHtml(target.id) + "</div>");
+      }
+      if (isFinite(target.face_index)) {
+        lines.push("<div><strong>face</strong>: " + escapeHtml(String(target.face_index)) + "</div>");
       }
 
       if (target.group) {
@@ -1782,6 +1883,257 @@ HTMLWidgets.widget({
       };
     }
 
+    function encodeMeshPickId(index) {
+      var id = Math.max(0, Math.floor(Number(index)) || 0) + 1;
+      return [
+        ((id >> 16) & 255) / 255,
+        ((id >> 8) & 255) / 255,
+        (id & 255) / 255,
+        1
+      ];
+    }
+
+    function decodeMeshPickColor(pixel) {
+      if (!pixel || pixel.length < 3) {
+        return -1;
+      }
+      var id = (Number(pixel[0]) << 16) + (Number(pixel[1]) << 8) + Number(pixel[2]);
+      return id > 0 ? id - 1 : -1;
+    }
+
+    function createMeshPickingPayload(gl, layer, viewport) {
+      var vertexCount = Math.floor(Number(layer.vertex_count) || 0);
+      var xs = Array.isArray(layer.x) ? layer.x : [];
+      var ys = Array.isArray(layer.y) ? layer.y : [];
+      var zs = Array.isArray(layer.z) ? layer.z : [];
+      var indices = Array.isArray(layer.indices) ? layer.indices : [];
+      var zRange = meshZRange(layer);
+      var normalized = [];
+      var positions = [];
+      var colors = [];
+
+      for (var i = 0; i < vertexCount; i += 1) {
+        var p = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+        normalized.push(p[0], p[1], p[2]);
+      }
+
+      for (var t = 0; t + 2 < indices.length; t += 3) {
+        var color = encodeMeshPickId(Math.floor(t / 3));
+        for (var corner = 0; corner < 3; corner += 1) {
+          var idx = Math.floor(Number(indices[t + corner])) || 0;
+          positions.push(
+            normalized[idx * 3],
+            normalized[idx * 3 + 1],
+            normalized[idx * 3 + 2]
+          );
+          colors.push(color[0], color[1], color[2], color[3]);
+        }
+      }
+
+      return {
+        count: Math.floor(positions.length / 3),
+        positionBuffer: createBuffer(gl, new Float32Array(positions)),
+        colorBuffer: createBuffer(gl, new Float32Array(colors))
+      };
+    }
+
+    function disposeMeshPickingPayload(gl, payload) {
+      if (!payload || !gl) {
+        return;
+      }
+      [payload.positionBuffer, payload.colorBuffer].forEach(function(buffer) {
+        if (buffer) {
+          gl.deleteBuffer(buffer);
+        }
+      });
+    }
+
+    function pickMeshFaceWithObjectIdPass(layer, px, py, viewport, box) {
+      var gl = state.gl;
+      var canvas = state.canvas;
+      if (!gl || !canvas || !box || !box.plotWidth || !box.plotHeight) {
+        return -1;
+      }
+      var programs = ensurePrograms(gl);
+      var pick = programs.meshPick;
+      if (!pick || !pick.program) {
+        return -1;
+      }
+
+      var stageRect = getStageRect();
+      var scaleX = canvas.width / Math.max(1, stageRect.width);
+      var scaleY = canvas.height / Math.max(1, stageRect.height);
+      var width = Math.max(1, canvas.width);
+      var height = Math.max(1, canvas.height);
+      var framebuffer = gl.createFramebuffer();
+      var texture = gl.createTexture();
+      var depth = gl.createRenderbuffer();
+      var payload = null;
+      var pixel = new Uint8Array(4);
+      var faceIndex = -1;
+
+      try {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        gl.bindRenderbuffer(gl.RENDERBUFFER, depth);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+          return -1;
+        }
+
+        var vx = Math.round(box.plotLeft * scaleX);
+        var vy = Math.round((stageRect.height - box.plotBottom) * scaleY);
+        var vw = Math.max(1, Math.round(box.plotWidth * scaleX));
+        var vh = Math.max(1, Math.round(box.plotHeight * scaleY));
+        gl.viewport(vx, vy, vw, vh);
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(vx, vy, vw, vh);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clearDepth(1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+
+        payload = createMeshPickingPayload(gl, layer, viewport);
+        if (!payload || payload.count < 3) {
+          return -1;
+        }
+        gl.useProgram(pick.program);
+        gl.uniformMatrix4fv(pick.uniforms.viewProjection, false, new Float32Array(cameraViewProjectionMatrix(state.x, box)));
+        bindAttributeBuffer(gl, pick.attributes.position3, payload.positionBuffer, 3);
+        bindAttributeBuffer(gl, pick.attributes.pickColor, payload.colorBuffer, 4);
+        gl.drawArrays(gl.TRIANGLES, 0, payload.count);
+
+        var readX = Math.max(0, Math.min(width - 1, Math.round((box.plotLeft + px) * scaleX)));
+        var readY = Math.max(0, Math.min(height - 1, Math.round(height - ((box.plotTop + py) * scaleY))));
+        gl.readPixels(readX, readY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+        faceIndex = decodeMeshPickColor(pixel);
+      } catch (err) {
+        faceIndex = -1;
+      } finally {
+        disposeMeshPickingPayload(gl, payload);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        if (texture) {
+          gl.deleteTexture(texture);
+        }
+        if (depth) {
+          gl.deleteRenderbuffer(depth);
+        }
+        if (framebuffer) {
+          gl.deleteFramebuffer(framebuffer);
+        }
+      }
+
+      return faceIndex;
+    }
+
+    function meshVertexScreenPoint(layer, vertexIndex, viewport, box) {
+      var xs = layer.x || [];
+      var ys = layer.y || [];
+      var zs = layer.z || [];
+      var xSpan = Math.max(1e-6, viewport.x[1] - viewport.x[0]);
+      var ySpan = Math.max(1e-6, viewport.y[1] - viewport.y[0]);
+      var projected = sceneDimension(state.x) === "3d"
+        ? project3dPoint(xs[vertexIndex], ys[vertexIndex], zs[vertexIndex] || 0, viewport, layer)
+        : { x: Number(xs[vertexIndex]), y: Number(ys[vertexIndex]) };
+      return {
+        x: sceneDimension(state.x) === "3d"
+          ? ((projected.x + 1.2) / 2.4) * box.plotWidth
+          : ((projected.x - viewport.x[0]) / xSpan) * box.plotWidth,
+        y: sceneDimension(state.x) === "3d"
+          ? (1 - ((projected.y + 1.2) / 2.4)) * box.plotHeight
+          : (1 - ((projected.y - viewport.y[0]) / ySpan)) * box.plotHeight,
+        z: Number(zs[vertexIndex]) || 0,
+        dataX: Number(xs[vertexIndex]),
+        dataY: Number(ys[vertexIndex])
+      };
+    }
+
+    function pointInScreenTriangle(px, py, a, b, c) {
+      var v0x = c.x - a.x;
+      var v0y = c.y - a.y;
+      var v1x = b.x - a.x;
+      var v1y = b.y - a.y;
+      var v2x = px - a.x;
+      var v2y = py - a.y;
+      var dot00 = v0x * v0x + v0y * v0y;
+      var dot01 = v0x * v1x + v0y * v1y;
+      var dot02 = v0x * v2x + v0y * v2y;
+      var dot11 = v1x * v1x + v1y * v1y;
+      var dot12 = v1x * v2x + v1y * v2y;
+      var denom = dot00 * dot11 - dot01 * dot01;
+      if (Math.abs(denom) < 1e-9) {
+        return false;
+      }
+      var inv = 1 / denom;
+      var u = (dot11 * dot02 - dot01 * dot12) * inv;
+      var v = (dot00 * dot12 - dot01 * dot02) * inv;
+      return u >= -0.001 && v >= -0.001 && (u + v) <= 1.001;
+    }
+
+    function pickMeshFaceAt(layer, px, py, viewport, box) {
+      var indices = layer.indices || [];
+      var pickIds = layer.pick_id || [];
+      var best = null;
+      var pickedFace = pickMeshFaceWithObjectIdPass(layer, px, py, viewport, box);
+      if (pickedFace >= 0 && pickedFace * 3 + 2 < indices.length) {
+        var offset = pickedFace * 3;
+        var pa = meshVertexScreenPoint(layer, indices[offset], viewport, box);
+        var pb = meshVertexScreenPoint(layer, indices[offset + 1], viewport, box);
+        var pc = meshVertexScreenPoint(layer, indices[offset + 2], viewport, box);
+        return {
+          dist2: 0,
+          type: "mesh_face",
+          x: (pa.dataX + pb.dataX + pc.dataX) / 3,
+          y: (pa.dataY + pb.dataY + pc.dataY) / 3,
+          z: (pa.z + pb.z + pc.z) / 3,
+          id: pickIds[pickedFace] || String(pickedFace),
+          face_index: pickedFace
+        };
+      }
+      for (var t = 0; t + 2 < indices.length; t += 3) {
+        var ia = Number(indices[t]);
+        var ib = Number(indices[t + 1]);
+        var ic = Number(indices[t + 2]);
+        if (!isFinite(ia) || !isFinite(ib) || !isFinite(ic)) {
+          continue;
+        }
+        var a = meshVertexScreenPoint(layer, ia, viewport, box);
+        var b = meshVertexScreenPoint(layer, ib, viewport, box);
+        var c = meshVertexScreenPoint(layer, ic, viewport, box);
+        if (!pointInScreenTriangle(px, py, a, b, c)) {
+          continue;
+        }
+        var cx = (a.x + b.x + c.x) / 3;
+        var cy = (a.y + b.y + c.y) / 3;
+        var dist2 = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+        if (!best || dist2 < best.dist2) {
+          var faceIndex = Math.floor(t / 3);
+          best = {
+            dist2: dist2,
+            type: "mesh_face",
+            x: (a.dataX + b.dataX + c.dataX) / 3,
+            y: (a.dataY + b.dataY + c.dataY) / 3,
+            z: (a.z + b.z + c.z) / 3,
+            id: pickIds[faceIndex] || String(faceIndex),
+            face_index: faceIndex
+          };
+        }
+      }
+      return best;
+    }
+
     function pickSceneTarget(clientX, clientY, panel, box) {
       var layers = Array.isArray(panel.layers) ? panel.layers : [];
       var viewport = currentViewport(panel);
@@ -1863,16 +2215,16 @@ HTMLWidgets.widget({
           var mys = layer.y || [];
           var mzs = layer.z || [];
           var mids = layer.id || [];
+          var face = pickMeshFaceAt(layer, px, py, viewport, box);
+          if (face && (!best || face.dist2 < best.dist2)) {
+            best = Object.assign(face, {
+              panelLabel: panel.label || ("Panel " + panel.panel_id)
+            });
+          }
           for (var m = 0; m < layer.vertex_count; m += 1) {
-            var projected = sceneDimension(state.x) === "3d"
-              ? project3dPoint(mxs[m], mys[m], mzs[m] || 0, viewport, layer)
-              : { x: Number(mxs[m]), y: Number(mys[m]) };
-            var msx = sceneDimension(state.x) === "3d"
-              ? ((projected.x + 1.2) / 2.4) * box.plotWidth
-              : ((projected.x - viewport.x[0]) / xSpan) * box.plotWidth;
-            var msy = sceneDimension(state.x) === "3d"
-              ? (1 - ((projected.y + 1.2) / 2.4)) * box.plotHeight
-              : (1 - ((projected.y - viewport.y[0]) / ySpan)) * box.plotHeight;
+            var vertex = meshVertexScreenPoint(layer, m, viewport, box);
+            var msx = vertex.x;
+            var msy = vertex.y;
             var mdx = px - msx;
             var mdy = py - msy;
             var mdist2 = mdx * mdx + mdy * mdy;
@@ -2810,6 +3162,8 @@ HTMLWidgets.widget({
       var primitive3dProgram = createProgram(gl, primitive3dVertexShaderSource, primitiveFragmentShaderSource);
       var rasterProgram = createProgram(gl, rasterVertexShaderSource, rasterFragmentShaderSource);
       var surfaceProgram = createProgram(gl, surfaceVertexShaderSource, surfaceFragmentShaderSource);
+      var meshProgram = createProgram(gl, meshVertexShaderSource, meshFragmentShaderSource);
+      var meshPickProgram = createProgram(gl, meshPickVertexShaderSource, meshPickFragmentShaderSource);
 
       state.programs = {
         primitive: {
@@ -2872,6 +3226,34 @@ HTMLWidgets.widget({
             shadingMode: gl.getUniformLocation(surfaceProgram, "u_shading_mode"),
             lightDir: gl.getUniformLocation(surfaceProgram, "u_light_dir"),
             zRange: gl.getUniformLocation(surfaceProgram, "u_z_range")
+          }
+        },
+        mesh: {
+          program: meshProgram,
+          attributes: {
+            position3: gl.getAttribLocation(meshProgram, "a_position3"),
+            normal: gl.getAttribLocation(meshProgram, "a_normal"),
+            color: gl.getAttribLocation(meshProgram, "a_color"),
+            scalar: gl.getAttribLocation(meshProgram, "a_scalar")
+          },
+          uniforms: {
+            viewProjection: gl.getUniformLocation(meshProgram, "u_view_projection"),
+            shadingMode: gl.getUniformLocation(meshProgram, "u_shading_mode"),
+            lightDir: gl.getUniformLocation(meshProgram, "u_light_dir"),
+            scalarRange: gl.getUniformLocation(meshProgram, "u_scalar_range"),
+            ambient: gl.getUniformLocation(meshProgram, "u_ambient"),
+            diffuse: gl.getUniformLocation(meshProgram, "u_diffuse"),
+            specular: gl.getUniformLocation(meshProgram, "u_specular")
+          }
+        },
+        meshPick: {
+          program: meshPickProgram,
+          attributes: {
+            position3: gl.getAttribLocation(meshPickProgram, "a_position3"),
+            pickColor: gl.getAttribLocation(meshPickProgram, "a_pick_color")
+          },
+          uniforms: {
+            viewProjection: gl.getUniformLocation(meshPickProgram, "u_view_projection")
           }
         }
       };
@@ -4294,73 +4676,168 @@ HTMLWidgets.widget({
       return [light[0] / len, light[1] / len, light[2] / len];
     }
 
-    function meshShade(layer, idx) {
+    function meshShadingMode(layer) {
       var material = layer.material || {};
-      if (material.shading !== "lambert") {
+      var shading = String(material.shading || "mesh_lambert");
+      if (shading === "mesh_lambert" || shading === "lambert") {
         return 1;
       }
-      var normal = layer.normal || [];
-      var light = meshLightDirection(layer);
-      var nx = Number(normal[idx * 3 + 0]) || 0;
-      var ny = Number(normal[idx * 3 + 1]) || 0;
-      var nz = Number(normal[idx * 3 + 2]) || 1;
-      var len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-      var dot = Math.max(0, (nx / len) * light[0] + (ny / len) * light[1] + (nz / len) * light[2]);
-      var ambient = isFinite(Number(material.ambient)) ? Number(material.ambient) : 0.35;
-      var diffuse = isFinite(Number(material.diffuse)) ? Number(material.diffuse) : 0.75;
-      return Math.max(0, Math.min(1.5, ambient + diffuse * dot));
+      if (shading === "mesh_phong_simple") {
+        return 2;
+      }
+      if (shading === "mesh_scalar_colormap") {
+        return 3;
+      }
+      if (shading === "mesh_selection_highlight") {
+        return 4;
+      }
+      return 0;
     }
 
-    function flattenMeshLayer(layer, viewport) {
-      var xs = layer.x || [];
-      var ys = layer.y || [];
-      var zs = layer.z || [];
-      var indices = layer.indices || [];
-      var rgba = layer.rgba || [];
-      var positions = [];
-      var ages = [];
-      var colors = [];
-
-      for (var t = 0; t + 2 < indices.length; t += 3) {
-        for (var corner = 0; corner < 3; corner += 1) {
-          var idx = Number(indices[t + corner]);
-          if (!isFinite(idx) || idx < 0 || idx >= xs.length) {
-            continue;
+    function meshZRange(layer) {
+      var bbox = layer && layer.bbox3d ? layer.bbox3d : null;
+      var zMin = bbox && isFinite(Number(bbox.zmin)) ? Number(bbox.zmin) : Infinity;
+      var zMax = bbox && isFinite(Number(bbox.zmax)) ? Number(bbox.zmax) : -Infinity;
+      var zs = Array.isArray(layer && layer.z) ? layer.z : [];
+      if (!isFinite(zMin) || !isFinite(zMax)) {
+        zMin = Infinity;
+        zMax = -Infinity;
+        for (var i = 0; i < zs.length; i += 1) {
+          var z = Number(zs[i]);
+          if (isFinite(z)) {
+            zMin = Math.min(zMin, z);
+            zMax = Math.max(zMax, z);
           }
-          var point = project3dPoint(xs[idx], ys[idx], zs[idx] || 0, viewport, layer);
-          positions.push(point.x, point.y);
-          ages.push(1);
-          var shade = meshShade(layer, idx);
-          colors.push(
-            Math.min(1, normalizeColorComponent(rgba[idx * 4 + 0], 0.25) * shade),
-            Math.min(1, normalizeColorComponent(rgba[idx * 4 + 1], 0.55) * shade),
-            Math.min(1, normalizeColorComponent(rgba[idx * 4 + 2], 0.75) * shade),
-            normalizeColorComponent(rgba[idx * 4 + 3], 0.92)
-          );
         }
       }
+      if (!isFinite(zMin) || !isFinite(zMax)) {
+        return [-1, 1];
+      }
+      if (zMin === zMax) {
+        zMin -= 0.5;
+        zMax += 0.5;
+      }
+      return [zMin, zMax];
+    }
 
-      return {
-        count: ages.length,
-        positions: new Float32Array(positions),
-        ages: new Float32Array(ages),
-        colors: new Float32Array(colors)
-      };
+    function meshScalarRange(layer) {
+      var source = Array.isArray(layer && layer.scalar_range) ? layer.scalar_range.map(Number) : [];
+      if (source.length >= 2 && isFinite(source[0]) && isFinite(source[1]) && source[0] !== source[1]) {
+        return [source[0], source[1]];
+      }
+      var scalars = Array.isArray(layer && layer.scalar) ? layer.scalar : [];
+      var minValue = Infinity;
+      var maxValue = -Infinity;
+      for (var i = 0; i < scalars.length; i += 1) {
+        var value = Number(scalars[i]);
+        if (isFinite(value)) {
+          minValue = Math.min(minValue, value);
+          maxValue = Math.max(maxValue, value);
+        }
+      }
+      if (!isFinite(minValue) || !isFinite(maxValue)) {
+        return meshZRange(layer);
+      }
+      if (minValue === maxValue) {
+        minValue -= 0.5;
+        maxValue += 0.5;
+      }
+      return [minValue, maxValue];
     }
 
     function createMeshLayerGpuPayload(gl, programs, layer, viewport) {
-      var payload = flattenMeshLayer(layer, viewport);
-      if (!payload || payload.count < 3) {
+      var vertexCount = Math.floor(Number(layer.vertex_count) || 0);
+      var xs = Array.isArray(layer.x) ? layer.x : [];
+      var ys = Array.isArray(layer.y) ? layer.y : [];
+      var zs = Array.isArray(layer.z) ? layer.z : [];
+      var normals = Array.isArray(layer.normal) ? layer.normal : [];
+      var rgba = Array.isArray(layer.rgba) ? layer.rgba : [];
+      var scalars = Array.isArray(layer.scalar) ? layer.scalar : [];
+      var indices = layer.indices || [];
+      var wireIndices = Array.isArray(layer.wire_indices) ? layer.wire_indices : [];
+      var zRange = meshZRange(layer);
+      var normalizedPositions = [];
+      var normalizedNormals = [];
+      var normalizedColors = [];
+      var normalizedScalars = [];
+
+      if (!vertexCount || indices.length < 3) {
         return null;
       }
+
+      for (var i = 0; i < vertexCount; i += 1) {
+        var p = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+        normalizedPositions.push(p[0], p[1], p[2]);
+        normalizedNormals.push(
+          isFinite(Number(normals[i * 3])) ? Number(normals[i * 3]) : 0,
+          isFinite(Number(normals[i * 3 + 1])) ? Number(normals[i * 3 + 1]) : 0,
+          isFinite(Number(normals[i * 3 + 2])) ? Number(normals[i * 3 + 2]) : 1
+        );
+        normalizedColors.push(
+          normalizeColorComponent(rgba[i * 4 + 0], 0.35),
+          normalizeColorComponent(rgba[i * 4 + 1], 0.55),
+          normalizeColorComponent(rgba[i * 4 + 2], 0.78),
+          normalizeColorComponent(rgba[i * 4 + 3], 0.92)
+        );
+        normalizedScalars.push(isFinite(Number(scalars[i])) ? Number(scalars[i]) : (isFinite(Number(zs[i])) ? Number(zs[i]) : 0));
+      }
+
+      var maxIndex = indices.reduce(function(maxValue, value) {
+        return Math.max(maxValue, Math.floor(Number(value)) || 0);
+      }, 0);
+      var uintExtension = maxIndex > 65535 ? gl.getExtension("OES_element_index_uint") : null;
+      var useUint = maxIndex > 65535 && !!uintExtension;
+      var canUseElements = maxIndex <= 65535 || useUint;
+
+      if (!canUseElements) {
+        var expandedPositions = [];
+        var expandedNormals = [];
+        var expandedColors = [];
+        var expandedScalars = [];
+        for (var ti = 0; ti < indices.length; ti += 1) {
+          var idx = Math.floor(Number(indices[ti])) || 0;
+          expandedPositions.push(
+            normalizedPositions[idx * 3],
+            normalizedPositions[idx * 3 + 1],
+            normalizedPositions[idx * 3 + 2]
+          );
+          expandedNormals.push(
+            normalizedNormals[idx * 3],
+            normalizedNormals[idx * 3 + 1],
+            normalizedNormals[idx * 3 + 2]
+          );
+          expandedColors.push(
+            normalizedColors[idx * 4],
+            normalizedColors[idx * 4 + 1],
+            normalizedColors[idx * 4 + 2],
+            normalizedColors[idx * 4 + 3]
+          );
+          expandedScalars.push(normalizedScalars[idx]);
+        }
+        el.ggwebglMeshIndexFallback = "uint_index_unavailable_expanded_arrays";
+        return {
+          expanded: true,
+          count: expandedScalars.length,
+          positionBuffer: createBuffer(gl, new Float32Array(expandedPositions)),
+          normalBuffer: createBuffer(gl, new Float32Array(expandedNormals)),
+          colorBuffer: createBuffer(gl, new Float32Array(expandedColors)),
+          scalarBuffer: createBuffer(gl, new Float32Array(expandedScalars)),
+          scalarRange: meshScalarRange(layer)
+        };
+      }
+
       return {
-        count: payload.count,
-        positionBuffer: createBuffer(gl, payload.positions),
-        ageBuffer: createBuffer(gl, payload.ages),
-        colorBuffer: createBuffer(gl, payload.colors),
-        uintExtension: gl.getExtension("OES_element_index_uint"),
-        indexType: payload.count > 65535 && gl.getExtension("OES_element_index_uint") ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT,
-        chunked: payload.count > 65535
+        expanded: false,
+        count: Math.floor(indices.length / 3) * 3,
+        indexType: useUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT,
+        positionBuffer: createBuffer(gl, new Float32Array(normalizedPositions)),
+        normalBuffer: createBuffer(gl, new Float32Array(normalizedNormals)),
+        colorBuffer: createBuffer(gl, new Float32Array(normalizedColors)),
+        scalarBuffer: createBuffer(gl, new Float32Array(normalizedScalars)),
+        indexBuffer: createElementBuffer(gl, useUint ? new Uint32Array(indices) : new Uint16Array(indices)),
+        wireIndexBuffer: wireIndices.length ? createElementBuffer(gl, useUint ? new Uint32Array(wireIndices) : new Uint16Array(wireIndices)) : null,
+        wireCount: wireIndices.length,
+        scalarRange: meshScalarRange(layer)
       };
     }
 
@@ -4368,7 +4845,14 @@ HTMLWidgets.widget({
       if (!payload) {
         return;
       }
-      [payload.positionBuffer, payload.ageBuffer, payload.colorBuffer].forEach(function(buffer) {
+      [
+        payload.positionBuffer,
+        payload.normalBuffer,
+        payload.colorBuffer,
+        payload.scalarBuffer,
+        payload.indexBuffer,
+        payload.wireIndexBuffer
+      ].forEach(function(buffer) {
         if (buffer) {
           gl.deleteBuffer(buffer);
         }
@@ -4381,7 +4865,9 @@ HTMLWidgets.widget({
         rotation: state.camera.rotation,
         target: state.camera.target,
         distance: state.camera.distance,
-        material: layer.material
+        material: layer.material,
+        scalar_range: layer.scalar_range,
+        wireframe: layer.wireframe
       });
       if (layer._meshGpuPayload && layer._meshGpuPayload.key === cameraKey) {
         return layer._meshGpuPayload;
@@ -4390,47 +4876,57 @@ HTMLWidgets.widget({
       var payload = createMeshLayerGpuPayload(gl, programs, layer, viewport);
       if (payload) {
         payload.key = cameraKey;
-        if (payload.chunked && !payload.uintExtension) {
-          el.ggwebglMeshIndexFallback = "uint_index_unavailable_chunked_arrays";
-        }
       }
       layer._meshGpuPayload = payload;
       return payload;
     }
 
-    function drawMeshLayer(gl, programs, layer, x, viewport) {
-      var payload = ensureMeshLayerGpuPayload(gl, programs, layer, viewport);
-      var primitive = programs.primitive;
+    function configureMeshProgram(gl, programInfo, x, matrix, layer, payload) {
+      var material = layer.material || {};
+      var light = meshLightDirection(layer);
+      var range = payload && payload.scalarRange ? payload.scalarRange : meshScalarRange(layer);
+      gl.useProgram(programInfo.program);
+      gl.uniformMatrix4fv(programInfo.uniforms.viewProjection, false, new Float32Array(matrix));
+      gl.uniform1f(programInfo.uniforms.shadingMode, meshShadingMode(layer));
+      gl.uniform3f(programInfo.uniforms.lightDir, light[0], light[1], light[2]);
+      gl.uniform2f(programInfo.uniforms.scalarRange, range[0], range[1]);
+      gl.uniform1f(programInfo.uniforms.ambient, isFinite(Number(material.ambient)) ? Number(material.ambient) : 0.35);
+      gl.uniform1f(programInfo.uniforms.diffuse, isFinite(Number(material.diffuse)) ? Number(material.diffuse) : 0.75);
+      gl.uniform1f(programInfo.uniforms.specular, isFinite(Number(material.specular)) ? Number(material.specular) : 0.25);
+      configurePrimitiveBlending(gl, x, 0, "mesh");
+    }
 
-      if (!payload || payload.count < 3) {
+    function drawMeshLayer(gl, programs, layer, x, viewport, box) {
+      var payload = ensureMeshLayerGpuPayload(gl, programs, layer, viewport);
+      var mesh = programs.mesh;
+
+      if (!payload || !mesh || !mesh.program || payload.count < 3) {
         return;
       }
 
-      configurePrimitiveLayerShader(gl, primitive, x, "mesh", { x: [-1.2, 1.2], y: [-1.2, 1.2] }, layer);
-      if (primitive.attributes.size >= 0) {
-        gl.disableVertexAttribArray(primitive.attributes.size);
-        gl.vertexAttrib1f(primitive.attributes.size, 1.0);
-      }
+      configureMeshProgram(gl, mesh, x, cameraViewProjectionMatrix(x, box), layer, payload);
+      bindAttributeBuffer(gl, mesh.attributes.position3, payload.positionBuffer, 3);
+      bindAttributeBuffer(gl, mesh.attributes.normal, payload.normalBuffer, 3);
+      bindAttributeBuffer(gl, mesh.attributes.color, payload.colorBuffer, 4);
+      bindAttributeBuffer(gl, mesh.attributes.scalar, payload.scalarBuffer, 1);
 
-      gl.enableVertexAttribArray(primitive.attributes.position);
-      gl.bindBuffer(gl.ARRAY_BUFFER, payload.positionBuffer);
-      gl.vertexAttribPointer(primitive.attributes.position, 2, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(primitive.attributes.age);
-      gl.bindBuffer(gl.ARRAY_BUFFER, payload.ageBuffer);
-      gl.vertexAttribPointer(primitive.attributes.age, 1, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(primitive.attributes.color);
-      gl.bindBuffer(gl.ARRAY_BUFFER, payload.colorBuffer);
-      gl.vertexAttribPointer(primitive.attributes.color, 4, gl.FLOAT, false, 0, 0);
       if (layer.material && layer.material.cull === "back") {
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
       } else {
         gl.disable(gl.CULL_FACE);
       }
-      gl.drawArrays(gl.TRIANGLES, 0, payload.count);
 
-      if (layer.wireframe) {
-        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+      if (payload.expanded) {
+        gl.drawArrays(gl.TRIANGLES, 0, payload.count);
+      } else {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, payload.indexBuffer);
+        gl.drawElements(gl.TRIANGLES, payload.count, payload.indexType, 0);
+      }
+
+      if (layer.wireframe && payload.wireIndexBuffer && payload.wireCount > 0) {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, payload.wireIndexBuffer);
+        gl.drawElements(gl.LINES, payload.wireCount, payload.indexType, 0);
       }
       gl.disable(gl.CULL_FACE);
     }
@@ -4734,6 +5230,9 @@ HTMLWidgets.widget({
       if (layer && layer.type === "surface") {
         return programRegistry.surface;
       }
+      if (layer && layer.type === "mesh") {
+        return programRegistry.mesh;
+      }
       return programRegistry.primitive;
     }
 
@@ -4754,7 +5253,7 @@ HTMLWidgets.widget({
     }
 
     function drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
-      drawMeshLayer(gl, programs, layer, scene, viewport);
+      drawMeshLayer(gl, programs, layer, scene, viewport, box);
     }
 
     function drawLayer(gl, programs, layer, scene, panel, viewport, box) {

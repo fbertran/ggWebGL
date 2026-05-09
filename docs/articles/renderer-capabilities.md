@@ -165,9 +165,11 @@ through
 [`ggwebgl_layer_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_mesh.md).
 
 **What to inspect.** The surface is rendered as indexed triangle
-geometry with generated normals, Lambert material metadata, picking ids,
-and an optional wireframe overlay. Raster fields remain raster fields;
-they are not silently treated as surfaces.
+geometry with generated normals, Lambert material metadata, and an
+optional wireframe overlay. Unstructured meshes use the separate indexed
+mesh path with scalar colouring, wireframe edges, and renderer-owned
+face/vertex picking ids. Raster fields remain raster fields; they are
+not silently treated as surfaces.
 
 ``` r
 renderer_capability_widgets$mesh_surface

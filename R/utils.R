@@ -422,7 +422,9 @@ normalise_selection <- function(selection = NULL, interactions = NULL) {
 #'
 #' Build a renderer material specification for mesh and surface layers.
 #'
-#' @param shading Shading model, `"flat"` or `"lambert"`.
+#' @param shading Shading model. `"flat"` and `"lambert"` are the stable
+#'   material aliases; mesh shader aliases such as `"mesh_lambert"` and
+#'   `"mesh_scalar_colormap"` are also accepted by mesh layers.
 #' @param ambient,diffuse,specular Lighting coefficients.
 #' @param light_dir Directional light vector.
 #' @param wireframe Whether to request a wireframe overlay.
@@ -433,7 +435,15 @@ normalise_selection <- function(selection = NULL, interactions = NULL) {
 #' @examples
 #' ggwebgl_material(shading = "lambert", wireframe = TRUE)
 #' @export
-ggwebgl_material <- function(shading = c("flat", "lambert"),
+ggwebgl_material <- function(shading = c(
+                               "flat",
+                               "lambert",
+                               "mesh_flat",
+                               "mesh_lambert",
+                               "mesh_phong_simple",
+                               "mesh_scalar_colormap",
+                               "mesh_selection_highlight"
+                             ),
                              ambient = 0.35,
                              diffuse = 0.75,
                              specular = 0,

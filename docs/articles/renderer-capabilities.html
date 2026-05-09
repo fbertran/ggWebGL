@@ -249,9 +249,11 @@ height field as a first-class <code>surface</code> payload through
 remain the separate <code>mesh</code> contract through
 <code><a href="../reference/ggwebgl_layer_mesh.html">ggwebgl_layer_mesh()</a></code>.</p>
 <p><strong>What to inspect.</strong> The surface is rendered as indexed
-triangle geometry with generated normals, Lambert material metadata,
-picking ids, and an optional wireframe overlay. Raster fields remain
-raster fields; they are not silently treated as surfaces.</p>
+triangle geometry with generated normals, Lambert material metadata, and
+an optional wireframe overlay. Unstructured meshes use the separate
+indexed mesh path with scalar colouring, wireframe edges, and
+renderer-owned face/vertex picking ids. Raster fields remain raster
+fields; they are not silently treated as surfaces.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">renderer_capability_widgets</span><span class="op">$</span><span class="va">mesh_surface</span></span></code></pre></div>
 <div id="htmlwidget-10b3b7155e8045a1b2ad" style="width:100%;height:460px;" class="ggWebGL html-widget"></div>

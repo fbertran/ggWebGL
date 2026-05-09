@@ -9,8 +9,8 @@ WebGL indices in the returned payload.
 ``` r
 ggwebgl_layer_mesh(
   vertices,
-  x,
-  y,
+  x = NULL,
+  y = NULL,
   z = NULL,
   triangles = NULL,
   i = NULL,
@@ -20,8 +20,10 @@ ggwebgl_layer_mesh(
   rgba = NULL,
   alpha = NULL,
   id = NULL,
+  scalar = NULL,
   normals = NULL,
   material = ggwebgl_material(),
+  shading = NULL,
   pick_id = NULL,
   panel_id = 1L,
   geom = "adapter_mesh",
@@ -33,7 +35,8 @@ ggwebgl_layer_mesh(
 
 - vertices:
 
-  Data frame supplying vertex coordinates.
+  Data frame, `ggwebgl_mesh` object, or list accepted by
+  [`as_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/as_mesh_webgl.md).
 
 - x, y:
 
@@ -69,6 +72,10 @@ ggwebgl_layer_mesh(
 
   Optional stable primitive id vector or column name for selection.
 
+- scalar:
+
+  Optional per-vertex scalar vector or column name.
+
 - normals:
 
   Optional vertex-normal matrix/data frame/vector or `"auto"`.
@@ -77,6 +84,10 @@ ggwebgl_layer_mesh(
 
   Mesh material created by
   [`ggwebgl_material()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_material.md).
+
+- shading:
+
+  Optional mesh shader mode overriding `material$shading`.
 
 - pick_id:
 
@@ -135,6 +146,9 @@ ggwebgl_layer_mesh(vertices, x = "x", y = "y", z = "z", triangles = triangles)
 #> $indices
 #> [1] 0 1 2
 #> 
+#> $wire_indices
+#> [1] 0 1 1 2 0 2
+#> 
 #> $normal
 #> [1] 0 0 1 0 0 1 0 0 1
 #> 
@@ -144,7 +158,7 @@ ggwebgl_layer_mesh(vertices, x = "x", y = "y", z = "z", triangles = triangles)
 #> 
 #> $material
 #> $material$shading
-#> [1] "flat"
+#> [1] "mesh_flat"
 #> 
 #> $material$ambient
 #> [1] 0.35
@@ -167,5 +181,25 @@ ggwebgl_layer_mesh(vertices, x = "x", y = "y", z = "z", triangles = triangles)
 #> 
 #> $wireframe
 #> [1] FALSE
+#> 
+#> $bbox3d
+#> $bbox3d$xmin
+#> [1] 0
+#> 
+#> $bbox3d$xmax
+#> [1] 1
+#> 
+#> $bbox3d$ymin
+#> [1] 0
+#> 
+#> $bbox3d$ymax
+#> [1] 1
+#> 
+#> $bbox3d$zmin
+#> [1] 0
+#> 
+#> $bbox3d$zmax
+#> [1] 0
+#> 
 #> 
 ```

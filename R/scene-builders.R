@@ -13,9 +13,9 @@ ggwebgl_coordinate_system <- function(dimension) {
 ggwebgl_enrich_scene_render <- function(render, webgl) {
   webgl <- normalise_webgl_options(webgl)
   explicit_fields <- attr(webgl, "explicit_fields", exact = TRUE) %||% character()
-  surface_defaults_3d <- "surface" %in% (render$primitives %||% character()) &&
+  mesh_or_surface_defaults_3d <- any(c("mesh", "surface") %in% (render$primitives %||% character())) &&
     !any(c("view", "dimension", "camera", "projection") %in% explicit_fields)
-  if (isTRUE(surface_defaults_3d)) {
+  if (isTRUE(mesh_or_surface_defaults_3d)) {
     webgl$view <- normalise_view(
       list(dimension = "3d", projection = "perspective", controller = "orbit"),
       dimension = "3d",

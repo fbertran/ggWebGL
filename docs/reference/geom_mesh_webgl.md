@@ -1,8 +1,8 @@
-# WebGL Mesh Layer
+# WebGL Unstructured Mesh Layer
 
-Add a mesh layer tagged for the `ggWebGL` 3D renderer. Mesh triangles
-are supplied with `i`, `j`, and `k` aesthetics using one-based vertex
-indices.
+Add an unstructured triangle mesh layer tagged for the `ggWebGL` 3D
+renderer. Mesh triangles are supplied with `i`, `j`, and `k` aesthetics
+using one-based vertex indices.
 
 ## Usage
 
@@ -13,8 +13,10 @@ geom_mesh_webgl(
   stat = "identity",
   position = "identity",
   ...,
+  shading = c("mesh_lambert", "mesh_flat", "mesh_phong_simple", "mesh_scalar_colormap",
+    "mesh_selection_highlight"),
   wireframe = FALSE,
-  material = ggwebgl_material(wireframe = wireframe),
+  material = NULL,
   normals = NULL,
   pick_id = NULL,
   na.rm = FALSE,
@@ -128,6 +130,12 @@ geom_mesh_webgl(
     described as [key
     glyphs](https://ggplot2.tidyverse.org/reference/draw_key.html), to
     change the display of the layer in the legend.
+
+- shading:
+
+  Mesh shader mode. One of `"mesh_lambert"`, `"mesh_flat"`,
+  `"mesh_phong_simple"`, `"mesh_scalar_colormap"`, or
+  `"mesh_selection_highlight"`.
 
 - wireframe:
 

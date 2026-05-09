@@ -10,6 +10,9 @@
 
   Convert an `xgeo_state` object to a ggWebGL renderer specification
 
+- [`as_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/as_mesh_webgl.md)
+  : Convert Explicit Mesh Data to a ggWebGL Mesh Object
+
 - [`compose_ggwebgl_figure()`](https://fbertran.github.io/ggWebGL/reference/compose_ggwebgl_figure.md)
   : Compose a Publication Figure from ggWebGL Panels
 
@@ -20,7 +23,7 @@
   : WebGL Line Layer
 
 - [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md)
-  : WebGL Mesh Layer
+  : WebGL Unstructured Mesh Layer
 
 - [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md)
   : WebGL Point Layer
@@ -69,6 +72,9 @@
 
 - [`ggwebgl_material()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_material.md)
   : Define ggWebGL Mesh Material
+
+- [`ggwebgl_mesh()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_mesh.md)
+  : Build a ggWebGL Mesh Helper Object
 
 - [`ggwebgl_publication_figure()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_publication_figure.md)
   : Build a Publication-Mode Figure Container from ggWebGL Panels

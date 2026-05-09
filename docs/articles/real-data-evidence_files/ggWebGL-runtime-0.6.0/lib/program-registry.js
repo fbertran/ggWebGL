@@ -11,6 +11,9 @@
     if (layer.type === "surface") {
       return programs.surface;
     }
+    if (layer.type === "mesh") {
+      return programs.mesh;
+    }
     if (scene && scene.render &&
         (scene.render.dimension === "3d" || scene.render.coordinate_system === "cartesian3d")) {
       return programs.primitive3d || programs.primitive;

@@ -26,12 +26,6 @@ GeomVectorWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomSegment$optional_aes, "z", "zend", "id", "frame", "time"),
   extra_params = c(ggplot2::GeomSegment$extra_params, "head_size")
 )
-GeomMeshWebGL <- ggplot2::ggproto(
-  "GeomMeshWebGL",
-  ggplot2::GeomPoint,
-  optional_aes = c(ggplot2::GeomPoint$optional_aes, "z", "i", "j", "k", "id", "frame", "time"),
-  extra_params = c(ggplot2::GeomPoint$extra_params, "wireframe", "material", "normals", "pick_id")
-)
 
 #' WebGL Point Layer
 #'
@@ -205,55 +199,5 @@ geom_vector_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(head_size = head_size, na.rm = na.rm, ...)
-  )
-}
-
-#' WebGL Mesh Layer
-#'
-#' Add a mesh layer tagged for the `ggWebGL` 3D renderer. Mesh
-#' triangles are supplied with `i`, `j`, and `k` aesthetics using one-based
-#' vertex indices.
-#'
-#' @inheritParams ggplot2::geom_point
-#' @param wireframe Whether to request a wireframe overlay.
-#' @param material Mesh material created by [ggwebgl_material()].
-#' @param normals Optional vertex normals or `"auto"`.
-#' @param pick_id Optional face picking ids.
-#'
-#' @return A `Layer` ready for `ggplot2`.
-#'
-#' @examples
-#' vertices <- data.frame(
-#'   x = c(0, 1, 0),
-#'   y = c(0, 0, 1),
-#'   z = c(0, 0, 0),
-#'   i = c(1, NA, NA),
-#'   j = c(2, NA, NA),
-#'   k = c(3, NA, NA)
-#' )
-#' ggplot2::ggplot(vertices, ggplot2::aes(x, y, z = z, i = i, j = j, k = k)) +
-#'   geom_mesh_webgl()
-#' @export
-geom_mesh_webgl <- function(mapping = NULL,
-                            data = NULL,
-                            stat = "identity",
-                            position = "identity",
-                            ...,
-                            wireframe = FALSE,
-                            material = ggwebgl_material(wireframe = wireframe),
-                            normals = NULL,
-                            pick_id = NULL,
-                            na.rm = FALSE,
-                            show.legend = NA,
-                            inherit.aes = TRUE) {
-  ggplot2::layer(
-    data = data,
-    mapping = mapping,
-    stat = stat,
-    geom = GeomMeshWebGL,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(wireframe = wireframe, material = material, normals = normals, pick_id = pick_id, na.rm = na.rm, ...)
   )
 }
