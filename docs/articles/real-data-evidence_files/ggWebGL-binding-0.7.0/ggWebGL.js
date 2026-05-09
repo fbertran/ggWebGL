@@ -3,6 +3,7 @@ HTMLWidgets.widget({
   type: "output",
 
   factory: function(el, width, height) {
+    var TIMELINE_UPDATE_MESSAGE_TYPE = "ggWebGL:updateTimeline";
     var state = {
       root: null,
       title: null,
@@ -50,8 +51,17 @@ HTMLWidgets.widget({
         result: null
       },
       timeline: {
-        frame: null,
+        values: [],
+        value: null,
+        index: 0,
+        source: "frame",
+        filter: "exact",
         playing: false,
+        speed: 1,
+        loop: false,
+        fps: null,
+        enabled: false,
+        controls: false,
         lastTick: null
       },
       camera: {
@@ -187,7 +197,7 @@ HTMLWidgets.widget({
         state.root.style.display = "grid";
         state.root.style.gridTemplateRows = publication
           ? "minmax(0, 1fr)"
-          : "auto minmax(0, 1fr) auto auto auto auto auto";
+          : "auto auto minmax(0, 1fr) auto auto auto";
       }
 
       if (state.stage) {
@@ -195,7 +205,7 @@ HTMLWidgets.widget({
         state.stage.style.width = "100%";
         state.stage.style.overflow = "hidden";
         state.stage.style.boxSizing = "border-box";
-        state.stage.style.minHeight = publication ? "0px" : "320px";
+        state.stage.style.minHeight = publication ? "0px" : "120px";
       }
 
       if (state.canvas) {
@@ -233,11 +243,13 @@ HTMLWidgets.widget({
       "attribute float a_size;",
       "attribute vec4 a_color;",
       "attribute float a_age;",
+      "attribute float a_metric;",
       "uniform vec4 u_domain;",
       "uniform float u_point_scale;",
       "uniform float u_min_point_size;",
       "varying vec4 v_color;",
       "varying float v_age;",
+      "varying float v_metric;",
       "void main() {",
       "  float xSpan = max(1e-6, u_domain.y - u_domain.x);",
       "  float ySpan = max(1e-6, u_domain.w - u_domain.z);",
@@ -247,6 +259,7 @@ HTMLWidgets.widget({
       "  gl_PointSize = max(u_min_point_size, a_size * u_point_scale);",
       "  v_color = a_color;",
       "  v_age = a_age;",
+      "  v_metric = a_metric;",
       "}"
     ].join("\n");
 
@@ -255,16 +268,19 @@ HTMLWidgets.widget({
       "attribute float a_size;",
       "attribute vec4 a_color;",
       "attribute float a_age;",
+      "attribute float a_metric;",
       "uniform mat4 u_view_projection;",
       "uniform float u_point_scale;",
       "uniform float u_min_point_size;",
       "varying vec4 v_color;",
       "varying float v_age;",
+      "varying float v_metric;",
       "void main() {",
       "  gl_Position = u_view_projection * vec4(a_position3, 1.0);",
       "  gl_PointSize = max(u_min_point_size, a_size * u_point_scale);",
       "  v_color = a_color;",
       "  v_age = a_age;",
+      "  v_metric = a_metric;",
       "}"
     ].join("\n");
 
@@ -276,6 +292,18 @@ HTMLWidgets.widget({
 	  "uniform float u_density_alpha_ceiling;",
 	  "varying vec4 v_color;",
 	  "varying float v_age;",
+	  "varying float v_metric;",
+	  "vec3 trajectoryVelocityColor(float t) {",
+	  "  t = clamp(t, 0.0, 1.0);",
+	  "  vec3 low = vec3(0.08, 0.23, 0.62);",
+	  "  vec3 mid = vec3(0.08, 0.68, 0.62);",
+	  "  vec3 high = vec3(0.98, 0.72, 0.18);",
+	  "  return mix(mix(low, mid, smoothstep(0.0, 0.55, t)), high, smoothstep(0.45, 1.0, t));",
+	  "}",
+	  "vec3 trajectoryDirectionColor(float t) {",
+	  "  t = fract(clamp(t, 0.0, 1.0));",
+	  "  return 0.5 + 0.5 * cos(6.2831853 * (t + vec3(0.00, 0.33, 0.67)));",
+	  "}",
 	  "void main() {",
 	  "  vec4 color = v_color;",
 	  "",
@@ -308,7 +336,13 @@ HTMLWidgets.widget({
 	  "    return;",
 	  "  }",
 	  "",
-	  "  if (u_shader_mode > 2.5) {",
+	  "  if (u_shader_mode > 4.5) {",
+	  "    color.rgb = mix(color.rgb, trajectoryDirectionColor(v_metric), 0.82);",
+	  "    color.a = max(0.55, color.a);",
+	  "  } else if (u_shader_mode > 3.5) {",
+	  "    color.rgb = mix(color.rgb, trajectoryVelocityColor(v_metric), 0.86);",
+	  "    color.a = max(0.55, color.a);",
+	  "  } else if (u_shader_mode > 2.5) {",
 	  "    float age = clamp(v_age, 0.0, 1.0);",
 	  "    float head = smoothstep(0.75, 1.0, age);",
 	  "    color.rgb = mix(color.rgb * 0.28, color.rgb * 1.15, age);",
@@ -614,15 +648,34 @@ HTMLWidgets.widget({
       }
       var frames = normalizeNumberArray(source.frames).map(function(value) { return Math.round(value); });
       var times = normalizeNumberArray(source.time);
+      var sourceValues = normalizeNumberArray(source.values);
+      var sourceName = String(source.source || (times.length ? "time" : "frame")).toLowerCase();
+      if (["frame", "time"].indexOf(sourceName) === -1) {
+        sourceName = times.length ? "time" : "frame";
+      }
+      if (!frames.length && !times.length && sourceValues.length) {
+        if (sourceName === "time") {
+          times = sourceValues.slice();
+        } else {
+          frames = sourceValues.map(function(value) { return Math.round(value); });
+        }
+      }
+      var values = times.length ? times.slice() : frames.slice();
+      sourceName = times.length ? "time" : (frames.length ? "frame" : sourceName);
+      var filter = String(source.mode || source.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact";
       return {
         frames: frames,
         time: times,
+        values: values,
+        source: sourceName,
         duration: isFinite(Number(source.duration)) ? Math.max(0.1, Number(source.duration)) : Math.max(1, frames.length || times.length || 1),
         loop: source.loop !== false,
         autoplay: source.autoplay === true,
         speed: isFinite(Number(source.speed)) ? Math.max(0.05, Number(source.speed)) : 1,
         controls: source.controls !== false,
-        filter: String(source.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact"
+        filter: filter,
+        mode: filter,
+        fps: isFinite(Number(source.fps)) ? Math.max(0.05, Number(source.fps)) : null
       };
     }
 
@@ -637,6 +690,10 @@ HTMLWidgets.widget({
         shader = "trajectory_age";
       } else if (shader === "trajectory-glow" || shader === "glow") {
         shader = "trajectory_age_glow";
+      } else if (shader === "trajectory-velocity" || shader === "velocity") {
+        shader = "trajectory_velocity";
+      } else if (shader === "trajectory-direction" || shader === "direction") {
+        shader = "trajectory_direction";
       }
 
       var lineMode = String(source.line_mode || extra.line_mode || "auto").toLowerCase();
@@ -1281,10 +1338,10 @@ HTMLWidgets.widget({
       ].join("");
 
       root.appendChild(header);
+      root.appendChild(timeline);
       root.appendChild(stage);
       root.appendChild(selectionControls);
       root.appendChild(selectionStatus);
-      root.appendChild(timeline);
       root.appendChild(axes);
       root.appendChild(notes);
       el.appendChild(root);
@@ -1371,64 +1428,314 @@ HTMLWidgets.widget({
     }
 
     function sceneTimeline(x) {
-      return x && x.render ? x.render.timeline : null;
+      return x && x.render ? (x.render.timeline || (x.webgl && x.webgl.timeline) || null) : null;
+    }
+
+    function uniqueSortedTimelineValues(values, source) {
+      var seen = {};
+      return normalizeNumberArray(values)
+        .map(function(value) { return source === "frame" ? Math.round(value) : value; })
+        .filter(function(value) {
+          var key = source === "frame" ? String(Math.round(value)) : String(value);
+          if (seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
+        })
+        .sort(function(a, b) { return a - b; });
+    }
+
+    function createTimelineState(spec, previous) {
+      var source = spec && typeof spec === "object" ? spec : {};
+      var timeline = sceneTimeline(source);
+      if (!timeline) {
+        return {
+          values: [],
+          value: null,
+          index: 0,
+          source: "frame",
+          filter: "exact",
+          playing: false,
+          speed: 1,
+          loop: false,
+          fps: null,
+          enabled: false,
+          controls: false,
+          lastTick: null
+        };
+      }
+      var sourceName = String(timeline.source || (timeline.time && timeline.time.length ? "time" : "frame")).toLowerCase();
+      if (["frame", "time"].indexOf(sourceName) === -1) {
+        sourceName = timeline.time && timeline.time.length ? "time" : "frame";
+      }
+      var values = uniqueSortedTimelineValues(
+        timeline.values && timeline.values.length
+          ? timeline.values
+          : (sourceName === "time" ? timeline.time : timeline.frames),
+        sourceName
+      );
+      var filter = String(timeline.mode || timeline.filter || "exact").toLowerCase() === "cumulative" ? "cumulative" : "exact";
+      var speed = isFinite(Number(timeline.speed)) ? Math.max(0.05, Number(timeline.speed)) : 1;
+      var fps = isFinite(Number(timeline.fps)) ? Math.max(0.05, Number(timeline.fps)) : null;
+      var previousValue = previous && previous.enabled ? previous.value : null;
+      var index = findTimelineIndex(values, previousValue, sourceName);
+      if (index < 0) {
+        index = 0;
+      }
+      return {
+        values: values,
+        value: values.length ? values[index] : null,
+        index: index,
+        source: sourceName,
+        filter: filter,
+        playing: values.length > 1 && timeline.autoplay === true,
+        speed: speed,
+        loop: timeline.loop === true,
+        fps: fps,
+        enabled: values.length > 0,
+        controls: timeline.controls !== false && values.length > 1,
+        lastTick: null
+      };
+    }
+
+    function findTimelineIndex(values, value, source) {
+      if (!Array.isArray(values) || !values.length || value === null || value === undefined) {
+        return -1;
+      }
+      var target = Number(value);
+      if (!isFinite(target)) {
+        return -1;
+      }
+      for (var i = 0; i < values.length; i += 1) {
+        if (source === "frame") {
+          if (Math.round(Number(values[i])) === Math.round(target)) {
+            return i;
+          }
+        } else if (Math.abs(Number(values[i]) - target) < 1e-9) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    function setTimelineIndex(timeline, index) {
+      if (!timeline || !timeline.enabled || !timeline.values.length) {
+        return null;
+      }
+      var nextIndex = Math.max(0, Math.min(timeline.values.length - 1, Math.floor(Number(index)) || 0));
+      timeline.index = nextIndex;
+      timeline.value = timeline.values[nextIndex];
+      return timeline.value;
+    }
+
+    function setTimelineValue(timeline, value) {
+      if (!timeline || !timeline.enabled) {
+        return null;
+      }
+      var idx = findTimelineIndex(timeline.values, value, timeline.source);
+      if (idx < 0) {
+        idx = 0;
+      }
+      return setTimelineIndex(timeline, idx);
     }
 
     function currentTimelineFrame(x) {
-      var timeline = sceneTimeline(x);
-      if (!timeline) {
+      return state.timeline && state.timeline.enabled ? state.timeline.value : null;
+    }
+
+    function buildTimelinePayload(timeline, reason) {
+      if (!timeline || !timeline.enabled) {
         return null;
       }
-      if (state.timeline.frame !== null && state.timeline.frame !== undefined) {
-        return state.timeline.frame;
+
+      var payload = {
+        value: timeline.value,
+        index: Number(timeline.index || 0) + 1,
+        playing: timeline.playing === true,
+        speed: isFinite(Number(timeline.speed)) ? Number(timeline.speed) : 1,
+        loop: timeline.loop === true,
+        source: timeline.source === "time" ? "time" : "frame",
+        filter: timeline.filter === "cumulative" ? "cumulative" : "exact"
+      };
+
+      if (reason) {
+        payload.reason = String(reason);
       }
-      if (timeline.frames && timeline.frames.length) {
-        return timeline.frames[0];
+
+      return payload;
+    }
+
+    function emitTimelineState(el, state, reason) {
+      if (!el || !el.id || !state || !state.timeline || !state.timeline.enabled) {
+        return;
       }
-      if (timeline.time && timeline.time.length) {
-        return timeline.time[0];
+      if (!(window.Shiny && typeof window.Shiny.setInputValue === "function")) {
+        return;
       }
-      return null;
+
+      var payload = buildTimelinePayload(state.timeline, reason);
+      if (!payload) {
+        return;
+      }
+
+      window.Shiny.setInputValue(el.id + "_timeline", payload, { priority: "event" });
+    }
+
+    function applyTimelineUpdate(message) {
+      if (!state.timeline || !state.timeline.enabled) {
+        return;
+      }
+
+      var changed = false;
+      var incoming = message && typeof message === "object" ? message : {};
+
+      if (incoming.index !== undefined && incoming.index !== null) {
+        setTimelineIndex(state.timeline, Number(incoming.index) - 1);
+        changed = true;
+      } else if (incoming.value !== undefined && incoming.value !== null) {
+        setTimelineValue(state.timeline, incoming.value);
+        changed = true;
+      }
+
+      if (incoming.speed !== undefined && incoming.speed !== null) {
+        var nextSpeed = Number(incoming.speed);
+        if (isFinite(nextSpeed) && nextSpeed > 0) {
+          state.timeline.speed = Math.max(0.05, nextSpeed);
+          changed = true;
+        }
+      }
+
+      if (incoming.loop !== undefined && incoming.loop !== null) {
+        state.timeline.loop = incoming.loop === true;
+        changed = true;
+      }
+
+      if (incoming.playing !== undefined && incoming.playing !== null) {
+        state.timeline.playing = incoming.playing === true;
+        state.timeline.lastTick = null;
+        changed = true;
+      }
+
+      if (!changed) {
+        return;
+      }
+
+      redrawCurrent();
+      emitTimelineState(el, state, "update");
+      if (state.timeline.playing) {
+        scheduleTimelineTick();
+      }
+    }
+
+    function registerShinyTimelineHandler() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      var registry = window.ggWebGLTimelineRegistry || { instances: {}, handlerRegistered: false };
+      registry.instances = registry.instances || {};
+      if (el.id) {
+        registry.instances[el.id] = {
+          updateTimeline: applyTimelineUpdate
+        };
+      }
+      window.ggWebGLTimelineRegistry = registry;
+
+      if (registry.handlerRegistered || !(window.Shiny && typeof window.Shiny.addCustomMessageHandler === "function")) {
+        return;
+      }
+
+      window.Shiny.addCustomMessageHandler(TIMELINE_UPDATE_MESSAGE_TYPE, function(message) {
+        var incoming = message && typeof message === "object" ? message : {};
+        var id = incoming.id || incoming.outputId;
+        var currentRegistry = window.ggWebGLTimelineRegistry;
+        var instance = id && currentRegistry && currentRegistry.instances ? currentRegistry.instances[id] : null;
+        if (instance && typeof instance.updateTimeline === "function") {
+          instance.updateTimeline(incoming);
+        }
+      });
+      registry.handlerRegistered = true;
+    }
+
+    function layerHasTimelineValues(layer, timeline) {
+      if (!timeline || !timeline.enabled || !layer) {
+        return false;
+      }
+      if (timeline.source === "time") {
+        return (Array.isArray(layer.time) && layer.time.length) || (Array.isArray(layer.frame) && layer.frame.length);
+      }
+      return (Array.isArray(layer.frame) && layer.frame.length) || (Array.isArray(layer.time) && layer.time.length);
+    }
+
+    function getTimelineValue(layer, rowOrVertexIndex, timeline) {
+      if (!timeline || !timeline.enabled || !layer) {
+        return null;
+      }
+      var preferred = timeline.source === "time" ? layer.time : layer.frame;
+      var fallback = timeline.source === "time" ? layer.frame : layer.time;
+      var value;
+      if (Array.isArray(preferred) && rowOrVertexIndex < preferred.length) {
+        value = Number(preferred[rowOrVertexIndex]);
+      } else if (Array.isArray(fallback) && rowOrVertexIndex < fallback.length) {
+        value = Number(fallback[rowOrVertexIndex]);
+      } else {
+        return null;
+      }
+      if (!isFinite(value)) {
+        return null;
+      }
+      return timeline.source === "frame" ? Math.round(value) : value;
+    }
+
+    function isTimelineVisible(value, timeline) {
+      if (!timeline || !timeline.enabled || value === null || value === undefined) {
+        return true;
+      }
+      var current = Number(timeline.value);
+      var candidate = Number(value);
+      if (!isFinite(current) || !isFinite(candidate)) {
+        return true;
+      }
+      if (timeline.filter === "cumulative") {
+        return timeline.source === "frame"
+          ? Math.round(candidate) <= Math.round(current)
+          : candidate <= current + 1e-9;
+      }
+      return timeline.source === "frame"
+        ? Math.round(candidate) === Math.round(current)
+        : Math.abs(candidate - current) < 1e-9;
     }
 
     function layerIndexVisible(layer, index, x) {
-      var frame = currentTimelineFrame(x);
-      var timeline = sceneTimeline(x);
-      var exact = timeline && timeline.filter === "exact";
-      if (frame === null || frame === undefined) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(layer, timeline)) {
         return true;
       }
-      if (Array.isArray(layer.frame) && layer.frame.length) {
-        return exact
-          ? Math.round(Number(layer.frame[index])) === Math.round(Number(frame))
-          : Math.round(Number(layer.frame[index])) <= Math.round(Number(frame));
-      }
-      if (Array.isArray(layer.time) && layer.time.length) {
-        return exact
-          ? Math.abs(Number(layer.time[index]) - Number(frame)) < 1e-9
-          : Number(layer.time[index]) <= Number(frame);
-      }
-      return true;
+      var value = getTimelineValue(layer, index, timeline);
+      return value === null ? false : isTimelineVisible(value, timeline);
     }
 
     function pathIndexVisible(path, index, x) {
-      var frame = currentTimelineFrame(x);
-      var timeline = sceneTimeline(x);
-      var exact = timeline && timeline.filter === "exact";
-      if (frame === null || frame === undefined) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(path, timeline)) {
         return true;
       }
-      if (Array.isArray(path.frame) && path.frame.length) {
-        return exact
-          ? Math.round(Number(path.frame[index])) === Math.round(Number(frame))
-          : Math.round(Number(path.frame[index])) <= Math.round(Number(frame));
+      var value = getTimelineValue(path, index, timeline);
+      return value === null ? false : isTimelineVisible(value, timeline);
+    }
+
+    function pathSegmentVisible(path, i0, i1, x) {
+      var timeline = state.timeline;
+      if (!timeline || !timeline.enabled || !layerHasTimelineValues(path, timeline)) {
+        return true;
       }
-      if (Array.isArray(path.time) && path.time.length) {
-        return exact
-          ? Math.abs(Number(path.time[index]) - Number(frame)) < 1e-9
-          : Number(path.time[index]) <= Number(frame);
+      var v0 = getTimelineValue(path, i0, timeline);
+      var v1 = getTimelineValue(path, i1, timeline);
+      if (v0 === null || v1 === null) {
+        return false;
       }
-      return true;
+      return isTimelineVisible(v0, timeline) && isTimelineVisible(v1, timeline);
     }
 
     function normaliseAxisRange(range, fallback) {
@@ -1687,6 +1994,14 @@ HTMLWidgets.widget({
 
       if (layerType === "lines" && shader === "trajectory_age_glow") {
         return 3;
+      }
+
+      if (layerType === "lines" && shader === "trajectory_velocity") {
+        return 4;
+      }
+
+      if (layerType === "lines" && shader === "trajectory_direction") {
+        return 5;
       }
 
       return 0;
@@ -2685,26 +3000,15 @@ HTMLWidgets.widget({
     }
 
     function timelineValues(x) {
-      var timeline = sceneTimeline(x);
-      if (!timeline) {
-        return [];
-      }
-      if (timeline.frames && timeline.frames.length) {
-        return timeline.frames.slice();
-      }
-      if (timeline.time && timeline.time.length) {
-        return timeline.time.slice();
-      }
-      return [];
+      return state.timeline && state.timeline.enabled ? state.timeline.values.slice() : [];
     }
 
     function updateTimelineUi(x) {
       if (!state.timelineControls) {
         return;
       }
-      var timeline = sceneTimeline(x);
       var values = timelineValues(x);
-      var visible = !!(timeline && timeline.controls && values.length > 1);
+      var visible = !!(state.timeline && state.timeline.controls && values.length > 1);
       el.ggwebglTimelineFrame = currentTimelineFrame(x);
       state.timelineControls.style.display = visible ? "flex" : "none";
       if (!visible) {
@@ -2713,13 +3017,16 @@ HTMLWidgets.widget({
 
       var scrub = state.timelineControls.querySelector(".ggwebgl__timeline-scrub");
       var play = state.timelineControls.querySelector(".ggwebgl__timeline-play");
+      var speed = state.timelineControls.querySelector(".ggwebgl__timeline-speed");
       if (scrub) {
         scrub.max = String(values.length - 1);
-        var idx = values.indexOf(currentTimelineFrame(x));
-        scrub.value = String(Math.max(0, idx));
+        scrub.value = String(Math.max(0, state.timeline.index || 0));
       }
       if (play) {
         play.textContent = state.timeline.playing ? "Pause" : "Play";
+      }
+      if (speed) {
+        speed.value = String(state.timeline.speed || 1);
       }
     }
 
@@ -2735,33 +3042,40 @@ HTMLWidgets.widget({
 
       if (play) {
         play.addEventListener("click", function() {
+          if (!state.timeline.enabled) {
+            return;
+          }
           state.timeline.playing = !state.timeline.playing;
           state.timeline.lastTick = null;
           updateTimelineUi(state.x);
+          emitTimelineState(el, state, state.timeline.playing ? "play" : "pause");
           scheduleTimelineTick();
         });
       }
       if (scrub) {
         scrub.addEventListener("input", function() {
-          var values = timelineValues(state.x);
-          var idx = Math.max(0, Math.min(values.length - 1, Number(scrub.value) || 0));
-          state.timeline.frame = values[idx];
+          if (!state.timeline.enabled) {
+            return;
+          }
+          setTimelineIndex(state.timeline, Number(scrub.value) || 0);
           redrawCurrent();
+          emitTimelineState(el, state, "scrub");
         });
       }
       if (speed) {
         speed.addEventListener("change", function() {
-          if (state.x && state.x.render && state.x.render.timeline) {
-            state.x.render.timeline.speed = Math.max(0.05, Number(speed.value) || 1);
+          if (state.timeline) {
+            state.timeline.speed = Math.max(0.05, Number(speed.value) || 1);
+            emitTimelineState(el, state, "speed");
           }
         });
       }
       if (reset) {
         reset.addEventListener("click", function() {
-          var values = timelineValues(state.x);
-          state.timeline.frame = values.length ? values[0] : null;
+          setTimelineIndex(state.timeline, 0);
           state.timeline.playing = false;
           redrawCurrent();
+          emitTimelineState(el, state, "reset");
         });
       }
     }
@@ -2774,26 +3088,24 @@ HTMLWidgets.widget({
         if (!state.timeline.playing || !state.x) {
           return;
         }
-        var values = timelineValues(state.x);
-        if (values.length <= 1) {
+        if (!state.timeline.enabled || state.timeline.values.length <= 1) {
           state.timeline.playing = false;
           updateTimelineUi(state.x);
           return;
         }
-        var timeline = sceneTimeline(state.x);
-        var speed = timeline && timeline.speed ? timeline.speed : 1;
+        var speed = state.timeline.speed || 1;
         if (state.timeline.lastTick === null || timestamp - state.timeline.lastTick > (500 / speed)) {
-          var idx = values.indexOf(currentTimelineFrame(state.x));
-          idx = idx < 0 ? 0 : idx + 1;
-          if (idx >= values.length) {
-            idx = timeline && timeline.loop ? 0 : values.length - 1;
-            if (!(timeline && timeline.loop)) {
+          var idx = state.timeline.index + 1;
+          if (idx >= state.timeline.values.length) {
+            idx = state.timeline.loop ? 0 : state.timeline.values.length - 1;
+            if (!state.timeline.loop) {
               state.timeline.playing = false;
             }
           }
-          state.timeline.frame = values[idx];
+          setTimelineIndex(state.timeline, idx);
           state.timeline.lastTick = timestamp;
           redrawCurrent();
+          emitTimelineState(el, state, "tick");
         }
         scheduleTimelineTick();
       });
@@ -3172,7 +3484,8 @@ HTMLWidgets.widget({
             position: gl.getAttribLocation(primitiveProgram, "a_position"),
             size: gl.getAttribLocation(primitiveProgram, "a_size"),
             color: gl.getAttribLocation(primitiveProgram, "a_color"),
-            age: gl.getAttribLocation(primitiveProgram, "a_age")
+            age: gl.getAttribLocation(primitiveProgram, "a_age"),
+            metric: gl.getAttribLocation(primitiveProgram, "a_metric")
 	          },
 	          uniforms: {
 	            domain: gl.getUniformLocation(primitiveProgram, "u_domain"),
@@ -3190,7 +3503,8 @@ HTMLWidgets.widget({
             position3: gl.getAttribLocation(primitive3dProgram, "a_position3"),
             size: gl.getAttribLocation(primitive3dProgram, "a_size"),
             color: gl.getAttribLocation(primitive3dProgram, "a_color"),
-            age: gl.getAttribLocation(primitive3dProgram, "a_age")
+            age: gl.getAttribLocation(primitive3dProgram, "a_age"),
+            metric: gl.getAttribLocation(primitive3dProgram, "a_metric")
           },
           uniforms: {
             viewProjection: gl.getUniformLocation(primitive3dProgram, "u_view_projection"),
@@ -3690,32 +4004,246 @@ HTMLWidgets.widget({
       return layer._ggwebglPointPayload;
     }
 
-		function flattenLinePath(path) {
+    function finiteTrajectoryNumber(value) {
+      var number = Number(value);
+      return isFinite(number) ? number : null;
+    }
+
+    function pathPointCount(path) {
+      var xs = Array.isArray(path && path.x) ? path.x : [];
+      var ys = Array.isArray(path && path.y) ? path.y : [];
+      return Math.min(xs.length, ys.length);
+    }
+
+    function trajectoryStepDelta(path, i0, i1) {
+      var times = Array.isArray(path.time) ? path.time : null;
+      var frames = Array.isArray(path.frame) ? path.frame : null;
+      var start;
+      var end;
+
+      if (times && times.length > i0 && times.length > i1) {
+        start = finiteTrajectoryNumber(times[i0]);
+        end = finiteTrajectoryNumber(times[i1]);
+        return start === null || end === null ? null : end - start;
+      }
+
+      if (frames && frames.length > i0 && frames.length > i1) {
+        start = finiteTrajectoryNumber(frames[i0]);
+        end = finiteTrajectoryNumber(frames[i1]);
+        return start === null || end === null ? null : end - start;
+      }
+
+      return 1;
+    }
+
+    function trajectoryDistance(path, i0, i1) {
+      var xs = Array.isArray(path.x) ? path.x : [];
+      var ys = Array.isArray(path.y) ? path.y : [];
+      var zs = Array.isArray(path.z) ? path.z : [];
+      var x0 = finiteTrajectoryNumber(xs[i0]);
+      var y0 = finiteTrajectoryNumber(ys[i0]);
+      var x1 = finiteTrajectoryNumber(xs[i1]);
+      var y1 = finiteTrajectoryNumber(ys[i1]);
+      var z0 = 0;
+      var z1 = 0;
+
+      if (x0 === null || y0 === null || x1 === null || y1 === null) {
+        return null;
+      }
+
+      if (zs.length) {
+        z0 = finiteTrajectoryNumber(zs[i0]);
+        z1 = finiteTrajectoryNumber(zs[i1]);
+        if (z0 === null || z1 === null) {
+          return null;
+        }
+      }
+
+      var dx = x1 - x0;
+      var dy = y1 - y0;
+      var dz = z1 - z0;
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    function rawTrajectoryVelocity(path) {
+      var n = pathPointCount(path);
+      var values = new Array(n).fill(0);
+
+      for (var i = 1; i < n; i += 1) {
+        var delta = trajectoryStepDelta(path, i - 1, i);
+        var distance = trajectoryDistance(path, i - 1, i);
+        if (delta !== null && distance !== null && isFinite(delta) && isFinite(distance) && delta > 0) {
+          values[i] = distance / delta;
+        }
+      }
+
+      return values;
+    }
+
+    function normalizeFiniteMetric(values, range) {
+      var min = range && isFinite(range[0]) ? Number(range[0]) : Infinity;
+      var max = range && isFinite(range[1]) ? Number(range[1]) : -Infinity;
+
+      if (!range) {
+        values.forEach(function(value) {
+          var number = Number(value);
+          if (isFinite(number)) {
+            min = Math.min(min, number);
+            max = Math.max(max, number);
+          }
+        });
+      }
+
+      if (!isFinite(min) || !isFinite(max) || max <= min) {
+        return values.map(function() { return 0; });
+      }
+
+      return values.map(function(value) {
+        var number = Number(value);
+        return isFinite(number) ? Math.max(0, Math.min(1, (number - min) / (max - min))) : 0;
+      });
+    }
+
+    function computeTrajectoryVelocity(path) {
+      return normalizeFiniteMetric(rawTrajectoryVelocity(path));
+    }
+
+    function computeTrajectoryDirection(path) {
+      var xs = Array.isArray(path.x) ? path.x : [];
+      var ys = Array.isArray(path.y) ? path.y : [];
+      var n = pathPointCount(path);
+      var values = new Array(n).fill(0.5);
+
+      for (var i = 1; i < n; i += 1) {
+        var x0 = finiteTrajectoryNumber(xs[i - 1]);
+        var y0 = finiteTrajectoryNumber(ys[i - 1]);
+        var x1 = finiteTrajectoryNumber(xs[i]);
+        var y1 = finiteTrajectoryNumber(ys[i]);
+        if (x0 === null || y0 === null || x1 === null || y1 === null) {
+          values[i] = values[i - 1];
+          continue;
+        }
+        var dx = x1 - x0;
+        var dy = y1 - y0;
+        if (Math.sqrt(dx * dx + dy * dy) <= 1e-12) {
+          values[i] = values[i - 1];
+          continue;
+        }
+        values[i] = Math.max(0, Math.min(1, (Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI)));
+      }
+
+      if (n > 1) {
+        values[0] = values[1];
+      }
+
+      return values;
+    }
+
+    function computeLayerTrajectoryMetrics(layer, shaderMode) {
+      var paths = linePathList(layer && layer.paths);
+      if (shaderMode === 4) {
+        var rawByPath = paths.map(rawTrajectoryVelocity);
+        var min = Infinity;
+        var max = -Infinity;
+        rawByPath.forEach(function(values) {
+          values.forEach(function(value) {
+            var number = Number(value);
+            if (isFinite(number)) {
+              min = Math.min(min, number);
+              max = Math.max(max, number);
+            }
+          });
+        });
+        return rawByPath.map(function(values) {
+          return normalizeFiniteMetric(values, [min, max]);
+        });
+      }
+
+      if (shaderMode === 5) {
+        return paths.map(computeTrajectoryDirection);
+      }
+
+      return paths.map(function(path) {
+        return new Array(pathPointCount(path)).fill(0);
+      });
+    }
+
+    function trajectoryMetricAt(metrics, index) {
+      if (!Array.isArray(metrics) || index < 0 || index >= metrics.length) {
+        return 0;
+      }
+      var value = Number(metrics[index]);
+      return isFinite(value) ? value : 0;
+    }
+
+		function flattenLinePath(path, xScene, metrics) {
 		  var xs = Array.isArray(path.x) ? path.x : [];
 		  var ys = Array.isArray(path.y) ? path.y : [];
 		  var ages = Array.isArray(path.age) ? path.age : [];
 		  var rgba = Array.isArray(path.rgba) ? path.rgba : [];
 		
 		  var n = Math.min(xs.length, ys.length);
+      var timelineClipped = xScene && state.timeline && state.timeline.enabled && layerHasTimelineValues(path, state.timeline);
 		
-		  if (!n) {
+		  if (!n || (timelineClipped && n < 2)) {
 			return {
 			  count: 0,
+        mode: "line_strip",
 			  positions: new Float32Array(0),
 			  ages: new Float32Array(0),
-			  colors: new Float32Array(0)
+			  colors: new Float32Array(0),
+        metrics: new Float32Array(0)
 			};
 		  }
+
+      if (timelineClipped) {
+        var segmentPositions = [];
+        var segmentAges = [];
+        var segmentColors = [];
+        var segmentMetrics = [];
+        function pushSegmentVertex(index) {
+          segmentPositions.push(Number(xs[index]), Number(ys[index]));
+          segmentAges.push(isFinite(ages[index]) ? Number(ages[index]) : 1.0);
+          segmentMetrics.push(trajectoryMetricAt(metrics, index));
+          if (rgba.length >= (index * 4 + 4)) {
+            segmentColors.push(
+              Number(rgba[index * 4 + 0]),
+              Number(rgba[index * 4 + 1]),
+              Number(rgba[index * 4 + 2]),
+              Number(rgba[index * 4 + 3])
+            );
+          } else {
+            segmentColors.push(0.1, 0.1, 0.1, 1.0);
+          }
+        }
+        for (var s = 0; s < n - 1; s += 1) {
+          if (!pathSegmentVisible(path, s, s + 1, xScene)) {
+            continue;
+          }
+          pushSegmentVertex(s);
+          pushSegmentVertex(s + 1);
+        }
+        return {
+          count: segmentAges.length,
+          mode: "lines",
+          positions: new Float32Array(segmentPositions),
+          ages: new Float32Array(segmentAges),
+          colors: new Float32Array(segmentColors),
+          metrics: new Float32Array(segmentMetrics)
+        };
+      }
 		
 		  var positions = new Float32Array(n * 2);
 		  var pathAges = new Float32Array(n);
 		  var colors = new Float32Array(n * 4);
+      var pathMetrics = new Float32Array(n);
 		
 		  for (var i = 0; i < n; i += 1) {
 			positions[i * 2] = Number(xs[i]);
 			positions[i * 2 + 1] = Number(ys[i]);
 		
 			pathAges[i] = isFinite(ages[i]) ? Number(ages[i]) : 1.0;
+      pathMetrics[i] = trajectoryMetricAt(metrics, i);
 		
 			if (rgba.length >= (i * 4 + 4)) {
 			  colors[i * 4 + 0] = Number(rgba[i * 4 + 0]);
@@ -3732,13 +4260,15 @@ HTMLWidgets.widget({
 		
 		return {
 		  count: n,
+      mode: "line_strip",
 		  positions: positions,
 		  ages: pathAges,
-		  colors: colors
+		  colors: colors,
+      metrics: pathMetrics
 		};
 	}
 
-    function flattenLinePath3d(path, x, viewport) {
+    function flattenLinePath3d(path, x, viewport, metrics) {
       var xs = Array.isArray(path.x) ? path.x : [];
       var ys = Array.isArray(path.y) ? path.y : [];
       var zs = Array.isArray(path.z) ? path.z : [];
@@ -3749,35 +4279,62 @@ HTMLWidgets.widget({
       var positions = [];
       var pathAges = [];
       var colors = [];
+      var pathMetrics = [];
+      var timelineClipped = x && state.timeline && state.timeline.enabled && layerHasTimelineValues(path, state.timeline);
 
-      for (var i = 0; i < n; i += 1) {
-        if (x && !pathIndexVisible(path, i, x)) {
-          continue;
-        }
-        var point = normalizePosition3(xs[i], ys[i], zs[i] || 0, viewport, zRange);
+      function push3dVertex(index) {
+        var point = normalizePosition3(xs[index], ys[index], zs[index] || 0, viewport, zRange);
         positions.push(point[0], point[1], point[2]);
-        pathAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
-        if (rgba.length >= (i * 4 + 4)) {
+        pathAges.push(isFinite(ages[index]) ? Number(ages[index]) : 1.0);
+        pathMetrics.push(trajectoryMetricAt(metrics, index));
+        if (rgba.length >= (index * 4 + 4)) {
           colors.push(
-            normalizeColorComponent(rgba[i * 4 + 0], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 1], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 2], 0.1),
-            normalizeColorComponent(rgba[i * 4 + 3], 1.0)
+            normalizeColorComponent(rgba[index * 4 + 0], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 1], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 2], 0.1),
+            normalizeColorComponent(rgba[index * 4 + 3], 1.0)
           );
         } else {
           colors.push(0.1, 0.1, 0.1, 1.0);
         }
       }
 
+      if (timelineClipped) {
+        for (var s = 0; s < n - 1; s += 1) {
+          if (!pathSegmentVisible(path, s, s + 1, x)) {
+            continue;
+          }
+          push3dVertex(s);
+          push3dVertex(s + 1);
+        }
+        return {
+          count: pathAges.length,
+          mode: "lines",
+          positions: new Float32Array(positions),
+          ages: new Float32Array(pathAges),
+          colors: new Float32Array(colors),
+          metrics: new Float32Array(pathMetrics)
+        };
+      }
+
+      for (var i = 0; i < n; i += 1) {
+        if (x && !pathIndexVisible(path, i, x)) {
+          continue;
+        }
+        push3dVertex(i);
+      }
+
       return {
         count: pathAges.length,
+        mode: "line_strip",
         positions: new Float32Array(positions),
         ages: new Float32Array(pathAges),
-        colors: new Float32Array(colors)
+        colors: new Float32Array(colors),
+        metrics: new Float32Array(pathMetrics)
       };
     }
 
-    function flattenLinePathToStyledQuads(path, viewport, plotWidthPx, plotHeightPx, joinMode, capMode, xScene, projectViewport) {
+    function flattenLinePathToStyledQuads(path, viewport, plotWidthPx, plotHeightPx, joinMode, capMode, xScene, projectViewport, metrics) {
       var xs = Array.isArray(path.x) ? path.x : [];
       var ys = Array.isArray(path.y) ? path.y : [];
       var zs = Array.isArray(path.z) ? path.z : [];
@@ -3792,7 +4349,8 @@ HTMLWidgets.widget({
           count: 0,
           positions: new Float32Array(0),
           ages: new Float32Array(0),
-          colors: new Float32Array(0)
+          colors: new Float32Array(0),
+          metrics: new Float32Array(0)
         };
       }
 
@@ -3809,6 +4367,7 @@ HTMLWidgets.widget({
 
       var positions = [];
       var outAges = [];
+      var outMetrics = [];
       var colors = [];
 
       function pointAt(i) {
@@ -3818,9 +4377,10 @@ HTMLWidgets.widget({
         return { x: Number(xs[i]), y: Number(ys[i]) };
       }
 
-      function pushVertex(x, y, age, r, g, b, a) {
+      function pushVertex(x, y, age, metric, r, g, b, a) {
         positions.push(x, y);
         outAges.push(isFinite(age) ? age : 1.0);
+        outMetrics.push(isFinite(metric) ? metric : 0.0);
         colors.push(r, g, b, a);
       }
 
@@ -3862,7 +4422,7 @@ HTMLWidgets.widget({
       }
 
       function addSegmentQuad(i0, i1) {
-        if (!pathIndexVisible(path, i0, xScene) || !pathIndexVisible(path, i1, xScene)) {
+        if (!pathSegmentVisible(path, i0, i1, xScene)) {
           return;
         }
         var p0 = pointAt(i0);
@@ -3884,17 +4444,19 @@ HTMLWidgets.widget({
         var c1 = colorAt(i1);
         var a0 = isFinite(ages[i0]) ? Number(ages[i0]) : 1.0;
         var a1 = isFinite(ages[i1]) ? Number(ages[i1]) : 1.0;
+        var m0 = trajectoryMetricAt(metrics, i0);
+        var m1 = trajectoryMetricAt(metrics, i1);
 
-        pushVertex(x0 - off.x, y0 - off.y, a0, c0[0], c0[1], c0[2], c0[3]);
-        pushVertex(x0 + off.x, y0 + off.y, a0, c0[0], c0[1], c0[2], c0[3]);
-        pushVertex(x1 - off.x, y1 - off.y, a1, c1[0], c1[1], c1[2], c1[3]);
-        pushVertex(x1 - off.x, y1 - off.y, a1, c1[0], c1[1], c1[2], c1[3]);
-        pushVertex(x0 + off.x, y0 + off.y, a0, c0[0], c0[1], c0[2], c0[3]);
-        pushVertex(x1 + off.x, y1 + off.y, a1, c1[0], c1[1], c1[2], c1[3]);
+        pushVertex(x0 - off.x, y0 - off.y, a0, m0, c0[0], c0[1], c0[2], c0[3]);
+        pushVertex(x0 + off.x, y0 + off.y, a0, m0, c0[0], c0[1], c0[2], c0[3]);
+        pushVertex(x1 - off.x, y1 - off.y, a1, m1, c1[0], c1[1], c1[2], c1[3]);
+        pushVertex(x1 - off.x, y1 - off.y, a1, m1, c1[0], c1[1], c1[2], c1[3]);
+        pushVertex(x0 + off.x, y0 + off.y, a0, m0, c0[0], c0[1], c0[2], c0[3]);
+        pushVertex(x1 + off.x, y1 + off.y, a1, m1, c1[0], c1[1], c1[2], c1[3]);
       }
 
       function addBevelJoin(i) {
-        if (!pathIndexVisible(path, i, xScene)) {
+        if (!pathSegmentVisible(path, i - 1, i, xScene) || !pathSegmentVisible(path, i, i + 1, xScene)) {
           return;
         }
         if (joinMode !== "bevel" || i <= 0 || i >= n - 1) {
@@ -3925,10 +4487,11 @@ HTMLWidgets.widget({
         var outward1 = pixelOffsetToData(cross > 0 ? u1.nx : -u1.nx, cross > 0 ? u1.ny : -u1.ny);
         var c = colorAt(i);
         var a = isFinite(ages[i]) ? Number(ages[i]) : 1.0;
+        var m = trajectoryMetricAt(metrics, i);
 
-        pushVertex(x0, y0, a, c[0], c[1], c[2], c[3]);
-        pushVertex(x0 + outward0.x, y0 + outward0.y, a, c[0], c[1], c[2], c[3]);
-        pushVertex(x0 + outward1.x, y0 + outward1.y, a, c[0], c[1], c[2], c[3]);
+        pushVertex(x0, y0, a, m, c[0], c[1], c[2], c[3]);
+        pushVertex(x0 + outward0.x, y0 + outward0.y, a, m, c[0], c[1], c[2], c[3]);
+        pushVertex(x0 + outward1.x, y0 + outward1.y, a, m, c[0], c[1], c[2], c[3]);
       }
 
       function addRoundCap(index, atEnd) {
@@ -3938,6 +4501,9 @@ HTMLWidgets.widget({
 
         var neighbor = atEnd ? index - 1 : index + 1;
         if (neighbor < 0 || neighbor >= n) {
+          return;
+        }
+        if (!pathSegmentVisible(path, Math.min(index, neighbor), Math.max(index, neighbor), xScene)) {
           return;
         }
 
@@ -3958,15 +4524,16 @@ HTMLWidgets.widget({
         var stop  = atEnd ? angleBase + Math.PI / 2 : angleBase + 3 * Math.PI / 2;
         var c = colorAt(index);
         var a = isFinite(ages[index]) ? Number(ages[index]) : 1.0;
+        var m = trajectoryMetricAt(metrics, index);
 
         for (var s = 0; s < capSegments; s += 1) {
           var t0 = start + (stop - start) * (s / capSegments);
           var t1 = start + (stop - start) * ((s + 1) / capSegments);
           var off0 = pixelOffsetToData(Math.cos(t0), Math.sin(t0));
           var off1 = pixelOffsetToData(Math.cos(t1), Math.sin(t1));
-          pushVertex(x0, y0, a, c[0], c[1], c[2], c[3]);
-          pushVertex(x0 + off0.x, y0 + off0.y, a, c[0], c[1], c[2], c[3]);
-          pushVertex(x0 + off1.x, y0 + off1.y, a, c[0], c[1], c[2], c[3]);
+          pushVertex(x0, y0, a, m, c[0], c[1], c[2], c[3]);
+          pushVertex(x0 + off0.x, y0 + off0.y, a, m, c[0], c[1], c[2], c[3]);
+          pushVertex(x0 + off1.x, y0 + off1.y, a, m, c[0], c[1], c[2], c[3]);
         }
       }
 
@@ -3985,6 +4552,7 @@ HTMLWidgets.widget({
         count: positions.length / 2,
         positions: new Float32Array(positions),
         ages: new Float32Array(outAges),
+        metrics: new Float32Array(outMetrics),
         colors: new Float32Array(colors)
       };
     }
@@ -4215,6 +4783,24 @@ HTMLWidgets.widget({
       return buffer;
     }
 
+    function bindMetricAttribute(gl, programInfo, values) {
+      var buffer = createBuffer(gl, values);
+      if (programInfo.attributes.metric < 0) {
+        return buffer;
+      }
+      gl.enableVertexAttribArray(programInfo.attributes.metric);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.vertexAttribPointer(programInfo.attributes.metric, 1, gl.FLOAT, false, 0, 0);
+      return buffer;
+    }
+
+    function bindConstantMetricAttribute(gl, programInfo) {
+      if (programInfo.attributes.metric >= 0) {
+        gl.disableVertexAttribArray(programInfo.attributes.metric);
+        gl.vertexAttrib1f(programInfo.attributes.metric, 0.0);
+      }
+    }
+
     function bindTexcoordAttribute(gl, programInfo, values) {
       var buffer = createBuffer(gl, values);
       gl.enableVertexAttribArray(programInfo.attributes.texcoord);
@@ -4330,6 +4916,7 @@ HTMLWidgets.widget({
       bindAttributeBuffer(gl, primitive.attributes.size, payload.sizeBuffer, 1);
       bindAttributeBuffer(gl, primitive.attributes.age, payload.ageBuffer, 1);
       bindAttributeBuffer(gl, primitive.attributes.color, payload.colorBuffer, 4);
+      bindConstantMetricAttribute(gl, primitive);
       gl.drawArrays(gl.POINTS, 0, payload.count);
       disposeTransientPointPayload(payload);
     }
@@ -4361,6 +4948,7 @@ HTMLWidgets.widget({
       bindAttributeBuffer(gl, programs.primitive.attributes.size, payload.sizeBuffer, 1);
       bindAttributeBuffer(gl, programs.primitive.attributes.age, payload.ageBuffer, 1);
       bindAttributeBuffer(gl, programs.primitive.attributes.color, payload.colorBuffer, 4);
+      bindConstantMetricAttribute(gl, programs.primitive);
 
       gl.drawArrays(gl.POINTS, 0, payload.count);
 
@@ -4426,63 +5014,42 @@ HTMLWidgets.widget({
     function drawLineLayerNative(gl, programs, layer, x, viewport) {
       var paths = linePathList(layer.paths);
       var primitive = programs.primitive;
+      var shaderMode = shaderModeForLayer(x, "lines");
+      var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
 
-      gl.useProgram(primitive.program);
-      gl.disable(gl.BLEND);
-
-      gl.uniform4f(
-        primitive.uniforms.domain,
-        viewport.x[0], viewport.x[1],
-        viewport.y[0], viewport.y[1]
-      );
-      gl.uniform1f(primitive.uniforms.shaderMode, 0.0);
-      gl.uniform1f(primitive.uniforms.isPointLayer, 0.0);
-      gl.uniform1f(primitive.uniforms.pointScale, 1.0);
-      gl.uniform1f(primitive.uniforms.minPointSize, 1.0);
+      configurePrimitiveLayerShader(gl, primitive, x, "lines", viewport, layer);
 
       if (primitive.attributes.size >= 0) {
         gl.disableVertexAttribArray(primitive.attributes.size);
         gl.vertexAttrib1f(primitive.attributes.size, 3.0);
       }
 
-      if (primitive.attributes.age >= 0) {
-        gl.disableVertexAttribArray(primitive.attributes.age);
-        gl.vertexAttrib1f(primitive.attributes.age, 1.0);
-      }
-
-      if (primitive.attributes.color >= 0) {
-        gl.disableVertexAttribArray(primitive.attributes.color);
-      }
-
-      paths.forEach(function(path) {
-        var payload = flattenLinePath(path);
+      paths.forEach(function(path, pathIndex) {
+        var payload = flattenLinePath(path, x, metricsByPath[pathIndex]);
 
         if (!payload || payload.count < 2) {
           return;
         }
 
         var positionBuffer = bindPositionAttribute(gl, primitive, payload.positions);
+        var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
+        var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+        var metricBuffer = bindMetricAttribute(gl, primitive, payload.metrics);
 
-        if (primitive.attributes.color >= 0) {
-          gl.vertexAttrib4f(primitive.attributes.color, 0.1, 0.1, 0.1, 1.0);
-        }
-        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+        gl.drawArrays(payload.mode === "lines" ? gl.LINES : gl.LINE_STRIP, 0, payload.count);
 
         gl.deleteBuffer(positionBuffer);
+        gl.deleteBuffer(ageBuffer);
+        gl.deleteBuffer(colorBuffer);
+        gl.deleteBuffer(metricBuffer);
       });
-
-      gl.enable(gl.BLEND);
-      gl.blendFuncSeparate(
-        gl.SRC_ALPHA,
-        gl.ONE_MINUS_SRC_ALPHA,
-        gl.ONE,
-        gl.ONE_MINUS_SRC_ALPHA
-      );
     }
 
     function drawLineLayer3d(gl, programs, layer, x, viewport, box) {
       var paths = linePathList(layer.paths);
       var primitive = programs.primitive3d;
+      var shaderMode = shaderModeForLayer(x, "lines");
+      var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
       configurePrimitive3dLayerShader(gl, primitive, x, "lines", cameraViewProjectionMatrix(x, box), layer);
 
       if (primitive.attributes.size >= 0) {
@@ -4490,8 +5057,8 @@ HTMLWidgets.widget({
         gl.vertexAttrib1f(primitive.attributes.size, 1.0);
       }
 
-      paths.forEach(function(path) {
-        var payload = flattenLinePath3d(path, x, viewport);
+      paths.forEach(function(path, pathIndex) {
+        var payload = flattenLinePath3d(path, x, viewport, metricsByPath[pathIndex]);
         if (!payload || payload.count < 2) {
           return;
         }
@@ -4499,10 +5066,12 @@ HTMLWidgets.widget({
         bindAttributeBuffer(gl, primitive.attributes.position3, positionBuffer, 3);
         var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
         var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
-        gl.drawArrays(gl.LINE_STRIP, 0, payload.count);
+        var metricBuffer = bindMetricAttribute(gl, primitive, payload.metrics);
+        gl.drawArrays(payload.mode === "lines" ? gl.LINES : gl.LINE_STRIP, 0, payload.count);
         gl.deleteBuffer(positionBuffer);
         gl.deleteBuffer(ageBuffer);
         gl.deleteBuffer(colorBuffer);
+        gl.deleteBuffer(metricBuffer);
       });
     }
 
@@ -4526,6 +5095,8 @@ HTMLWidgets.widget({
       var plotHeightPx = Math.max(1, box && box.plotHeight ? box.plotHeight : 1);
       var joinMode = lineJoinMode(x);
       var capMode = lineCapMode(x);
+      var shaderMode = shaderModeForLayer(x, "lines");
+      var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
 
       configurePrimitiveLayerShader(gl, primitive, x, "lines", drawViewport, layer);
 
@@ -4542,8 +5113,8 @@ HTMLWidgets.widget({
         gl.ONE_MINUS_SRC_ALPHA
       );
 
-      paths.forEach(function(path) {
-        var payload = flattenLinePathToStyledQuads(path, drawViewport, plotWidthPx, plotHeightPx, joinMode, capMode, x, viewport);
+      paths.forEach(function(path, pathIndex) {
+        var payload = flattenLinePathToStyledQuads(path, drawViewport, plotWidthPx, plotHeightPx, joinMode, capMode, x, viewport, metricsByPath[pathIndex]);
 
         if (!payload || payload.count < 3) {
           return;
@@ -4552,12 +5123,14 @@ HTMLWidgets.widget({
         var positionBuffer = bindPositionAttribute(gl, primitive, payload.positions);
         var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
         var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+        var metricBuffer = bindMetricAttribute(gl, primitive, payload.metrics);
 
         gl.drawArrays(gl.TRIANGLES, 0, payload.count);
 
         gl.deleteBuffer(positionBuffer);
         gl.deleteBuffer(ageBuffer);
         gl.deleteBuffer(colorBuffer);
+        gl.deleteBuffer(metricBuffer);
       });
     }
 
@@ -4660,6 +5233,7 @@ HTMLWidgets.widget({
       var positionBuffer = bindPositionAttribute(gl, primitive, payload.positions);
       var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
       var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+      bindConstantMetricAttribute(gl, primitive);
       gl.drawArrays(gl.TRIANGLES, 0, payload.count);
       gl.deleteBuffer(positionBuffer);
       gl.deleteBuffer(ageBuffer);
@@ -5357,25 +5931,25 @@ HTMLWidgets.widget({
         state.x = next;
         state.selection.active = false;
         state.selection.result = null;
+        state.timeline = createTimelineState(next, state.timeline);
+        registerShinyTimelineHandler();
         applyWidgetSize(width, height);
         resetViewport(null);
         initialiseCameraFromScene(next);
-        var values = timelineValues(next);
-        state.timeline.frame = values.length ? values[0] : null;
-        state.timeline.playing = !!(next.render.timeline && next.render.timeline.autoplay);
-        
-		requestAnimationFrame(function() {
-    	  redrawCurrent();
+        redrawCurrent();
+
+        requestAnimationFrame(function() {
+          redrawCurrent();
           scheduleTimelineTick();
-	    });
+        });
       },
 
       resize: function(newWidth, newHeight) {
-	  applyWidgetSize(newWidth, newHeight);
+        applyWidgetSize(newWidth, newHeight);
 
-		requestAnimationFrame(function() {
-    	  redrawCurrent();
-	    });
+        requestAnimationFrame(function() {
+          redrawCurrent();
+        });
       }
     };
   }

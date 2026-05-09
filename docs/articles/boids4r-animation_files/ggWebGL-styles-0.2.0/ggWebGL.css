@@ -19,7 +19,7 @@
   color: #102a43;
   font-family: "Source Sans 3", "Helvetica Neue", sans-serif;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
   gap: 0.55rem;
   overflow: hidden;
 }
@@ -49,14 +49,14 @@
 
 .ggwebgl__meta {
   margin: 0;
+  font-size: 0.95rem;
   line-height: 1.4;
   color: #334e68;
 }
 
 .ggwebgl__stage {
   position: relative;
-  min-height: 0;
-  min-height: 320px;
+  min-height: 120px;
   border-radius: 0.8rem;
   overflow: hidden;
   touch-action: none;
@@ -246,7 +246,7 @@
   display: none;
   align-items: center;
   gap: 0.5rem;
-  min-height: 0;
+  min-height: 1.8rem;
   font-size: 0.82rem;
   color: #334e68;
 }

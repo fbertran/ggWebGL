@@ -39,6 +39,35 @@ test_that("widget JavaScript keeps canvases contained in their local stage", {
   expect_false(grepl("RESIZE METRICS|CANVAS FINAL SIZE|DRAW SCENE INPUT", js))
 })
 
+test_that("timeline controls reserve visible space in compact widgets", {
+  js_path <- testthat::test_path("..", "..", "inst", "htmlwidgets", "ggWebGL.js")
+  css_path <- testthat::test_path("..", "..", "inst", "htmlwidgets", "ggWebGL.css")
+  if (!file.exists(js_path)) {
+    js_path <- system.file("htmlwidgets", "ggWebGL.js", package = "ggWebGL")
+  }
+  if (!file.exists(css_path)) {
+    css_path <- system.file("htmlwidgets", "ggWebGL.css", package = "ggWebGL")
+  }
+
+  expect_true(file.exists(js_path))
+  expect_true(file.exists(css_path))
+
+  js <- paste(readLines(js_path, warn = FALSE), collapse = "\n")
+  css <- paste(readLines(css_path, warn = FALSE), collapse = "\n")
+
+  expect_match(
+    js,
+    "root\\.appendChild\\(header\\);[[:space:]]+root\\.appendChild\\(timeline\\);[[:space:]]+root\\.appendChild\\(stage\\);",
+    perl = TRUE
+  )
+  expect_match(js, "auto auto minmax\\(0, 1fr\\) auto auto auto")
+  expect_match(js, "state.stage.style.minHeight = publication ? \"0px\" : \"120px\";", fixed = TRUE)
+  expect_match(css, "grid-template-rows: auto auto minmax\\(0, 1fr\\) auto auto auto;")
+  expect_match(css, "font-size: 0.95rem;", fixed = TRUE)
+  expect_match(css, "min-height: 120px;", fixed = TRUE)
+  expect_match(css, "min-height: 1.8rem;", fixed = TRUE)
+})
+
 test_that("generated real-data article keeps widget stylesheet and flow heights when present", {
   article <- testthat::test_path("..", "..", "docs", "articles", "real-data-evidence.html")
   if (!file.exists(article)) {

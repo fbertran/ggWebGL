@@ -197,7 +197,7 @@ HTMLWidgets.widget({
         state.root.style.display = "grid";
         state.root.style.gridTemplateRows = publication
           ? "minmax(0, 1fr)"
-          : "auto minmax(0, 1fr) auto auto auto auto auto";
+          : "auto auto minmax(0, 1fr) auto auto auto";
       }
 
       if (state.stage) {
@@ -205,7 +205,7 @@ HTMLWidgets.widget({
         state.stage.style.width = "100%";
         state.stage.style.overflow = "hidden";
         state.stage.style.boxSizing = "border-box";
-        state.stage.style.minHeight = publication ? "0px" : "320px";
+        state.stage.style.minHeight = publication ? "0px" : "120px";
       }
 
       if (state.canvas) {
@@ -1338,10 +1338,10 @@ HTMLWidgets.widget({
       ].join("");
 
       root.appendChild(header);
+      root.appendChild(timeline);
       root.appendChild(stage);
       root.appendChild(selectionControls);
       root.appendChild(selectionStatus);
-      root.appendChild(timeline);
       root.appendChild(axes);
       root.appendChild(notes);
       el.appendChild(root);
@@ -5937,19 +5937,19 @@ HTMLWidgets.widget({
         resetViewport(null);
         initialiseCameraFromScene(next);
         redrawCurrent();
-        
-		requestAnimationFrame(function() {
-    	  redrawCurrent();
+
+        requestAnimationFrame(function() {
+          redrawCurrent();
           scheduleTimelineTick();
-	    });
+        });
       },
 
       resize: function(newWidth, newHeight) {
-	  applyWidgetSize(newWidth, newHeight);
+        applyWidgetSize(newWidth, newHeight);
 
-		requestAnimationFrame(function() {
-    	  redrawCurrent();
-	    });
+        requestAnimationFrame(function() {
+          redrawCurrent();
+        });
       }
     };
   }
