@@ -197,9 +197,14 @@ extract_line_payloads <- function(layer, data) {
 
   panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
   split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  subtype <- if (is_path3d_geom(layer)) "path3d" else NULL
   payloads <- lapply(names(split_index), function(id) {
     panel_data <- data[split_index[[id]], , drop = FALSE]
-    path_runs <- split_path_runs(panel_data)
+    path_runs <- if (identical(subtype, "path3d")) {
+      split_ordered_group_path_runs(panel_data)
+    } else {
+      split_path_runs(panel_data)
+    }
 
     if (!length(path_runs)) {
       return(NULL)
@@ -219,6 +224,7 @@ extract_line_payloads <- function(layer, data) {
       compact_list(list(
         rows = nrow(path),
         group = first_group_value(path),
+        subtype = subtype,
         x = unname(as.numeric(path$x)),
         y = unname(as.numeric(path$y)),
         z = if (length(z)) unname(z) else NULL,
@@ -234,6 +240,7 @@ extract_line_payloads <- function(layer, data) {
       panel_id = as.integer(id),
       type = "lines",
       geom = class(layer$geom)[1],
+      subtype = subtype,
       rows = sum(vapply(paths, `[[`, integer(1), "rows")),
       path_count = length(paths),
       paths = paths

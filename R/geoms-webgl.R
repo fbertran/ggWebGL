@@ -19,6 +19,11 @@ GeomLineWebGL <- ggplot2::ggproto(
   ggplot2::GeomLine,
   optional_aes = c(ggplot2::GeomLine$optional_aes, "z", "frame", "time")
 )
+GeomPath3DWebGL <- ggplot2::ggproto(
+  "GeomPath3DWebGL",
+  ggplot2::GeomPath,
+  optional_aes = c(ggplot2::GeomPath$optional_aes, "z", "frame", "time")
+)
 GeomRasterWebGL <- ggplot2::ggproto("GeomRasterWebGL", ggplot2::GeomRaster)
 GeomVectorWebGL <- ggplot2::ggproto(
   "GeomVectorWebGL",
@@ -111,6 +116,64 @@ geom_line_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(na.rm = na.rm, orientation = orientation, ...)
+  )
+}
+
+#' WebGL Ordered 3D Path Layer
+#'
+#' Add an ordered three-dimensional path layer that is tagged for the `ggWebGL`
+#' rendering pipeline. Unlike [geom_line_webgl()], this geom is based on
+#' `ggplot2::GeomPath` and preserves row order within each group.
+#'
+#' @inheritParams ggplot2::geom_path
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' path_data <- data.frame(
+#'   x = c(0, 0.4, 0.2, 0.8),
+#'   y = c(0, 0.3, 0.7, 1),
+#'   z = c(0, 0.2, 0.5, 0.9),
+#'   frame = 1:4
+#' )
+#'
+#' path_plot <- ggplot2::ggplot(
+#'   path_data,
+#'   ggplot2::aes(x, y, z = z, frame = frame)
+#' ) +
+#'   geom_path3d_webgl(linewidth = 1.2) +
+#'   theme_webgl(shader = "trajectory_age")
+#'
+#' path_plot
+#' @export
+geom_path3d_webgl <- function(mapping = NULL,
+                              data = NULL,
+                              stat = "identity",
+                              position = "identity",
+                              ...,
+                              lineend = "butt",
+                              linejoin = "round",
+                              linemitre = 10,
+                              arrow = NULL,
+                              na.rm = FALSE,
+                              show.legend = NA,
+                              inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomPath3DWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
+      arrow = arrow,
+      na.rm = na.rm,
+      ...
+    )
   )
 }
 

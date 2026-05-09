@@ -782,7 +782,12 @@ is_point_geom <- function(layer) {
 is_line_geom <- function(layer) {
   inherits(layer$geom, "GeomLine") ||
     inherits(layer$geom, "GeomPath") ||
-    identical(class(layer$geom)[1], "GeomLineWebGL")
+    identical(class(layer$geom)[1], "GeomLineWebGL") ||
+    is_path3d_geom(layer)
+}
+
+is_path3d_geom <- function(layer) {
+  identical(class(layer$geom)[1], "GeomPath3DWebGL")
 }
 
 is_raster_geom <- function(layer) {
@@ -832,4 +837,40 @@ split_path_runs <- function(data) {
     },
     x = split_idx
   )
+}
+
+split_ordered_group_path_runs <- function(data) {
+  if (!nrow(data)) {
+    return(list())
+  }
+
+  group_chr <- as.character(data$group %||% seq_len(nrow(data)))
+  x_ok <- is.finite(as.numeric(data$x))
+  y_ok <- is.finite(as.numeric(data$y))
+  valid <- x_ok & y_ok
+  group_levels <- unique(group_chr)
+  out <- list()
+
+  for (group_name in group_levels) {
+    group_idx <- which(group_chr == group_name)
+    if (!length(group_idx)) {
+      next
+    }
+
+    run_break <- rep(TRUE, length(group_idx))
+    if (length(group_idx) > 1L) {
+      run_break[-1] <- !(valid[group_idx][-1] & valid[group_idx][-length(group_idx)])
+    }
+
+    group_runs <- split(group_idx, cumsum(run_break))
+    group_runs <- Filter(
+      f = function(idx) {
+        length(idx) >= 2L && all(valid[idx])
+      },
+      x = group_runs
+    )
+    out <- c(out, group_runs)
+  }
+
+  out
 }

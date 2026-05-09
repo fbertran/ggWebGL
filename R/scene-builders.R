@@ -13,9 +13,10 @@ ggwebgl_coordinate_system <- function(dimension) {
 ggwebgl_enrich_scene_render <- function(render, webgl) {
   webgl <- normalise_webgl_options(webgl)
   explicit_fields <- attr(webgl, "explicit_fields", exact = TRUE) %||% character()
-  mesh_or_surface_defaults_3d <- any(c("mesh", "surface") %in% (render$primitives %||% character())) &&
+  defaults_3d <- (any(c("mesh", "surface") %in% (render$primitives %||% character())) ||
+    render_has_layer_subtype(render, "path3d")) &&
     !any(c("view", "dimension", "camera", "projection") %in% explicit_fields)
-  if (isTRUE(mesh_or_surface_defaults_3d)) {
+  if (isTRUE(defaults_3d)) {
     webgl$view <- normalise_view(
       list(dimension = "3d", projection = "perspective", controller = "orbit"),
       dimension = "3d",
@@ -42,4 +43,14 @@ ggwebgl_enrich_scene_render <- function(render, webgl) {
     render$timeline <- webgl$timeline
   }
   render
+}
+
+render_has_layer_subtype <- function(render, subtype) {
+  panels <- render$panels %||% list()
+  any(vapply(panels, function(panel) {
+    layers <- panel$layers %||% list()
+    any(vapply(layers, function(layer) {
+      identical(layer$subtype, subtype)
+    }, logical(1)))
+  }, logical(1)))
 }
