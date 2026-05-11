@@ -103,7 +103,32 @@ webgl_spec(camera = "orbit", projection = "perspective")
 #> [1] 65536
 #> 
 #> $interactions
-#> [1] "pan"  "zoom"
+#> [1] "pan"    "zoom"   "camera"
+#> 
+#> $interactions_spec
+#> $hover
+#> [1] FALSE
+#> 
+#> $click
+#> [1] FALSE
+#> 
+#> $brush
+#> [1] FALSE
+#> 
+#> $lasso
+#> [1] FALSE
+#> 
+#> $camera
+#> [1] TRUE
+#> 
+#> $shiny
+#> [1] TRUE
+#> 
+#> $modes
+#> [1] "camera"
+#> 
+#> attr(,"class")
+#> [1] "ggwebgl_interactions" "list"                
 #> 
 #> $rendering
 #> [1] "visualization"

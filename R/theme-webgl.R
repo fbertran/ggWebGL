@@ -16,6 +16,9 @@
 #' @param interactions Legacy character vector of interaction modes to enable.
 #'   New code should use `selection = ggwebgl_selection(...)` for brush/lasso
 #'   behavior.
+#' @param interactions_spec Optional [ggwebgl_interactions()] object. This is
+#'   the preferred structured interaction contract for hover, click, brush,
+#'   lasso, camera, and Shiny event behavior.
 #' @param rendering Rendering contract mode. `"visualization"` keeps the
 #'   current interactive widget chrome. `"publication"` suppresses presentation
 #'   chrome by default and is intended for clean figure capture.
@@ -53,6 +56,7 @@ theme_webgl <- function(shader = "default",
                         transparent = TRUE,
                         buffer_size = 65536L,
                         interactions = c("pan", "zoom"),
+                        interactions_spec = NULL,
                         rendering = "visualization",
                         panel_overlay = "auto",
                         view = NULL,
@@ -73,6 +77,7 @@ theme_webgl <- function(shader = "default",
     if (!missing(transparent)) "transparent",
     if (!missing(buffer_size)) "buffer_size",
     if (!missing(interactions)) "interactions",
+    if (!missing(interactions_spec)) "interactions_spec",
     if (!missing(rendering)) "rendering",
     if (!missing(panel_overlay)) "panel_overlay",
     if (!missing(view)) "view",
@@ -92,6 +97,7 @@ theme_webgl <- function(shader = "default",
     transparent = if (!missing(transparent)) transparent else NULL,
     buffer_size = if (!missing(buffer_size)) buffer_size else NULL,
     interactions = if (!missing(interactions)) interactions else NULL,
+    interactions_spec = if (!missing(interactions_spec)) interactions_spec else NULL,
     rendering = if (!missing(rendering)) rendering else NULL,
     panel_overlay = if (!missing(panel_overlay)) panel_overlay else NULL,
     view = if (!missing(view)) view else NULL,

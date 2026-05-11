@@ -57,6 +57,7 @@ default_theme_webgl <- function() {
       )
     ),
     selection = list(mode = "none", highlight = TRUE, emit = TRUE),
+    interactions_spec = NULL,
     dimension = "2d",
     camera = "orbit",
     projection = "orthographic",
@@ -678,7 +679,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
   recognised_extra_fields <- c(
     "line_mode", "line_join", "line_cap",
     "view", "selection", "dimension", "camera", "projection", "camera_state",
-    "depth_test", "blend_mode", "timeline", "time_scale"
+    "depth_test", "blend_mode", "timeline", "time_scale", "interactions_spec"
   )
 
   for (field in recognised_extra_fields) {
@@ -710,6 +711,22 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
   )
   selection <- normalise_selection(options[["selection"]] %||% NULL, interactions = interactions)
   interactions <- unique(c(interactions, selection_interactions(selection)))
+  interactions_spec <- normalise_interactions_spec(
+    options[["interactions_spec"]] %||% NULL,
+    interactions = interactions,
+    selection = selection,
+    view = view
+  )
+  if (identical(selection$mode, "none")) {
+    if (isTRUE(interactions_spec$brush) && isTRUE(interactions_spec$lasso)) {
+      selection$mode <- "brush_lasso"
+    } else if (isTRUE(interactions_spec$brush)) {
+      selection$mode <- "brush"
+    } else if (isTRUE(interactions_spec$lasso)) {
+      selection$mode <- "lasso"
+    }
+  }
+  interactions <- unique(c(interactions, interactions_spec$modes))
 
   normalised <- compact_list(list(
     shader = normalise_shader_name(options[["shader"]] %||% defaults[["shader"]]),
@@ -717,6 +734,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
     transparent = isTRUE(options[["transparent"]] %||% transparent_default),
     buffer_size = normalise_buffer_size(options[["buffer_size"]] %||% defaults[["buffer_size"]]),
     interactions = interactions,
+    interactions_spec = interactions_spec,
     rendering = rendering,
     panel_overlay = normalise_panel_overlay(options[["panel_overlay"]] %||% defaults[["panel_overlay"]]),
     view = view,

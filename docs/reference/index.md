@@ -55,6 +55,9 @@
 - [`ggwebgl_example_data()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_example_data.md)
   : Load Packaged ggWebGL Example Data
 
+- [`ggwebgl_interactions()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_interactions.md)
+  : Define ggWebGL Runtime Interactions
+
 - [`ggwebgl_layer_lines()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_layer_lines.md)
   : Renderer-Ready Line Layer
 

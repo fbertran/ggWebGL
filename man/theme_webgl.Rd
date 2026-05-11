@@ -10,6 +10,7 @@ theme_webgl(
   transparent = TRUE,
   buffer_size = 65536L,
   interactions = c("pan", "zoom"),
+  interactions_spec = NULL,
   rendering = "visualization",
   panel_overlay = "auto",
   view = NULL,
@@ -41,6 +42,10 @@ by the eventual renderer.}
 \item{interactions}{Legacy character vector of interaction modes to enable.
 New code should use \code{selection = ggwebgl_selection(...)} for brush/lasso
 behavior.}
+
+\item{interactions_spec}{Optional \code{\link[=ggwebgl_interactions]{ggwebgl_interactions()}} object. This is
+the preferred structured interaction contract for hover, click, brush,
+lasso, camera, and Shiny event behavior.}
 
 \item{rendering}{Rendering contract mode. \code{"visualization"} keeps the
 current interactive widget chrome. \code{"publication"} suppresses presentation

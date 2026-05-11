@@ -69,6 +69,7 @@ object is consumed by <code><a href="ggplot_webgl.html">ggplot_webgl()</a></code
 <span>  transparent <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  buffer_size <span class="op">=</span> <span class="fl">65536L</span>,</span>
 <span>  interactions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pan"</span>, <span class="st">"zoom"</span><span class="op">)</span>,</span>
+<span>  interactions_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rendering <span class="op">=</span> <span class="st">"visualization"</span>,</span>
 <span>  panel_overlay <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  view <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -113,6 +114,12 @@ by the eventual renderer.</p></dd>
 <dd><p>Legacy character vector of interaction modes to enable.
 New code should use <code>selection = ggwebgl_selection(...)</code> for brush/lasso
 behavior.</p></dd>
+
+
+<dt id="arg-interactions-spec">interactions_spec<a class="anchor" aria-label="anchor" href="#arg-interactions-spec"></a></dt>
+<dd><p>Optional <code><a href="ggwebgl_interactions.html">ggwebgl_interactions()</a></code> object. This is
+the preferred structured interaction contract for hover, click, brush,
+lasso, camera, and Shiny event behavior.</p></dd>
 
 
 <dt id="arg-rendering">rendering<a class="anchor" aria-label="anchor" href="#arg-rendering"></a></dt>
@@ -190,6 +197,31 @@ playback controls.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $interactions</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "pan"  "zoom"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $interactions_spec</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $hover</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $click</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $brush</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $lasso</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $camera</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $shiny</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $modes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"class")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "ggwebgl_interactions" "list"                </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $rendering</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "visualization"</span>

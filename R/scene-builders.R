@@ -39,6 +39,11 @@ ggwebgl_enrich_scene_render <- function(render, webgl) {
   render$depth_test <- isTRUE(webgl$depth_test)
   render$blend_mode <- webgl$blend_mode %||% "auto"
   render$selection <- webgl$selection %||% list(mode = "none", highlight = TRUE, emit = TRUE)
+  render$interactions <- webgl$interactions_spec %||% normalise_interactions_spec(
+    interactions = webgl$interactions %||% character(),
+    selection = render$selection,
+    view = webgl$view %||% list(dimension = render$dimension)
+  )
   if (!is.null(webgl$timeline)) {
     render$timeline <- webgl$timeline
   }

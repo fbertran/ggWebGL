@@ -8,6 +8,11 @@ dependencies:
       - lib/camera.js
       - lib/program-registry.js
       - lib/picking.js
+      - lib/interactions/hover.js
+      - lib/interactions/brush.js
+      - lib/interactions/lasso.js
+      - lib/interactions/select.js
+      - lib/interactions/raycast.js
     all_files: false
   - name: ggWebGL-styles
     version: 0.2.0

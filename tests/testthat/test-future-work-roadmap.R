@@ -235,7 +235,7 @@ test_that("widget source contains experimental renderer paths", {
   expect_match(js, "function bindTimelineHandlers", fixed = TRUE)
   expect_match(js, "function project3dPoint", fixed = TRUE)
   expect_match(js, "ggwebgl__timeline", fixed = TRUE)
-  expect_match(js, "setInputValue(el.id + \"_selection\"", fixed = TRUE)
+  expect_match(js, "emitShinyEvent(\"_selection\"", fixed = TRUE)
   expect_match(js, "function createTimelineState", fixed = TRUE)
   expect_match(js, "filter: filter", fixed = TRUE)
   expect_match(js, "zend", fixed = TRUE)

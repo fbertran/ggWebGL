@@ -2,6 +2,19 @@
 
 ## ggWebGL 0.7.0
 
+- Added
+  [`ggwebgl_interactions()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_interactions.md)
+  as the structured interaction contract for hover, click, brush/lasso,
+  camera, and Shiny event behavior.
+- Added renderer-owned hover/click picking coverage for additional
+  primitive types, including vectors, raster cells, and structured
+  surfaces.
+- Unified Shiny interaction event emission for hover, selection, brush,
+  camera, and timeline/time state while preserving existing timeline
+  update APIs.
+- Added a CRAN-safe Shiny interaction demo that exercises hover, click,
+  brush, camera, and time events without custom JavaScript.
+
 ## ggWebGL 0.6.0
 
 - Added `XGeoRTR` and `boids4R` to `Suggests` as optional integrations

@@ -155,6 +155,31 @@ ggwebgl_magnify_region(
 #> $webgl$interactions
 #> [1] "pan"  "zoom"
 #> 
+#> $webgl$interactions_spec
+#> $hover
+#> [1] FALSE
+#> 
+#> $click
+#> [1] FALSE
+#> 
+#> $brush
+#> [1] FALSE
+#> 
+#> $lasso
+#> [1] FALSE
+#> 
+#> $camera
+#> [1] FALSE
+#> 
+#> $shiny
+#> [1] TRUE
+#> 
+#> $modes
+#> character(0)
+#> 
+#> attr(,"class")
+#> [1] "ggwebgl_interactions" "list"                
+#> 
 #> $webgl$rendering
 #> [1] "visualization"
 #> 
@@ -697,6 +722,31 @@ ggwebgl_magnify_region(
 #> $render$selection$emit
 #> [1] TRUE
 #> 
+#> 
+#> $render$interactions
+#> $hover
+#> [1] FALSE
+#> 
+#> $click
+#> [1] FALSE
+#> 
+#> $brush
+#> [1] FALSE
+#> 
+#> $lasso
+#> [1] FALSE
+#> 
+#> $camera
+#> [1] FALSE
+#> 
+#> $shiny
+#> [1] TRUE
+#> 
+#> $modes
+#> character(0)
+#> 
+#> attr(,"class")
+#> [1] "ggwebgl_interactions" "list"                
 #> 
 #> 
 #> attr(,"class")

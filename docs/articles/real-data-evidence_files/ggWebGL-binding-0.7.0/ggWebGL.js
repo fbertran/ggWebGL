@@ -28,14 +28,17 @@ HTMLWidgets.widget({
       hover: {
         clientX: 0,
         clientY: 0,
-        panelId: null
+        panelId: null,
+        key: null
       },
+      suppressNextClick: false,
       drag: {
         active: false,
         panelId: null,
         pointerId: null,
         lastClientX: 0,
-        lastClientY: 0
+        lastClientY: 0,
+        moved: false
       },
       selection: {
         active: false,
@@ -642,6 +645,39 @@ HTMLWidgets.widget({
       };
     }
 
+    function normalizeInteractionsSpec(source, interactions, selection, view) {
+      source = source && typeof source === "object" ? source : null;
+      interactions = normalizeStringArray(interactions);
+      selection = selection && typeof selection === "object" ? selection : normalizeSelection(null, interactions);
+      view = view && typeof view === "object" ? view : {};
+
+      var brushSelected = selection.mode === "brush" || selection.mode === "brush_lasso";
+      var lassoSelected = selection.mode === "lasso" || selection.mode === "brush_lasso";
+      var out = source ? {
+        hover: source.hover === true,
+        click: source.click === true,
+        brush: source.brush === true || brushSelected,
+        lasso: source.lasso === true || lassoSelected,
+        camera: source.camera === true,
+        shiny: source.shiny !== false
+      } : {
+        hover: interactions.indexOf("hover") !== -1,
+        click: interactions.indexOf("click") !== -1 || interactions.indexOf("select") !== -1,
+        brush: interactions.indexOf("brush") !== -1 || brushSelected,
+        lasso: interactions.indexOf("lasso") !== -1 || lassoSelected,
+        camera: interactions.indexOf("camera") !== -1 || view.dimension === "3d",
+        shiny: true
+      };
+      var modes = [];
+      if (out.hover) modes.push("hover");
+      if (out.click) modes.push("click");
+      if (out.brush) modes.push("brush");
+      if (out.lasso) modes.push("lasso");
+      if (out.camera) modes.push("camera");
+      out.modes = modes;
+      return out;
+    }
+
     function normalizeTimeline(source) {
       if (!source || typeof source !== "object") {
         return null;
@@ -709,6 +745,7 @@ HTMLWidgets.widget({
       var blendMode = String(source.blend_mode || extra.blend_mode || "auto").toLowerCase();
       var interactions = normalizeStringArray(source.interactions);
       var selection = normalizeSelection(source.selection, interactions);
+      var interactionsSpec = normalizeInteractionsSpec(source.interactions_spec || source.interactionsSpec || null, interactions, selection, view);
 
       if (["visualization", "publication"].indexOf(rendering) === -1) {
         rendering = "visualization";
@@ -729,6 +766,20 @@ HTMLWidgets.widget({
         if (interactions.indexOf("brush") === -1) interactions.push("brush");
         if (interactions.indexOf("lasso") === -1) interactions.push("lasso");
       }
+      interactionsSpec.modes.forEach(function(mode) {
+        if (interactions.indexOf(mode) === -1) {
+          interactions.push(mode);
+        }
+      });
+      if (selection.mode === "none") {
+        if (interactionsSpec.brush && interactionsSpec.lasso) {
+          selection.mode = "brush_lasso";
+        } else if (interactionsSpec.brush) {
+          selection.mode = "brush";
+        } else if (interactionsSpec.lasso) {
+          selection.mode = "lasso";
+        }
+      }
 
       return {
         shader: shader,
@@ -736,6 +787,7 @@ HTMLWidgets.widget({
         transparent: source.transparent !== undefined ? source.transparent !== false : rendering !== "publication",
         buffer_size: Number(source.buffer_size) || 65536,
         interactions: interactions,
+        interactions_spec: interactionsSpec,
         rendering: rendering,
         panel_overlay: panelOverlay,
         view: view,
@@ -1201,6 +1253,9 @@ HTMLWidgets.widget({
         dimension: String(source.dimension || "2d").toLowerCase() === "3d" ? "3d" : "2d",
         camera: source.camera && typeof source.camera === "object" ? source.camera : null,
         selection: source.selection && typeof source.selection === "object" ? normalizeSelection(source.selection, []) : null,
+        interactions: source.interactions && typeof source.interactions === "object"
+          ? normalizeInteractionsSpec(source.interactions, [], source.selection, source.camera)
+          : null,
         timeline: normalizeTimeline(source.timeline),
         links: source.links && typeof source.links === "object" ? source.links : {},
         unsupported_layers: Array.isArray(source.unsupported_layers) ? source.unsupported_layers : [],
@@ -1232,6 +1287,9 @@ HTMLWidgets.widget({
         state: normalized.webgl.view.state
       };
       normalized.render.selection = normalized.render.selection || normalized.webgl.selection || { mode: "none", highlight: true, emit: true };
+      normalized.render.interactions = normalized.render.interactions ||
+        normalized.webgl.interactions_spec ||
+        normalizeInteractionsSpec(null, normalized.webgl.interactions, normalized.render.selection, normalized.webgl.view);
       normalized.render.timeline = normalized.render.timeline || normalized.webgl.timeline || null;
       if (window.ggWebGLScene && typeof window.ggWebGLScene.finalizeScene === "function") {
         normalized = window.ggWebGLScene.finalizeScene(normalized);
@@ -1371,7 +1429,15 @@ HTMLWidgets.widget({
     }
 
     function interactionList(x) {
-      return x && x.webgl ? x.webgl.interactions : [];
+      var values = x && x.webgl ? normalizeStringArray(x.webgl.interactions) : [];
+      var renderInteractions = x && x.render && x.render.interactions ? x.render.interactions : null;
+      var modes = renderInteractions && Array.isArray(renderInteractions.modes) ? renderInteractions.modes : [];
+      modes.forEach(function(mode) {
+        if (values.indexOf(mode) === -1) {
+          values.push(mode);
+        }
+      });
+      return values;
     }
 
     function renderingMode(x) {
@@ -1566,11 +1632,26 @@ HTMLWidgets.widget({
       return payload;
     }
 
+    function shinyEventsEnabled() {
+      var interactions = state.x && state.x.render ? state.x.render.interactions : null;
+      return !(interactions && interactions.shiny === false);
+    }
+
+    function emitShinyEvent(suffix, payload) {
+      if (!el || !el.id || !shinyEventsEnabled()) {
+        return;
+      }
+      if (!(window.Shiny && typeof window.Shiny.setInputValue === "function")) {
+        return;
+      }
+      window.Shiny.setInputValue(el.id + suffix, payload, { priority: "event" });
+    }
+
     function emitTimelineState(el, state, reason) {
       if (!el || !el.id || !state || !state.timeline || !state.timeline.enabled) {
         return;
       }
-      if (!(window.Shiny && typeof window.Shiny.setInputValue === "function")) {
+      if (!shinyEventsEnabled() || !(window.Shiny && typeof window.Shiny.setInputValue === "function")) {
         return;
       }
 
@@ -1580,6 +1661,7 @@ HTMLWidgets.widget({
       }
 
       window.Shiny.setInputValue(el.id + "_timeline", payload, { priority: "event" });
+      window.Shiny.setInputValue(el.id + "_time", payload, { priority: "event" });
     }
 
     function applyTimelineUpdate(message) {
@@ -2040,6 +2122,14 @@ HTMLWidgets.widget({
       var title = "Trajectory sample";
       if (target.type === "point") {
         title = "Point sample";
+      } else if (target.type === "vector") {
+        title = "Vector";
+      } else if (target.type === "raster_cell") {
+        title = "Raster cell";
+      } else if (target.type === "surface_vertex") {
+        title = "Surface vertex";
+      } else if (target.type === "surface_face") {
+        title = "Surface face";
       } else if (target.type === "mesh_vertex") {
         title = "Mesh vertex";
       } else if (target.type === "mesh_face") {
@@ -2067,12 +2157,22 @@ HTMLWidgets.widget({
       if (target.id) {
         lines.push("<div><strong>id</strong>: " + escapeHtml(target.id) + "</div>");
       }
+      if (isFinite(target.index)) {
+        lines.push("<div><strong>index</strong>: " + escapeHtml(String(target.index)) + "</div>");
+      }
       if (isFinite(target.face_index)) {
         lines.push("<div><strong>face</strong>: " + escapeHtml(String(target.face_index)) + "</div>");
+      }
+      if (isFinite(target.cell_index)) {
+        lines.push("<div><strong>cell</strong>: " + escapeHtml(String(target.cell_index)) + "</div>");
       }
 
       if (target.group) {
         lines.push("<div><strong>group</strong>: " + escapeHtml(target.group) + "</div>");
+      }
+
+      if (Array.isArray(target.rgba)) {
+        lines.push("<div><strong>rgba</strong>: " + escapeHtml(target.rgba.map(formatNumber).join(", ")) + "</div>");
       }
 
       if (target.type === "point") {
@@ -2084,6 +2184,96 @@ HTMLWidgets.widget({
       }
 
       return lines.join("");
+    }
+
+    function pickPayload(target, reason) {
+      if (window.ggWebGLInteractions && typeof window.ggWebGLInteractions.pickPayload === "function") {
+        return window.ggWebGLInteractions.pickPayload(target, reason);
+      }
+      if (!target) {
+        return null;
+      }
+      var payload = {};
+      Object.keys(target).forEach(function(key) {
+        var value = target[key];
+        if (value !== undefined && typeof value !== "function" && key !== "dist2") {
+          payload[key] = value;
+        }
+      });
+      payload.reason = reason || "pick";
+      return payload;
+    }
+
+    function hoverKey(target) {
+      if (window.ggWebGLInteractions && typeof window.ggWebGLInteractions.hoverKey === "function") {
+        return window.ggWebGLInteractions.hoverKey(target);
+      }
+      if (!target) {
+        return "none";
+      }
+      return [target.type || "unknown", target.panel_id || "", target.layer_index || "", target.index || "", target.id || ""].join(":");
+    }
+
+    function emitHover(target) {
+      var key = hoverKey(target);
+      if (key === state.hover.key) {
+        return;
+      }
+      state.hover.key = key;
+      el.ggwebglLastHover = target ? pickPayload(target, "hover") : null;
+      emitShinyEvent("_hover", el.ggwebglLastHover);
+    }
+
+    function emitClickSelection(target) {
+      var picked = pickPayload(target, "click");
+      if (!picked) {
+        return;
+      }
+      var payload = {
+        mode: "click",
+        panel_id: picked.panel_id,
+        region: null,
+        count: 1,
+        selections: [{
+          panel_id: picked.panel_id,
+          layer_index: picked.layer_index,
+          geom: picked.geom || picked.type,
+          type: picked.type,
+          count: 1,
+          indices: isFinite(picked.index) ? [picked.index] : [],
+          ids: picked.id ? [picked.id] : []
+        }],
+        picked: picked
+      };
+      state.selection.result = payload;
+      emitSelection(payload);
+      updateSelectionStatus();
+      redrawCurrent();
+    }
+
+    function currentCameraPayload(reason) {
+      return {
+        reason: reason || "camera",
+        controller: cameraController(state.x),
+        projection: sceneProjection(state.x),
+        yaw: state.camera.yaw,
+        pitch: state.camera.pitch,
+        distance: state.camera.distance,
+        target: state.camera.target.slice(),
+        rotation: state.camera.rotation.slice(),
+        up: state.camera.up.slice(),
+        fov: state.camera.fov,
+        near: state.camera.near,
+        far: state.camera.far
+      };
+    }
+
+    function emitCameraState(reason) {
+      if (!state.x || sceneDimension(state.x) !== "3d" || !hasInteraction(state.x, "camera")) {
+        return;
+      }
+      el.ggwebglLastCameraEvent = currentCameraPayload(reason);
+      emitShinyEvent("_camera", el.ggwebglLastCameraEvent);
     }
 
     function panelBoxes(x) {
@@ -2376,6 +2566,9 @@ HTMLWidgets.widget({
     }
 
     function pointInScreenTriangle(px, py, a, b, c) {
+      if (window.ggWebGLInteractions && typeof window.ggWebGLInteractions.pointInTriangle === "function") {
+        return window.ggWebGLInteractions.pointInTriangle(px, py, a, b, c);
+      }
       var v0x = c.x - a.x;
       var v0y = c.y - a.y;
       var v1x = b.x - a.x;
@@ -2395,6 +2588,23 @@ HTMLWidgets.widget({
       var u = (dot11 * dot02 - dot01 * dot12) * inv;
       var v = (dot00 * dot12 - dot01 * dot02) * inv;
       return u >= -0.001 && v >= -0.001 && (u + v) <= 1.001;
+    }
+
+    function distanceToSegmentSquared(px, py, ax, ay, bx, by) {
+      var dx = bx - ax;
+      var dy = by - ay;
+      var len2 = dx * dx + dy * dy;
+      if (len2 <= 1e-9) {
+        dx = px - ax;
+        dy = py - ay;
+        return dx * dx + dy * dy;
+      }
+      var t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+      var x = ax + t * dx;
+      var y = ay + t * dy;
+      dx = px - x;
+      dy = py - y;
+      return dx * dx + dy * dy;
     }
 
     function pickMeshFaceAt(layer, px, py, viewport, box) {
@@ -2449,6 +2659,83 @@ HTMLWidgets.widget({
       return best;
     }
 
+    function surfaceLayerCoordinateArrays(layer) {
+      if (layer._surfacePickCoords) {
+        return layer._surfacePickCoords;
+      }
+      var positions = layer.positions || [];
+      var xs = [];
+      var ys = [];
+      var zs = [];
+      var count = Math.floor(positions.length / 3);
+      for (var i = 0; i < count; i += 1) {
+        xs.push(Number(positions[i * 3]));
+        ys.push(Number(positions[i * 3 + 1]));
+        zs.push(Number(positions[i * 3 + 2]) || 0);
+      }
+      layer._surfacePickCoords = { x: xs, y: ys, z: zs };
+      return layer._surfacePickCoords;
+    }
+
+    function surfaceVertexScreenPoint(layer, vertexIndex, viewport, box) {
+      var coords = surfaceLayerCoordinateArrays(layer);
+      var x = coords.x[vertexIndex];
+      var y = coords.y[vertexIndex];
+      var z = coords.z[vertexIndex] || 0;
+      var xSpan = Math.max(1e-6, viewport.x[1] - viewport.x[0]);
+      var ySpan = Math.max(1e-6, viewport.y[1] - viewport.y[0]);
+      var projected = sceneDimension(state.x) === "3d"
+        ? project3dPoint(x, y, z, viewport, coords)
+        : { x: Number(x), y: Number(y) };
+      return {
+        x: sceneDimension(state.x) === "3d"
+          ? ((projected.x + 1.2) / 2.4) * box.plotWidth
+          : ((projected.x - viewport.x[0]) / xSpan) * box.plotWidth,
+        y: sceneDimension(state.x) === "3d"
+          ? (1 - ((projected.y + 1.2) / 2.4)) * box.plotHeight
+          : (1 - ((projected.y - viewport.y[0]) / ySpan)) * box.plotHeight,
+        z: z,
+        dataX: Number(x),
+        dataY: Number(y)
+      };
+    }
+
+    function pickSurfaceFaceAt(layer, px, py, viewport, box) {
+      var indices = layer.indices || [];
+      var pickIds = layer.pick_id || [];
+      var best = null;
+      for (var t = 0; t + 2 < indices.length; t += 3) {
+        var ia = Number(indices[t]);
+        var ib = Number(indices[t + 1]);
+        var ic = Number(indices[t + 2]);
+        if (!isFinite(ia) || !isFinite(ib) || !isFinite(ic)) {
+          continue;
+        }
+        var a = surfaceVertexScreenPoint(layer, ia, viewport, box);
+        var b = surfaceVertexScreenPoint(layer, ib, viewport, box);
+        var c = surfaceVertexScreenPoint(layer, ic, viewport, box);
+        if (!pointInScreenTriangle(px, py, a, b, c)) {
+          continue;
+        }
+        var cx = (a.x + b.x + c.x) / 3;
+        var cy = (a.y + b.y + c.y) / 3;
+        var dist2 = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+        if (!best || dist2 < best.dist2) {
+          var faceIndex = Math.floor(t / 3);
+          best = {
+            dist2: dist2,
+            type: "surface_face",
+            x: (a.dataX + b.dataX + c.dataX) / 3,
+            y: (a.dataY + b.dataY + c.dataY) / 3,
+            z: (a.z + b.z + c.z) / 3,
+            id: pickIds[faceIndex] || String(faceIndex),
+            face_index: faceIndex
+          };
+        }
+      }
+      return best;
+    }
+
     function pickSceneTarget(clientX, clientY, panel, box) {
       var layers = Array.isArray(panel.layers) ? panel.layers : [];
       var viewport = currentViewport(panel);
@@ -2461,7 +2748,7 @@ HTMLWidgets.widget({
       var ySpan = Math.max(1e-6, viewport.y[1] - viewport.y[0]);
       var best = null;
 
-      layers.forEach(function(layer) {
+      layers.forEach(function(layer, layerIndex) {
         if (layer.type === "points") {
           var count = layer.rows || 0;
           var xs = layer.x || [];
@@ -2482,10 +2769,16 @@ HTMLWidgets.widget({
               best = {
                 dist2: dist2,
                 type: "point",
+                panel_id: panel.panel_id,
+                layer_index: layerIndex,
+                geom: layer.geom || "points",
+                index: i,
                 x: xs[i],
                 y: ys[i],
+                z: layer.z && isFinite(layer.z[i]) ? layer.z[i] : NaN,
                 size: sizes[i] || 0,
                 age: isFinite(ages[i]) ? ages[i] : 1,
+                id: layer.id && layer.id[i] ? layer.id[i] : String(i),
                 label: labels[i] || "",
                 panelLabel: panel.label || ("Panel " + panel.panel_id)
               };
@@ -2516,8 +2809,13 @@ HTMLWidgets.widget({
                 best = {
                   dist2: dist2,
                   type: "line",
+                  panel_id: panel.panel_id,
+                  layer_index: layerIndex,
+                  geom: layer.geom || "lines",
+                  index: i,
                   x: xs[i],
                   y: ys[i],
+                  z: path.z && isFinite(path.z[i]) ? path.z[i] : NaN,
                   group: path.group || "",
                   age: isFinite(ages[i]) ? ages[i] : NaN,
                   panelLabel: panel.label || ("Panel " + panel.panel_id)
@@ -2525,6 +2823,69 @@ HTMLWidgets.widget({
               }
             }
           });
+        } else if (layer.type === "vectors") {
+          var vxs = layer.x || [];
+          var vys = layer.y || [];
+          var vxends = layer.xend || [];
+          var vyends = layer.yend || [];
+          var vids = layer.id || [];
+          for (var v = 0; v < layer.rows; v += 1) {
+            if (!layerIndexVisible(layer, v, state.x)) {
+              continue;
+            }
+            var ax = ((vxs[v] - viewport.x[0]) / xSpan) * box.plotWidth;
+            var ay = (1 - ((vys[v] - viewport.y[0]) / ySpan)) * box.plotHeight;
+            var bx = ((vxends[v] - viewport.x[0]) / xSpan) * box.plotWidth;
+            var by = (1 - ((vyends[v] - viewport.y[0]) / ySpan)) * box.plotHeight;
+            var vdist2 = distanceToSegmentSquared(px, py, ax, ay, bx, by);
+            if (vdist2 <= 144 && (!best || vdist2 < best.dist2)) {
+              best = {
+                dist2: vdist2,
+                type: "vector",
+                panel_id: panel.panel_id,
+                layer_index: layerIndex,
+                geom: layer.geom || "vectors",
+                index: v,
+                x: vxs[v],
+                y: vys[v],
+                z: layer.z && isFinite(layer.z[v]) ? layer.z[v] : NaN,
+                xend: vxends[v],
+                yend: vyends[v],
+                zend: layer.zend && isFinite(layer.zend[v]) ? layer.zend[v] : NaN,
+                id: vids[v] || String(v),
+                panelLabel: panel.label || ("Panel " + panel.panel_id)
+              };
+            }
+          }
+        } else if (layer.type === "raster") {
+          var rxmin = Number(layer.xmin);
+          var rxmax = Number(layer.xmax);
+          var rymin = Number(layer.ymin);
+          var rymax = Number(layer.ymax);
+          var dataPoint = stageToDataPoint(box.plotLeft + px, box.plotTop + py, panel, box);
+          if (dataPoint && dataPoint.x >= rxmin && dataPoint.x <= rxmax && dataPoint.y >= rymin && dataPoint.y <= rymax) {
+            var fx = (dataPoint.x - rxmin) / Math.max(1e-9, rxmax - rxmin);
+            var fy = (dataPoint.y - rymin) / Math.max(1e-9, rymax - rymin);
+            var col = Math.max(0, Math.min(layer.width - 1, Math.floor(fx * layer.width)));
+            var row = Math.max(0, Math.min(layer.height - 1, Math.floor((1 - fy) * layer.height)));
+            var cellIndex = row * layer.width + col;
+            var offset = cellIndex * 4;
+            best = {
+              dist2: 0,
+              type: "raster_cell",
+              panel_id: panel.panel_id,
+              layer_index: layerIndex,
+              geom: layer.geom || "raster",
+              index: cellIndex,
+              cell_index: cellIndex,
+              row: row,
+              col: col,
+              x: dataPoint.x,
+              y: dataPoint.y,
+              rgba: (layer.rgba || []).slice(offset, offset + 4),
+              panelLabel: panel.label || ("Panel " + panel.panel_id)
+            };
+          }
         } else if (layer.type === "mesh") {
           var mxs = layer.x || [];
           var mys = layer.y || [];
@@ -2533,6 +2894,9 @@ HTMLWidgets.widget({
           var face = pickMeshFaceAt(layer, px, py, viewport, box);
           if (face && (!best || face.dist2 < best.dist2)) {
             best = Object.assign(face, {
+              panel_id: panel.panel_id,
+              layer_index: layerIndex,
+              geom: layer.geom || "mesh",
               panelLabel: panel.label || ("Panel " + panel.panel_id)
             });
           }
@@ -2547,10 +2911,45 @@ HTMLWidgets.widget({
               best = {
                 dist2: mdist2,
                 type: "mesh_vertex",
+                panel_id: panel.panel_id,
+                layer_index: layerIndex,
+                geom: layer.geom || "mesh",
+                index: m,
                 x: mxs[m],
                 y: mys[m],
                 z: mzs[m] || 0,
                 id: mids[m] || String(m),
+                panelLabel: panel.label || ("Panel " + panel.panel_id)
+              };
+            }
+          }
+        } else if (layer.type === "surface") {
+          var sface = pickSurfaceFaceAt(layer, px, py, viewport, box);
+          if (sface && (!best || sface.dist2 < best.dist2)) {
+            best = Object.assign(sface, {
+              panel_id: panel.panel_id,
+              layer_index: layerIndex,
+              geom: layer.geom || "surface",
+              panelLabel: panel.label || ("Panel " + panel.panel_id)
+            });
+          }
+          for (var s = 0; s < layer.vertex_count; s += 1) {
+            var svertex = surfaceVertexScreenPoint(layer, s, viewport, box);
+            var sdx = px - svertex.x;
+            var sdy = py - svertex.y;
+            var sdist2 = sdx * sdx + sdy * sdy;
+            if (sdist2 <= 100 && (!best || sdist2 < best.dist2)) {
+              best = {
+                dist2: sdist2,
+                type: "surface_vertex",
+                panel_id: panel.panel_id,
+                layer_index: layerIndex,
+                geom: layer.geom || "surface",
+                index: s,
+                x: svertex.dataX,
+                y: svertex.dataY,
+                z: svertex.z,
+                id: String(s),
                 panelLabel: panel.label || ("Panel " + panel.panel_id)
               };
             }
@@ -2563,13 +2962,17 @@ HTMLWidgets.widget({
 
     function emitSelection(payload) {
       payload = payload || {};
+      if (window.ggWebGLPicking && typeof window.ggWebGLPicking.decorateSelectionPayload === "function") {
+        payload = window.ggWebGLPicking.decorateSelectionPayload(payload);
+      }
       el.ggwebglLastSelection = payload;
       var selection = state.x && state.x.webgl ? state.x.webgl.selection : null;
       if (selection && selection.emit === false) {
         return;
       }
-      if (window.Shiny && typeof window.Shiny.setInputValue === "function" && el.id) {
-        window.Shiny.setInputValue(el.id + "_selection", payload, { priority: "event" });
+      emitShinyEvent("_selection", payload);
+      if (payload.mode === "brush") {
+        emitShinyEvent("_brush", payload);
       }
       if (state.x && state.x.webgl && state.x.webgl.extra && typeof state.x.webgl.extra.on_selection === "function") {
         state.x.webgl.extra.on_selection(payload);
@@ -2890,6 +3293,7 @@ HTMLWidgets.widget({
     function refreshHover(clientX, clientY) {
       if (!state.x || !hasInteraction(state.x, "hover")) {
         hideTooltip();
+        emitHover(null);
         return;
       }
 
@@ -2900,6 +3304,7 @@ HTMLWidgets.widget({
 
       if (!box) {
         hideTooltip();
+        emitHover(null);
         return;
       }
 
@@ -2909,9 +3314,11 @@ HTMLWidgets.widget({
 
       if (!target) {
         hideTooltip();
+        emitHover(null);
         return;
       }
 
+      emitHover(target);
       showTooltip(hoverHtml(target), clientX, clientY);
     }
 
@@ -3133,6 +3540,7 @@ HTMLWidgets.widget({
       state.drag.active = false;
       state.drag.panelId = null;
       state.drag.pointerId = null;
+      state.drag.moved = false;
       updateInteractionUi(state.x);
     }
 
@@ -3187,6 +3595,7 @@ HTMLWidgets.widget({
         state.drag.pointerId = event.pointerId;
         state.drag.lastClientX = event.clientX;
         state.drag.lastClientY = event.clientY;
+        state.drag.moved = false;
         hideTooltip();
 
         if (state.stage.setPointerCapture) {
@@ -3255,12 +3664,15 @@ HTMLWidgets.widget({
         if (!dx && !dy) {
           return;
         }
+        state.drag.moved = true;
 
         if (sceneDimension(state.x) === "3d") {
           if (event.shiftKey) {
             panCameraTarget(dx, dy, box);
+            emitCameraState("pan");
           } else if (cameraController(state.x) === "trackball") {
             applyTrackballDrag(dx, dy);
+            emitCameraState("trackball");
           } else {
             state.camera.yaw += dx * 0.01;
             state.camera.pitch = Math.max(-1.4, Math.min(1.4, state.camera.pitch + dy * 0.01));
@@ -3272,6 +3684,7 @@ HTMLWidgets.widget({
               rotation: state.camera.rotation.slice(),
               distance: state.camera.distance
             };
+            emitCameraState("orbit");
           }
           redrawCurrent();
           event.preventDefault();
@@ -3330,12 +3743,13 @@ HTMLWidgets.widget({
                 ? { mode: "lasso", polygon: polygon }
                 : { mode: "brush", rectangle: rectangle }
             };
-            state.selection.result = payload;
-            applyMagnifierRegion(panel.panel_id, region);
-            emitSelection(payload);
-            updateSelectionStatus();
-            redrawCurrent();
-          }
+          state.selection.result = payload;
+          applyMagnifierRegion(panel.panel_id, region);
+          emitSelection(payload);
+          updateSelectionStatus();
+          redrawCurrent();
+          state.suppressNextClick = true;
+        }
           state.selection.active = false;
           state.selection.pointerId = null;
           renderSelectionOverlay();
@@ -3343,6 +3757,9 @@ HTMLWidgets.widget({
           return;
         }
         if (event.pointerId === state.drag.pointerId) {
+          if (state.drag.moved) {
+            state.suppressNextClick = true;
+          }
           endDrag();
         }
       });
@@ -3367,6 +3784,27 @@ HTMLWidgets.widget({
 
       state.stage.addEventListener("pointerleave", function() {
         hideTooltip();
+        emitHover(null);
+      });
+
+      state.stage.addEventListener("click", function(event) {
+        if (!state.x || !hasInteraction(state.x, "click")) {
+          return;
+        }
+        if (state.suppressNextClick) {
+          state.suppressNextClick = false;
+          return;
+        }
+        var box = panelAtClient(event.clientX, event.clientY, state.x, true);
+        if (!box) {
+          return;
+        }
+        var target = pickSceneTarget(event.clientX, event.clientY, box.panel, box);
+        if (!target) {
+          return;
+        }
+        emitClickSelection(target);
+        event.preventDefault();
       });
 
       state.stage.addEventListener("wheel", function(event) {
@@ -3392,6 +3830,7 @@ HTMLWidgets.widget({
 
         if (sceneDimension(state.x) === "3d") {
           state.camera.distance = Math.max(0.2, Math.min(20, state.camera.distance * scale));
+          emitCameraState("zoom");
           redrawCurrent();
           event.preventDefault();
           return;
@@ -3428,6 +3867,7 @@ HTMLWidgets.widget({
 
         if (sceneDimension(state.x) === "3d") {
           initialiseCameraFromScene(state.x);
+          emitCameraState("reset");
         }
         resetViewport(box ? box.panel.panel_id : null);
         redrawCurrent();
@@ -4966,7 +5406,13 @@ HTMLWidgets.widget({
 
       var xs = [];
       var ys = [];
+      var selectedIds = {};
       result.selections.forEach(function(selection) {
+        (selection.ids || []).forEach(function(id) {
+          if (id !== null && id !== undefined && String(id).length) {
+            selectedIds[String(id)] = true;
+          }
+        });
         if (String(selection.panel_id) !== String(panel.panel_id)) {
           return;
         }
@@ -4984,6 +5430,22 @@ HTMLWidgets.widget({
           }
         });
       });
+
+      if (Object.keys(selectedIds).length) {
+        (panel.layers || []).forEach(function(layer) {
+          if (layer.type !== "points" && layer.type !== "vectors") {
+            return;
+          }
+          var ids = layer.id || [];
+          for (var i = 0; i < ids.length; i += 1) {
+            if (!selectedIds[String(ids[i])]) {
+              continue;
+            }
+            xs.push(Number(layer.x[i]));
+            ys.push(Number(layer.y[i]));
+          }
+        });
+      }
 
       var n = xs.length;
       if (!n) {

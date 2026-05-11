@@ -14,6 +14,7 @@ theme_webgl(
   transparent = TRUE,
   buffer_size = 65536L,
   interactions = c("pan", "zoom"),
+  interactions_spec = NULL,
   rendering = "visualization",
   panel_overlay = "auto",
   view = NULL,
@@ -55,6 +56,13 @@ theme_webgl(
   Legacy character vector of interaction modes to enable. New code
   should use `selection = ggwebgl_selection(...)` for brush/lasso
   behavior.
+
+- interactions_spec:
+
+  Optional
+  [`ggwebgl_interactions()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_interactions.md)
+  object. This is the preferred structured interaction contract for
+  hover, click, brush, lasso, camera, and Shiny event behavior.
 
 - rendering:
 
@@ -132,6 +140,31 @@ plot$ggwebgl
 #> 
 #> $interactions
 #> [1] "pan"  "zoom"
+#> 
+#> $interactions_spec
+#> $hover
+#> [1] FALSE
+#> 
+#> $click
+#> [1] FALSE
+#> 
+#> $brush
+#> [1] FALSE
+#> 
+#> $lasso
+#> [1] FALSE
+#> 
+#> $camera
+#> [1] FALSE
+#> 
+#> $shiny
+#> [1] TRUE
+#> 
+#> $modes
+#> character(0)
+#> 
+#> attr(,"class")
+#> [1] "ggwebgl_interactions" "list"                
 #> 
 #> $rendering
 #> [1] "visualization"
