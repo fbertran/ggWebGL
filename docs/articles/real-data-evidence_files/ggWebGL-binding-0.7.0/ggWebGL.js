@@ -4,6 +4,9 @@ HTMLWidgets.widget({
 
   factory: function(el, width, height) {
     var TIMELINE_UPDATE_MESSAGE_TYPE = "ggWebGL:updateTimeline";
+    var STAGE_MIN_DEFAULT = 260;
+    var STAGE_MIN_CONTROLS = 300;
+    var STAGE_MIN_MULTIPANEL = 320;
     var state = {
       root: null,
       title: null,
@@ -23,6 +26,7 @@ HTMLWidgets.widget({
       gl: null,
       programs: null,
       x: null,
+      requestedHeight: null,
       baseDomains: {},
       viewDomains: {},
       hover: {
@@ -181,6 +185,96 @@ HTMLWidgets.widget({
         : "visualization";
     }
 
+    function elementDisplayed(node) {
+      if (!node) {
+        return false;
+      }
+      var style = window.getComputedStyle ? window.getComputedStyle(node) : null;
+      return node.style.display !== "none" && (!style || style.display !== "none");
+    }
+
+    function cssPixelValue(value) {
+      var parsed = parseFloat(value);
+      return isFinite(parsed) ? parsed : 0;
+    }
+
+    function recommendedStageMinHeight(x) {
+      if (currentRenderingMode() === "publication") {
+        return 0;
+      }
+      var panels = panelList(x || state.x);
+      var hasMultiplePanels = panels.length > 1;
+      var hasTimeline = state.timelineControls && elementDisplayed(state.timelineControls);
+      var hasSelectionControls = state.selectionControls && elementDisplayed(state.selectionControls);
+      var hasSelectionStatus = state.selectionStatus && elementDisplayed(state.selectionStatus);
+
+      if (hasMultiplePanels) {
+        return STAGE_MIN_MULTIPANEL;
+      }
+      if (hasTimeline || hasSelectionControls || hasSelectionStatus) {
+        return STAGE_MIN_CONTROLS;
+      }
+      return STAGE_MIN_DEFAULT;
+    }
+
+    function recalculateWidgetChromeLayout(x) {
+      if (!state.root || !state.stage) {
+        return;
+      }
+
+      var publication = currentRenderingMode() === "publication";
+      var timelineVisible = !publication && elementDisplayed(state.timelineControls);
+      var selectionControlsVisible = !publication && elementDisplayed(state.selectionControls);
+      var selectionStatusVisible = !publication && elementDisplayed(state.selectionStatus);
+
+      state.root.classList.toggle("ggwebgl--timeline-visible", timelineVisible);
+      state.root.classList.toggle("ggwebgl--selection-controls-visible", selectionControlsVisible);
+      state.root.classList.toggle("ggwebgl--selection-status-visible", selectionStatusVisible);
+
+      if (publication) {
+        state.stage.style.minHeight = "0px";
+        state.stage.style.height = "100%";
+        el.style.minHeight = "";
+        return;
+      }
+
+      var stageMin = recommendedStageMinHeight(x);
+      var chromeNodes = [
+        state.root.querySelector(".ggwebgl__header"),
+        state.timelineControls,
+        state.selectionControls,
+        state.selectionStatus,
+        state.axes,
+        state.notes
+      ];
+      var visibleChromeRows = 0;
+      var chromeHeight = chromeNodes.reduce(function(total, node) {
+        if (!elementDisplayed(node)) {
+          return total;
+        }
+        visibleChromeRows += 1;
+        return total + node.getBoundingClientRect().height;
+      }, 0);
+      var rootStyle = window.getComputedStyle ? window.getComputedStyle(state.root) : null;
+      var rowGap = rootStyle ? cssPixelValue(rootStyle.rowGap || rootStyle.gap) : 0;
+      var requiredHeight = Math.ceil(chromeHeight + rowGap * visibleChromeRows + stageMin);
+      var requestedHeight = isFinite(Number(state.requestedHeight)) && Number(state.requestedHeight) > 0
+        ? Number(state.requestedHeight)
+        : requiredHeight;
+      var layoutHeight = Math.max(requestedHeight, requiredHeight);
+
+      if (requiredHeight > 0) {
+        el.style.minHeight = requiredHeight + "px";
+      }
+
+      var available = Math.max(stageMin, Math.floor(layoutHeight - chromeHeight - rowGap * visibleChromeRows));
+      state.stage.style.minHeight = stageMin + "px";
+      var nextHeight = available + "px";
+      if (state.stage.style.height !== nextHeight) {
+        state.stage.style.height = nextHeight;
+      }
+    }
+
     function ensureWidgetLayout() {
       var publication = currentRenderingMode() === "publication";
 
@@ -195,12 +289,13 @@ HTMLWidgets.widget({
       if (state.root) {
         state.root.style.position = "relative";
         state.root.style.width = "100%";
-        state.root.style.height = "100%";
+        state.root.style.height = publication ? "100%" : "auto";
+        state.root.style.minHeight = publication ? "0" : "100%";
         state.root.style.boxSizing = "border-box";
         state.root.style.display = "grid";
         state.root.style.gridTemplateRows = publication
           ? "minmax(0, 1fr)"
-          : "auto auto minmax(0, 1fr) auto auto auto";
+          : "auto auto auto auto auto auto auto";
       }
 
       if (state.stage) {
@@ -208,7 +303,7 @@ HTMLWidgets.widget({
         state.stage.style.width = "100%";
         state.stage.style.overflow = "hidden";
         state.stage.style.boxSizing = "border-box";
-        state.stage.style.minHeight = publication ? "0px" : "120px";
+        state.stage.style.minHeight = publication ? "0px" : STAGE_MIN_DEFAULT + "px";
       }
 
       if (state.canvas) {
@@ -232,9 +327,13 @@ HTMLWidgets.widget({
       }
 
       if (isFinite(resolvedHeight) && resolvedHeight > 0) {
-        el.style.height = (publication ? resolvedHeight : Math.max(320, resolvedHeight)) + "px";
-      } else if (!el.style.height) {
-        el.style.height = publication ? "480px" : "640px";
+        state.requestedHeight = publication ? resolvedHeight : Math.max(320, resolvedHeight);
+        el.style.height = state.requestedHeight + "px";
+      } else if (!state.requestedHeight) {
+        state.requestedHeight = publication ? 480 : 640;
+        if (!el.style.height) {
+          el.style.height = state.requestedHeight + "px";
+        }
       }
 
       ensureWidgetLayout();
@@ -3130,12 +3229,20 @@ HTMLWidgets.widget({
       var enabled = state.x && !publicationMode(state.x) && activeSelectionMode(state.x);
       if (!enabled) {
         state.selectionStatus.textContent = "";
+        state.selectionStatus.style.display = "none";
+        if (state.root) {
+          state.root.classList.toggle("ggwebgl--selection-status-visible", false);
+        }
         return;
       }
       if (state.selection.result) {
         state.selectionStatus.textContent = selectedCount(state.selection.result.selections) + " selected";
       } else {
         state.selectionStatus.textContent = "Drag to select samples";
+      }
+      state.selectionStatus.style.display = "block";
+      if (state.root) {
+        state.root.classList.toggle("ggwebgl--selection-status-visible", true);
       }
     }
 
@@ -3380,6 +3487,9 @@ HTMLWidgets.widget({
       var publication = publicationMode(x);
       var showControls = !publication && modes.brush && modes.lasso;
       state.selectionControls.style.display = showControls ? "flex" : "none";
+      if (state.root) {
+        state.root.classList.toggle("ggwebgl--selection-controls-visible", showControls);
+      }
       Array.prototype.forEach.call(
         state.selectionControls.querySelectorAll(".ggwebgl__selection-mode"),
         function(button) {
@@ -3418,6 +3528,9 @@ HTMLWidgets.widget({
       var visible = !!(state.timeline && state.timeline.controls && values.length > 1);
       el.ggwebglTimelineFrame = currentTimelineFrame(x);
       state.timelineControls.style.display = visible ? "flex" : "none";
+      if (state.root) {
+        state.root.classList.toggle("ggwebgl--timeline-visible", visible);
+      }
       if (!visible) {
         return;
       }
@@ -3526,6 +3639,8 @@ HTMLWidgets.widget({
       hideTooltip();
       updateLabels(state.x);
       updateTimelineUi(state.x);
+      updateSelectionStatus();
+      recalculateWidgetChromeLayout(state.x);
 
       try {
         drawScene(state.x);

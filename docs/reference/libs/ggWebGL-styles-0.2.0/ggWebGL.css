@@ -19,7 +19,7 @@
   color: #102a43;
   font-family: "Source Sans 3", "Helvetica Neue", sans-serif;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto auto auto auto auto auto auto;
   gap: 0.55rem;
   overflow: hidden;
 }
@@ -56,7 +56,7 @@
 
 .ggwebgl__stage {
   position: relative;
-  min-height: 120px;
+  min-height: 260px;
   border-radius: 0.8rem;
   overflow: hidden;
   touch-action: none;
@@ -89,7 +89,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 0;  
+  min-height: 0;
 }
 
 .ggwebgl__selection-overlay {
@@ -109,9 +109,10 @@
 
 .ggwebgl__selection-controls {
   display: none;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-  min-height: 0;
+  min-height: 1.8rem;
   font-size: 0.82rem;
   color: #334e68;
 }
@@ -140,12 +141,12 @@
 
 .ggwebgl__selection-status {
   display: none;
-  min-height: 0;
+  min-height: 1.25rem;
   font-size: 0.82rem;
   color: #486581;
 }
 
-.ggwebgl--selection-enabled .ggwebgl__selection-status {
+.ggwebgl--selection-status-visible .ggwebgl__selection-status {
   display: block;
 }
 
@@ -244,6 +245,7 @@
 
 .ggwebgl__timeline {
   display: none;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   min-height: 1.8rem;
@@ -253,6 +255,7 @@
 
 .ggwebgl__timeline button,
 .ggwebgl__timeline select {
+  flex: 0 0 auto;
   border: 1px solid rgba(72, 101, 129, 0.22);
   border-radius: 0.45rem;
   background: rgba(255, 255, 255, 0.86);
@@ -263,7 +266,7 @@
 
 .ggwebgl__timeline input[type="range"] {
   flex: 1;
-  min-width: 5rem;
+  min-width: min(18rem, 100%);
 }
 
 .ggwebgl--publication {
