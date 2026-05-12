@@ -424,6 +424,20 @@ HTMLWidgets.widget({
 	  "      color.rgb = clamp(color.rgb, 0.0, 1.0);",
 	  "      color.a = clamp(sourceAlpha * w * u_density_alpha_boost, 0.0, u_density_alpha_ceiling);",
 	  "      if (color.a < 0.003) discard;",
+	  "    } else if (u_shader_mode > 5.5 && u_shader_mode < 6.5) {",
+	  "      color.rgb = clamp(color.rgb, 0.0, 1.0);",
+	  "      float uncertainty = clamp(1.0 - v_age, 0.0, 1.0);",
+	  "      float body = smoothstep(1.0, 0.62, radius);",
+	  "      color.rgb = mix(color.rgb, vec3(0.06, 0.16, 0.28), 0.28 * uncertainty);",
+	  "      color.a = clamp(color.a * body * (1.0 - 0.72 * uncertainty), 0.02, 0.92);",
+	  "      if (color.a < 0.01) discard;",
+	  "    } else if (u_shader_mode > 6.5 && u_shader_mode < 7.5) {", // point_sprite_glow
+	  "      float glow = smoothstep(1.0, 0.0, radius);",
+	  "      float core = smoothstep(0.52, 0.0, radius);",
+	  "      vec3 boosted = min(vec3(1.0), color.rgb * 1.85 + vec3(0.10, 0.12, 0.16));",
+	  "      color.rgb = mix(color.rgb * 0.50, boosted, core);",
+	  "      color.a = max(color.a * glow, 0.16 * smoothstep(1.0, 0.68, radius));",
+	  "      if (color.a < 0.008) discard;",
 	  "    } else {",
 	  "      color.rgb = clamp(color.rgb, 0.0, 1.0);",
 	  "      float body = smoothstep(1.0, 0.65, radius);",
@@ -613,9 +627,23 @@ HTMLWidgets.widget({
     var rasterFragmentShaderSource = [
       "precision mediump float;",
       "uniform sampler2D u_texture;",
+      "uniform float u_shader_mode;",
       "varying vec2 v_texcoord;",
       "void main() {",
-      "  gl_FragColor = texture2D(u_texture, v_texcoord);",
+      "  vec4 color = texture2D(u_texture, v_texcoord);",
+      "  if (u_shader_mode > 1.5) {", // raster_contour_overlay
+      "    float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));",
+      "    float band = abs(fract(luminance * 8.0) - 0.5);",
+      "    float contour = smoothstep(0.055, 0.0, band);",
+      "    color.rgb = mix(color.rgb, vec3(0.05, 0.09, 0.16), contour * 0.85);",
+      "    color.a = max(color.a, contour * 0.9);",
+      "  } else if (u_shader_mode > 0.5) {", // raster_threshold
+      "    float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));",
+      "    float keep = step(0.50, luminance);",
+      "    color.rgb = mix(vec3(0.88, 0.92, 0.96), color.rgb, keep);",
+      "    color.a *= mix(0.18, 1.0, keep);",
+      "  }",
+      "  gl_FragColor = color;",
       "}"
     ].join("\n");
 
@@ -2162,29 +2190,24 @@ HTMLWidgets.widget({
       return x && x.webgl ? x.webgl.line_cap : "round";
     }
 
-    function shaderModeForLayer(x, layerType) {
-      var shader = shaderName(x);
-
-      if (layerType === "points" && shader === "density_splat") {
-        return 1;
+    function shaderRegistryEntryForLayer(x, layer, layerType) {
+      if (window.ggWebGLProgramRegistry &&
+          typeof window.ggWebGLProgramRegistry.getShaderEntry === "function") {
+        return window.ggWebGLProgramRegistry.getShaderEntry(
+          x,
+          layer || { type: layerType },
+          layer && layer.material ? layer.material : null,
+          layerType
+        );
       }
+      return null;
+    }
 
-      if (layerType === "lines" && shader === "trajectory_age") {
-        return 2;
+    function shaderModeForLayer(x, layerType, layer) {
+      var entry = shaderRegistryEntryForLayer(x, layer, layerType);
+      if (entry && isFinite(Number(entry.mode))) {
+        return Number(entry.mode);
       }
-
-      if (layerType === "lines" && shader === "trajectory_age_glow") {
-        return 3;
-      }
-
-      if (layerType === "lines" && shader === "trajectory_velocity") {
-        return 4;
-      }
-
-      if (layerType === "lines" && shader === "trajectory_direction") {
-        return 5;
-      }
-
       return 0;
     }
 
@@ -4079,7 +4102,8 @@ HTMLWidgets.widget({
           },
           uniforms: {
             domain: gl.getUniformLocation(rasterProgram, "u_domain"),
-            texture: gl.getUniformLocation(rasterProgram, "u_texture")
+            texture: gl.getUniformLocation(rasterProgram, "u_texture"),
+            shaderMode: gl.getUniformLocation(rasterProgram, "u_shader_mode")
           }
         },
         surface: {
@@ -5412,7 +5436,7 @@ HTMLWidgets.widget({
     }
 
     function configurePrimitiveLayerShader(gl, programInfo, x, layerType, viewport, layer) {
-      var shaderMode = shaderModeForLayer(x, layerType);
+      var shaderMode = shaderModeForLayer(x, layerType, layer);
       var isPointLayer = layerType === "points" ? 1.0 : 0.0;
       var densityTuning = densitySplatTuning(layer && layer.rows);
 
@@ -5441,7 +5465,7 @@ HTMLWidgets.widget({
     }
 
     function configurePrimitive3dLayerShader(gl, programInfo, x, layerType, matrix, layer) {
-      var shaderMode = shaderModeForLayer(x, layerType);
+      var shaderMode = shaderModeForLayer(x, layerType, layer);
       var densityTuning = densitySplatTuning(layer && layer.rows);
       var pointScale = layerType === "points" && shaderMode === 1 ? densityTuning.pointScale : 1.6;
       var minPointSize = layerType === "points" && shaderMode === 1 ? densityTuning.minPointSize : 1.0;
@@ -5476,9 +5500,12 @@ HTMLWidgets.widget({
       disposeTransientPointPayload(payload);
     }
 
-    function configureRasterProgram(gl, programInfo, viewport) {
+    function configureRasterProgram(gl, programInfo, viewport, x, layer) {
       gl.useProgram(programInfo.program);
       gl.uniform4f(programInfo.uniforms.domain, viewport.x[0], viewport.x[1], viewport.y[0], viewport.y[1]);
+      if (programInfo.uniforms.shaderMode) {
+        gl.uniform1f(programInfo.uniforms.shaderMode, shaderModeForLayer(x, "raster", layer));
+      }
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     }
 
@@ -5591,7 +5618,7 @@ HTMLWidgets.widget({
     function drawLineLayerNative(gl, programs, layer, x, viewport) {
       var paths = linePathList(layer.paths);
       var primitive = programs.primitive;
-      var shaderMode = shaderModeForLayer(x, "lines");
+      var shaderMode = shaderModeForLayer(x, "lines", layer);
       var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
 
       configurePrimitiveLayerShader(gl, primitive, x, "lines", viewport, layer);
@@ -5625,7 +5652,7 @@ HTMLWidgets.widget({
     function drawLineLayer3d(gl, programs, layer, x, viewport, box) {
       var paths = linePathList(layer.paths);
       var primitive = programs.primitive3d;
-      var shaderMode = shaderModeForLayer(x, "lines");
+      var shaderMode = shaderModeForLayer(x, "lines", layer);
       var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
       configurePrimitive3dLayerShader(gl, primitive, x, "lines", cameraViewProjectionMatrix(x, box), layer);
 
@@ -5672,7 +5699,7 @@ HTMLWidgets.widget({
       var plotHeightPx = Math.max(1, box && box.plotHeight ? box.plotHeight : 1);
       var joinMode = lineJoinMode(x);
       var capMode = lineCapMode(x);
-      var shaderMode = shaderModeForLayer(x, "lines");
+      var shaderMode = shaderModeForLayer(x, "lines", layer);
       var metricsByPath = computeLayerTrajectoryMetrics(layer, shaderMode);
 
       configurePrimitiveLayerShader(gl, primitive, x, "lines", drawViewport, layer);
@@ -5828,6 +5855,10 @@ HTMLWidgets.widget({
     }
 
     function meshShadingMode(layer) {
+      var entry = shaderRegistryEntryForLayer(state.x || null, layer, "mesh");
+      if (entry && isFinite(Number(entry.mode))) {
+        return Number(entry.mode);
+      }
       var material = layer.material || {};
       var shading = String(material.shading || "mesh_lambert");
       if (shading === "mesh_lambert" || shading === "lambert") {
@@ -6083,6 +6114,10 @@ HTMLWidgets.widget({
     }
 
     function surfaceShadingMode(layer) {
+      var entry = shaderRegistryEntryForLayer(state.x || null, layer, "surface");
+      if (entry && isFinite(Number(entry.mode))) {
+        return Number(entry.mode);
+      }
       var shading = layer && layer.surface_meta ? String(layer.surface_meta.shading || "") : "";
       if (shading === "surface_lambert") {
         return 1;
@@ -6319,7 +6354,7 @@ HTMLWidgets.widget({
       }
     }
 
-    function drawRasterLayer(gl, programs, layer, viewport) {
+    function drawRasterLayer(gl, programs, layer, scene, viewport) {
       var payload = flattenRasterLayer(layer);
 
       if (!payload.width || !payload.height || !payload.pixels.length) {
@@ -6339,7 +6374,7 @@ HTMLWidgets.widget({
         1, 1
       ]);
 
-      configureRasterProgram(gl, programs.raster, viewport);
+      configureRasterProgram(gl, programs.raster, viewport, scene, layer);
       var positionBuffer = bindPositionAttribute(gl, programs.raster, positions);
       var texcoordBuffer = bindTexcoordAttribute(gl, programs.raster, texcoords);
       var texture = gl.createTexture();
@@ -6396,7 +6431,7 @@ HTMLWidgets.widget({
     }
 
     function drawRasterLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
-      drawRasterLayer(gl, programs, layer, viewport);
+      drawRasterLayer(gl, programs, layer, scene, viewport);
     }
 
     function drawVectorsLayer(gl, programs, layer, scene, panel, viewport, box) {

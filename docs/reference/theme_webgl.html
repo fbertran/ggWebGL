@@ -90,10 +90,13 @@ object is consumed by <code><a href="ggplot_webgl.html">ggplot_webgl()</a></code
 
 
 <dl><dt id="arg-shader">shader<a class="anchor" aria-label="anchor" href="#arg-shader"></a></dt>
-<dd><p>Shader preset name or path identifier. Built-in modes are
-<code>"default"</code>, <code>"density_splat"</code>, <code>"trajectory_age"</code>, and
-<code>"trajectory_age_glow"</code>, <code>"trajectory_velocity"</code>, and
-<code>"trajectory_direction"</code>.</p></dd>
+<dd><p>Shader preset name or path identifier. Built-in modes include
+point shaders (<code>"default"</code>, <code>"density_splat"</code>, <code>"uncertainty_alpha"</code>,
+<code>"point_sprite_glow"</code>), trajectory shaders (<code>"trajectory_age"</code>,
+<code>"trajectory_age_glow"</code>, <code>"trajectory_velocity"</code>,
+<code>"trajectory_direction"</code>), and raster shaders (<code>"raster_texture"</code>,
+<code>"raster_threshold"</code>, <code>"raster_contour_overlay"</code>). Mesh and surface layers
+usually select their shader through material/shading arguments.</p></dd>
 
 
 <dt id="arg-antialias">antialias<a class="anchor" aria-label="anchor" href="#arg-antialias"></a></dt>

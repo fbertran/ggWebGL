@@ -40,11 +40,11 @@ applies the update to the widget identified by \code{outputId} and emits the
 updated state back as \verb{input$<outputId>_timeline}.
 }
 \examples{
-\dontshow{if (interactive() && requireNamespace("shiny", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-server <- function(input, output, session) {
-  shiny::observeEvent(input$next_frame, {
-    updateGgWebGLTimeline(session, "plot", index = 2)
-  })
+if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+  server <- function(input, output, session) {
+    shiny::observeEvent(input$next_frame, {
+      updateGgWebGLTimeline(session, "plot", index = 2)
+    })
+  }
 }
-\dontshow{\}) # examplesIf}
 }

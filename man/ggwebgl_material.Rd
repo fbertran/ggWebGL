@@ -6,7 +6,8 @@
 \usage{
 ggwebgl_material(
   shading = c("flat", "lambert", "mesh_flat", "mesh_lambert", "mesh_phong_simple",
-    "mesh_scalar_colormap", "mesh_selection_highlight"),
+    "mesh_scalar_colormap", "mesh_selection_highlight", "surface_flat",
+    "surface_lambert", "surface_height_colormap", "surface_uncertainty_alpha"),
   ambient = 0.35,
   diffuse = 0.75,
   specular = 0,
@@ -18,7 +19,9 @@ ggwebgl_material(
 \arguments{
 \item{shading}{Shading model. \code{"flat"} and \code{"lambert"} are the stable
 material aliases; mesh shader aliases such as \code{"mesh_lambert"} and
-\code{"mesh_scalar_colormap"} are also accepted by mesh layers.}
+\code{"mesh_scalar_colormap"} and surface shader aliases such as
+\code{"surface_lambert"} and \code{"surface_height_colormap"} are accepted by their
+respective layer families.}
 
 \item{ambient, diffuse, specular}{Lighting coefficients.}
 

@@ -76,6 +76,6 @@ test_that("non-timeline draw paths remain available", {
 
   expect_match(js, "function drawPointLayer(gl, programs, layer, x, viewport)", fixed = TRUE)
   expect_match(js, "function drawLineLayer(gl, programs, layer, x, viewport, box)", fixed = TRUE)
-  expect_match(js, "function drawRasterLayer(gl, programs, layer, viewport)", fixed = TRUE)
+  expect_match(js, "function drawRasterLayer(gl, programs, layer, scene, viewport)", fixed = TRUE)
   expect_match(js, "function drawVectorLayer(gl, programs, layer, x, viewport, box)", fixed = TRUE)
 })

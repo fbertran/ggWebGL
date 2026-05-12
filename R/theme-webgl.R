@@ -4,10 +4,13 @@
 #' object is consumed by [`ggplot_webgl()`] and stored on the plot as
 #' `plot$ggwebgl`.
 #'
-#' @param shader Shader preset name or path identifier. Built-in modes are
-#'   `"default"`, `"density_splat"`, `"trajectory_age"`, and
-#'   `"trajectory_age_glow"`, `"trajectory_velocity"`, and
-#'   `"trajectory_direction"`.
+#' @param shader Shader preset name or path identifier. Built-in modes include
+#'   point shaders (`"default"`, `"density_splat"`, `"uncertainty_alpha"`,
+#'   `"point_sprite_glow"`), trajectory shaders (`"trajectory_age"`,
+#'   `"trajectory_age_glow"`, `"trajectory_velocity"`,
+#'   `"trajectory_direction"`), and raster shaders (`"raster_texture"`,
+#'   `"raster_threshold"`, `"raster_contour_overlay"`). Mesh and surface layers
+#'   usually select their shader through material/shading arguments.
 #' @param antialias Logical scalar; whether antialiasing should be requested.
 #' @param transparent Logical scalar; whether the drawing surface should allow
 #'   transparency.

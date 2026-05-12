@@ -81,6 +81,13 @@ normalise_shader_name <- function(shader) {
     density = "density_splat",
     splat = "density_splat",
     density_splat = "density_splat",
+    uncertainty = "uncertainty_alpha",
+    `uncertainty-alpha` = "uncertainty_alpha",
+    uncertainty_alpha = "uncertainty_alpha",
+    point_glow = "point_sprite_glow",
+    point_sprite = "point_sprite_glow",
+    point_sprite_glow = "point_sprite_glow",
+    `point-sprite-glow` = "point_sprite_glow",
     trajectory = "trajectory_age",
     age = "trajectory_age",
     trajectory_age = "trajectory_age",
@@ -93,6 +100,24 @@ normalise_shader_name <- function(shader) {
     trajectory_direction = "trajectory_direction",
     `trajectory-direction` = "trajectory_direction",
     direction = "trajectory_direction",
+    raster = "raster_texture",
+    texture = "raster_texture",
+    raster_texture = "raster_texture",
+    threshold = "raster_threshold",
+    raster_threshold = "raster_threshold",
+    `raster-threshold` = "raster_threshold",
+    contour = "raster_contour_overlay",
+    raster_contour_overlay = "raster_contour_overlay",
+    `raster-contour` = "raster_contour_overlay",
+    surface_flat = "surface_flat",
+    surface_lambert = "surface_lambert",
+    surface_height_colormap = "surface_height_colormap",
+    surface_uncertainty_alpha = "surface_uncertainty_alpha",
+    mesh_flat = "mesh_flat",
+    mesh_lambert = "mesh_lambert",
+    mesh_phong_simple = "mesh_phong_simple",
+    mesh_scalar_colormap = "mesh_scalar_colormap",
+    mesh_selection_highlight = "mesh_selection_highlight",
     default = "default",
     shader
   )
@@ -432,7 +457,9 @@ normalise_selection <- function(selection = NULL, interactions = NULL) {
 #'
 #' @param shading Shading model. `"flat"` and `"lambert"` are the stable
 #'   material aliases; mesh shader aliases such as `"mesh_lambert"` and
-#'   `"mesh_scalar_colormap"` are also accepted by mesh layers.
+#'   `"mesh_scalar_colormap"` and surface shader aliases such as
+#'   `"surface_lambert"` and `"surface_height_colormap"` are accepted by their
+#'   respective layer families.
 #' @param ambient,diffuse,specular Lighting coefficients.
 #' @param light_dir Directional light vector.
 #' @param wireframe Whether to request a wireframe overlay.
@@ -450,7 +477,11 @@ ggwebgl_material <- function(shading = c(
                                "mesh_lambert",
                                "mesh_phong_simple",
                                "mesh_scalar_colormap",
-                               "mesh_selection_highlight"
+                               "mesh_selection_highlight",
+                               "surface_flat",
+                               "surface_lambert",
+                               "surface_height_colormap",
+                               "surface_uncertainty_alpha"
                              ),
                              ambient = 0.35,
                              diffuse = 0.75,

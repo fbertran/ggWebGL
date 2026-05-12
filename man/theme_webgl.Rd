@@ -26,10 +26,13 @@ theme_webgl(
 )
 }
 \arguments{
-\item{shader}{Shader preset name or path identifier. Built-in modes are
-\code{"default"}, \code{"density_splat"}, \code{"trajectory_age"}, and
-\code{"trajectory_age_glow"}, \code{"trajectory_velocity"}, and
-\code{"trajectory_direction"}.}
+\item{shader}{Shader preset name or path identifier. Built-in modes include
+point shaders (\code{"default"}, \code{"density_splat"}, \code{"uncertainty_alpha"},
+\code{"point_sprite_glow"}), trajectory shaders (\code{"trajectory_age"},
+\code{"trajectory_age_glow"}, \code{"trajectory_velocity"},
+\code{"trajectory_direction"}), and raster shaders (\code{"raster_texture"},
+\code{"raster_threshold"}, \code{"raster_contour_overlay"}). Mesh and surface layers
+usually select their shader through material/shading arguments.}
 
 \item{antialias}{Logical scalar; whether antialiasing should be requested.}
 

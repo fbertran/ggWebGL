@@ -16,11 +16,13 @@
 #'
 #' @return `NULL`, invisibly.
 #'
-#' @examplesIf interactive() && requireNamespace("shiny", quietly = TRUE)
-#' server <- function(input, output, session) {
-#'   shiny::observeEvent(input$next_frame, {
-#'     updateGgWebGLTimeline(session, "plot", index = 2)
-#'   })
+#' @examples
+#' if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+#'   server <- function(input, output, session) {
+#'     shiny::observeEvent(input$next_frame, {
+#'       updateGgWebGLTimeline(session, "plot", index = 2)
+#'     })
+#'   }
 #' }
 #' @export
 updateGgWebGLTimeline <- function(session,

@@ -59,11 +59,11 @@ updateGgWebGLTimeline(
 ## Examples
 
 ``` r
-if (FALSE) { # interactive() && requireNamespace("shiny", quietly = TRUE)
-server <- function(input, output, session) {
-  shiny::observeEvent(input$next_frame, {
-    updateGgWebGLTimeline(session, "plot", index = 2)
-  })
-}
+if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
+  server <- function(input, output, session) {
+    shiny::observeEvent(input$next_frame, {
+      updateGgWebGLTimeline(session, "plot", index = 2)
+    })
+  }
 }
 ```
