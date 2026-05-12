@@ -40,6 +40,9 @@
 #'   `"additive"`, or `"premultiplied"`.
 #' @param timeline Optional `ggwebgl_timeline()` specification for runtime
 #'   playback controls.
+#' @param transport Optional `ggwebgl_transport()` object controlling compact
+#'   typed-array payloads, LOD previews, and progressive upload for large point
+#'   layers.
 #' @param ... Reserved for future backend-specific options.
 #'
 #' @return An object that can be added to a `ggplot`.
@@ -71,6 +74,7 @@ theme_webgl <- function(shader = "default",
                         depth_test = NULL,
                         blend_mode = "auto",
                         timeline = NULL,
+                        transport = NULL,
                         ...) {
   inferred_3d_dimension <- missing(dimension) &&
     (!missing(camera) || (!missing(projection) && identical(normalise_projection(projection), "perspective")))
@@ -92,6 +96,7 @@ theme_webgl <- function(shader = "default",
     if (!missing(depth_test)) "depth_test",
     if (!missing(blend_mode)) "blend_mode",
     if (!missing(timeline)) "timeline",
+    if (!missing(transport)) "transport",
     names(list(...))
   )
   options <- normalise_webgl_options(compact_list(list(
@@ -112,6 +117,7 @@ theme_webgl <- function(shader = "default",
     depth_test = if (!missing(depth_test)) depth_test else NULL,
     blend_mode = if (!missing(blend_mode)) blend_mode else NULL,
     timeline = if (!missing(timeline)) timeline else NULL,
+    transport = if (!missing(transport)) transport else NULL,
     extra = list(...)
   )), explicit_fields = explicit_fields)
   class(options) <- "ggwebgl_theme"

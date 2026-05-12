@@ -21,6 +21,7 @@ webgl_spec(
   view = NULL,
   selection = NULL,
   timeline = NULL,
+  transport = NULL,
   ...
 )
 ```
@@ -76,6 +77,12 @@ webgl_spec(
 
   Optional
   [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md)
+  object.
+
+- transport:
+
+  Optional
+  [`ggwebgl_transport()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_transport.md)
   object.
 
 - ...:
@@ -230,6 +237,32 @@ webgl_spec(camera = "orbit", projection = "perspective")
 #> 
 #> $blend_mode
 #> [1] "auto"
+#> 
+#> $transport
+#> $transport$mode
+#> [1] "auto"
+#> 
+#> $transport$threshold
+#> [1] 100000
+#> 
+#> $transport$progressive
+#> [1] "auto"
+#> 
+#> $transport$chunk_size
+#> [1] 100000
+#> 
+#> $transport$position
+#> [1] "float32"
+#> 
+#> $transport$colors
+#> [1] "auto"
+#> 
+#> $transport$lod
+#> [1] "auto"
+#> 
+#> $transport$lod_max_points
+#> [1] 5000
+#> 
 #> 
 #> $line_mode
 #> [1] "auto"

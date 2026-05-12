@@ -81,6 +81,7 @@ object is consumed by <code><a href="ggplot_webgl.html">ggplot_webgl()</a></code
 <span>  depth_test <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  blend_mode <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  timeline <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  transport <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -165,6 +166,12 @@ for 2D scenes and enabled for 3D scenes. Set explicitly to override.</p></dd>
 <dt id="arg-timeline">timeline<a class="anchor" aria-label="anchor" href="#arg-timeline"></a></dt>
 <dd><p>Optional <code><a href="ggwebgl_timeline.html">ggwebgl_timeline()</a></code> specification for runtime
 playback controls.</p></dd>
+
+
+<dt id="arg-transport">transport<a class="anchor" aria-label="anchor" href="#arg-transport"></a></dt>
+<dd><p>Optional <code><a href="ggwebgl_transport.html">ggwebgl_transport()</a></code> object controlling compact
+typed-array payloads, LOD previews, and progressive upload for large point
+layers.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -326,6 +333,32 @@ playback controls.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $blend_mode</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$mode</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$threshold</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 100000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$progressive</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$chunk_size</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 100000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$position</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "float32"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$colors</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$lod</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $transport$lod_max_points</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $line_mode</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "auto"</span>

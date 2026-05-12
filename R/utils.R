@@ -66,6 +66,16 @@ default_theme_webgl <- function() {
     blend_mode = "auto",
     timeline = NULL,
     time_scale = NULL,
+    transport = list(
+      mode = "auto",
+      threshold = 100000L,
+      progressive = "auto",
+      chunk_size = 100000L,
+      position = "float32",
+      colors = "auto",
+      lod = "auto",
+      lod_max_points = 5000L
+    ),
     line_mode = "auto",
     line_join = "bevel",
     line_cap = "round",
@@ -710,7 +720,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
   recognised_extra_fields <- c(
     "line_mode", "line_join", "line_cap",
     "view", "selection", "dimension", "camera", "projection", "camera_state",
-    "depth_test", "blend_mode", "timeline", "time_scale", "interactions_spec"
+    "depth_test", "blend_mode", "timeline", "time_scale", "transport", "interactions_spec"
   )
 
   for (field in recognised_extra_fields) {
@@ -778,6 +788,7 @@ normalise_webgl_options <- function(options = NULL, explicit_fields = NULL) {
     blend_mode = normalise_blend_mode(options[["blend_mode"]] %||% defaults[["blend_mode"]]),
     timeline = normalise_timeline(options[["timeline"]] %||% defaults[["timeline"]]),
     time_scale = normalise_time_scale(options[["time_scale"]] %||% defaults[["time_scale"]]),
+    transport = normalise_transport(options[["transport"]] %||% defaults[["transport"]]),
     line_mode = normalise_line_mode(options[["line_mode"]] %||% defaults[["line_mode"]]),
     line_join = normalise_line_join(options[["line_join"]] %||% defaults[["line_join"]]),
     line_cap = normalise_line_cap(options[["line_cap"]] %||% defaults[["line_cap"]]),

@@ -216,10 +216,13 @@ as_ggwebgl_spec.xgeo_state <- function(x,
     character()
   }
 
+  webgl <- normalise_webgl_options(webgl)
+  render <- ggwebgl_enrich_render(ggwebgl_apply_transport(render, webgl), webgl)
+
   compact_list(list(
     package_version = as.character(utils::packageVersion("ggWebGL")),
     labels = xgeo_resolve_labels(labels, metadata = x$metadata %||% list()),
-    webgl = normalise_webgl_options(webgl),
+    webgl = webgl,
     layer_count = 1L,
     layers = list(compact_list(list(
       geom = paste0("xgeo_state_", primitive),

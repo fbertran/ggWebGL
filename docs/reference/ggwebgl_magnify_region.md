@@ -281,6 +281,32 @@ ggwebgl_magnify_region(
 #> $webgl$blend_mode
 #> [1] "auto"
 #> 
+#> $webgl$transport
+#> $webgl$transport$mode
+#> [1] "auto"
+#> 
+#> $webgl$transport$threshold
+#> [1] 100000
+#> 
+#> $webgl$transport$progressive
+#> [1] "auto"
+#> 
+#> $webgl$transport$chunk_size
+#> [1] 100000
+#> 
+#> $webgl$transport$position
+#> [1] "float32"
+#> 
+#> $webgl$transport$colors
+#> [1] "auto"
+#> 
+#> $webgl$transport$lod
+#> [1] "auto"
+#> 
+#> $webgl$transport$lod_max_points
+#> [1] 5000
+#> 
+#> 
 #> $webgl$line_mode
 #> [1] "auto"
 #> 
@@ -616,13 +642,6 @@ ggwebgl_magnify_region(
 #> 
 #> 
 #> 
-#> attr(,"grid")
-#> attr(,"grid")$rows
-#> [1] 1
-#> 
-#> attr(,"grid")$cols
-#> [1] 2
-#> 
 #> 
 #> $render$primitives
 #> [1] "points" "lines" 
@@ -659,6 +678,40 @@ ggwebgl_magnify_region(
 #> 
 #> $render$messages
 #> character(0)
+#> 
+#> $render$transport
+#> $render$transport$mode
+#> [1] "auto"
+#> 
+#> $render$transport$threshold
+#> [1] 100000
+#> 
+#> $render$transport$position
+#> [1] "float32"
+#> 
+#> $render$transport$colors
+#> [1] "auto"
+#> 
+#> $render$transport$progressive
+#> [1] "auto"
+#> 
+#> $render$transport$chunk_size
+#> [1] 100000
+#> 
+#> $render$transport$compact_layers
+#> [1] 0
+#> 
+#> $render$transport$compact_point_count
+#> [1] 0
+#> 
+#> $render$transport$decoded_bytes
+#> [1] 0
+#> 
+#> 
+#> $render$lod
+#> $render$lod$mesh_hooks
+#> [1] "external"
+#> 
 #> 
 #> $render$dimension
 #> [1] "2d"

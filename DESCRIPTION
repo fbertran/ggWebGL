@@ -24,6 +24,7 @@ Imports:
     ggplot2,
     htmltools,
     htmlwidgets,
+    jsonlite,
     rlang
 Suggests:
     boids4R,

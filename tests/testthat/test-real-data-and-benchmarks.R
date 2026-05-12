@@ -84,7 +84,9 @@ test_that("benchmark suite emits machine-readable metrics for all families", {
     "family", "engine", "rep", "status", "ggplot_build_seconds",
     "engine_build_seconds", "artifact_write_seconds", "serialized_bytes",
     "artifact_bytes", "artifact_file", "browser_first_render_ms",
-    "browser_status"
+    "browser_status", "startup_latency_ms", "transport_mode",
+    "transport_compact_layers", "transport_compact_point_count",
+    "transport_decoded_bytes", "transport_uploaded", "progressive_complete_ms"
   ) %in% names(metrics)))
   expect_true(all(metrics$status == "ok"))
   expect_true(file.exists(attr(metrics, "metrics_path")))

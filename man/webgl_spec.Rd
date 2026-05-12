@@ -15,6 +15,7 @@ webgl_spec(
   view = NULL,
   selection = NULL,
   timeline = NULL,
+  transport = NULL,
   ...
 )
 }
@@ -43,6 +44,8 @@ precedence over \code{camera}, \code{projection}, and \code{dimension}.}
 \item{selection}{Optional \code{\link[=ggwebgl_selection]{ggwebgl_selection()}} object.}
 
 \item{timeline}{Optional \code{\link[=ggwebgl_timeline]{ggwebgl_timeline()}} object.}
+
+\item{transport}{Optional \code{ggwebgl_transport()} object.}
 
 \item{...}{Additional renderer options stored under \code{webgl$extra}.}
 }

@@ -724,6 +724,7 @@ build_ggwebgl_spec <- function(plot) {
   scene_source <- extract_ggplot_scene_source(plot)
   render <- build_render_plan(scene_source)
   webgl <- ggwebgl_complete_timeline(scene_source$webgl, render)
+  render <- ggwebgl_apply_transport(render, webgl)
 
   validate_ggwebgl_scene(compact_list(list(
     scene_version = ggwebgl_scene_version(),

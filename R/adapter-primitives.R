@@ -421,6 +421,7 @@ ggwebgl_spec <- function(layers,
   }
   render <- ggwebgl_build_render(panel_specs, messages = messages)
   webgl <- ggwebgl_complete_timeline(webgl, render)
+  render <- ggwebgl_apply_transport(render, webgl)
   render <- ggwebgl_enrich_render(render, webgl)
   layer_metadata <- lapply(seq_along(layers), function(i) {
     compact_list(list(

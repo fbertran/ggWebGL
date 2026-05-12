@@ -97,6 +97,9 @@
 - [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md)
   : ggWebGL Timeline Controls
 
+- [`ggwebgl_transport()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_transport.md)
+  : Configure ggWebGL Transport Options
+
 - [`ggwebgl_view()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_view.md)
   : Define a ggWebGL View Contract
 

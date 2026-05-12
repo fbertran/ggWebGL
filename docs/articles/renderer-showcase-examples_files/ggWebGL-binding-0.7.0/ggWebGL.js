@@ -670,11 +670,18 @@ HTMLWidgets.widget({
       return [];
     }
 
+    function isArrayLike(values) {
+      if (window.ggWebGLBuffers && typeof window.ggWebGLBuffers.isArrayLike === "function") {
+        return window.ggWebGLBuffers.isArrayLike(values);
+      }
+      return Array.isArray(values) || ArrayBuffer.isView(values);
+    }
+
     function normalizeNumberArray(values) {
-      if (!Array.isArray(values)) {
+      if (!isArrayLike(values)) {
         return [];
       }
-      return values.map(Number).filter(function(value) { return isFinite(value); });
+      return Array.prototype.slice.call(values).map(Number).filter(function(value) { return isFinite(value); });
     }
 
     function normalizeCameraState(source) {
@@ -1012,14 +1019,19 @@ HTMLWidgets.widget({
 
       if (type === "points") {
         var pointRows = Number(source.rows);
-        var pointX = Array.isArray(source.x) ? source.x.map(Number) : [];
-        var pointY = Array.isArray(source.y) ? source.y.map(Number) : [];
-        var pointSize = Array.isArray(source.size) ? source.size.map(Number) : [];
-        var pointAge = Array.isArray(source.age) ? source.age.map(Number) : [];
+        var compactDecoded = null;
+        if (source.compact && window.ggWebGLBuffers &&
+            typeof window.ggWebGLBuffers.materializePointLayerCompact === "function") {
+          compactDecoded = window.ggWebGLBuffers.materializePointLayerCompact(source.compact);
+        }
+        var pointX = compactDecoded ? compactDecoded.x : (Array.isArray(source.x) ? source.x.map(Number) : []);
+        var pointY = compactDecoded ? compactDecoded.y : (Array.isArray(source.y) ? source.y.map(Number) : []);
+        var pointSize = compactDecoded ? compactDecoded.size : (Array.isArray(source.size) ? source.size.map(Number) : []);
+        var pointAge = compactDecoded ? compactDecoded.age : (Array.isArray(source.age) ? source.age.map(Number) : []);
         var pointRgba = Array.isArray(source.rgba) ? source.rgba.map(Number) : [];
         var pointLabel = Array.isArray(source.label) ? source.label.map(String) : [];
         var pointId = Array.isArray(source.id) ? source.id.map(String) : [];
-        var pointZ = Array.isArray(source.z) ? source.z.map(Number) : [];
+        var pointZ = compactDecoded ? compactDecoded.z : (Array.isArray(source.z) ? source.z.map(Number) : []);
         var pointFrame = Array.isArray(source.frame) ? source.frame.map(Number) : [];
         var pointTime = Array.isArray(source.time) ? source.time.map(Number) : [];
         var pointCount = Math.min(
@@ -1045,7 +1057,11 @@ HTMLWidgets.widget({
           id: pointId.slice(0, pointCount),
           frame: pointFrame.slice(0, pointCount),
           time: pointTime.slice(0, pointCount),
-          rgba: pointRgba.slice(0, pointCount * 4)
+          rgba: pointRgba.slice(0, pointCount * 4),
+          compact: source.compact && typeof source.compact === "object" ? source.compact : null,
+          compact_color: compactDecoded ? compactDecoded.color : null,
+          transport: source.transport && typeof source.transport === "object" ? source.transport : null,
+          lod: source.lod && typeof source.lod === "object" ? source.lod : null
         };
       }
 
@@ -4366,6 +4382,19 @@ HTMLWidgets.widget({
       return Math.max(0, Math.min(1, number));
     }
 
+    function pointColorComponents(layer, rgba, index) {
+      if (layer && layer.compact_color && window.ggWebGLBuffers &&
+          typeof window.ggWebGLBuffers.colorAt === "function") {
+        return window.ggWebGLBuffers.colorAt(layer.compact_color, index);
+      }
+      return [
+        normalizeColorComponent(rgba[index * 4 + 0], 0.0),
+        normalizeColorComponent(rgba[index * 4 + 1], 0.0),
+        normalizeColorComponent(rgba[index * 4 + 2], 0.0),
+        normalizeColorComponent(rgba[index * 4 + 3], 1.0)
+      ];
+    }
+
     function project3dPoint(xValue, yValue, zValue, viewport, layer) {
       var xs = layer.x || [];
       var ys = layer.y || [];
@@ -4408,7 +4437,7 @@ HTMLWidgets.widget({
     function layerZRange(zs) {
       var zMin = Infinity;
       var zMax = -Infinity;
-      zs = Array.isArray(zs) ? zs : [];
+      zs = isArrayLike(zs) ? zs : [];
       for (var i = 0; i < zs.length; i += 1) {
         var value = Number(zs[i]);
         if (isFinite(value)) {
@@ -4467,8 +4496,10 @@ HTMLWidgets.widget({
       return cameraModule.cameraMatrices(camera, sceneProjection(x), aspect).viewProjection;
     }
 
-    function flattenPointLayer3d(layer, x, viewport) {
+    function flattenPointLayer3d(layer, x, viewport, start, end) {
       var n = layer.rows || 0;
+      var from = Math.max(0, Math.floor(Number(start) || 0));
+      var to = Math.min(n, end === undefined ? n : Math.max(from, Math.floor(Number(end) || n)));
       var xs = layer.x || [];
       var ys = layer.y || [];
       var zs = layer.z || [];
@@ -4481,7 +4512,7 @@ HTMLWidgets.widget({
       var pointAges = [];
       var colors = [];
 
-      for (var i = 0; i < n; i += 1) {
+      for (var i = from; i < to; i += 1) {
         if (x && !layerIndexVisible(layer, i, x)) {
           continue;
         }
@@ -4489,12 +4520,8 @@ HTMLWidgets.widget({
         positions.push(point[0], point[1], point[2]);
         pointSizes.push(isFinite(sizes[i]) ? Number(sizes[i]) : 1.0);
         pointAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
-        colors.push(
-          normalizeColorComponent(rgba[i * 4 + 0], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 1], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 2], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 3], 1.0)
-        );
+        var color = pointColorComponents(layer, rgba, i);
+        colors.push(color[0], color[1], color[2], color[3]);
       }
 
       return {
@@ -4506,8 +4533,10 @@ HTMLWidgets.widget({
       };
     }
 
-    function flattenPointLayer(layer, x, viewport) {
+    function flattenPointLayer(layer, x, viewport, start, end) {
       var n = layer.rows || 0;
+      var from = Math.max(0, Math.floor(Number(start) || 0));
+      var to = Math.min(n, end === undefined ? n : Math.max(from, Math.floor(Number(end) || n)));
       var xs = layer.x || [];
       var ys = layer.y || [];
       var zs = layer.z || [];
@@ -4520,7 +4549,7 @@ HTMLWidgets.widget({
       var pointAges = [];
       var colors = [];
 
-      for (var i = 0; i < n; i += 1) {
+      for (var i = from; i < to; i += 1) {
         if (x && !layerIndexVisible(layer, i, x)) {
           continue;
         }
@@ -4529,12 +4558,8 @@ HTMLWidgets.widget({
         pointSizes.push(isFinite(sizes[i]) ? Number(sizes[i]) : 1.0);
         pointAges.push(isFinite(ages[i]) ? Number(ages[i]) : 1.0);
 
-        colors.push(
-          normalizeColorComponent(rgba[i * 4 + 0], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 1], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 2], 0.0),
-          normalizeColorComponent(rgba[i * 4 + 3], 1.0)
-        );
+        var color = pointColorComponents(layer, rgba, i);
+        colors.push(color[0], color[1], color[2], color[3]);
       }
 
       return {
@@ -4546,7 +4571,58 @@ HTMLWidgets.widget({
       };
     }
 
+    function pointLayerProgressiveEnabled(layer) {
+      return !!(layer && layer.transport && layer.transport.progressive === true &&
+        layer.transport.mode === "compact" && state && state.x && sceneDimension(state.x) !== "3d");
+    }
+
+    function pointLayerChunkSize(layer) {
+      var size = layer && layer.transport ? Math.floor(Number(layer.transport.chunk_size) || 0) : 0;
+      return Math.max(1, size || 100000);
+    }
+
+    function recordPointTransportMetrics(layer, metrics) {
+      metrics = metrics || {};
+      var current = el.__ggwebgl_transport_metrics || {};
+      var next = {
+        mode: metrics.mode || current.mode || (layer && layer.transport && layer.transport.mode) || "legacy",
+        rows: metrics.rows !== undefined ? metrics.rows : (current.rows || (layer && layer.rows) || 0),
+        uploaded: metrics.uploaded !== undefined ? metrics.uploaded : (current.uploaded || 0),
+        decoded_bytes: metrics.decoded_bytes !== undefined ? metrics.decoded_bytes :
+          (current.decoded_bytes || (layer && layer.compact && layer.compact.decoded_bytes) || null),
+        first_chunk_points: metrics.first_chunk_points !== undefined ? metrics.first_chunk_points : current.first_chunk_points,
+        full_upload_ms: metrics.full_upload_ms !== undefined ? metrics.full_upload_ms : current.full_upload_ms,
+        complete: metrics.complete !== undefined ? metrics.complete : !!current.complete
+      };
+      el.__ggwebgl_transport_metrics = next;
+      window.__ggwebgl_transport_metrics = next;
+    }
+
     function createPointLayerGpuPayload(gl, layer) {
+      if (pointLayerProgressiveEnabled(layer)) {
+        var lodLayer = window.ggWebGLLod && typeof window.ggWebGLLod.pointLodLayer === "function"
+          ? window.ggWebGLLod.pointLodLayer(layer)
+          : null;
+        var chunkSize = pointLayerChunkSize(layer);
+        var firstPayload = lodLayer
+          ? flattenPointLayer(lodLayer)
+          : flattenPointLayer(layer, null, null, 0, Math.min(layer.rows || 0, chunkSize));
+        var firstGpu = createPointLayerGpuPayloadFromFlat(gl, firstPayload);
+        firstGpu.progressive = true;
+        firstGpu.complete = false;
+        firstGpu.uploaded = firstPayload.count;
+        firstGpu.rows = layer.rows || 0;
+        recordPointTransportMetrics(layer, {
+          mode: "compact",
+          uploaded: firstPayload.count,
+          rows: layer.rows || 0,
+          first_chunk_points: firstPayload.count,
+          complete: false
+        });
+        schedulePointLayerFullUpload(gl, layer);
+        return firstGpu;
+      }
+
       var payload = flattenPointLayer(layer);
 
       return {
@@ -4566,15 +4642,63 @@ HTMLWidgets.widget({
         positionBuffer: payload.count ? createBuffer(gl, payload.positions) : null,
         sizeBuffer: payload.count ? createBuffer(gl, payload.sizes) : null,
         ageBuffer: payload.count ? createBuffer(gl, payload.ages) : null,
-        colorBuffer: payload.count ? createBuffer(gl, payload.colors) : null
+        colorBuffer: payload.count ? createBuffer(gl, payload.colors) : null,
+        complete: true,
+        rows: payload.count
       };
+    }
+
+    function schedulePointLayerFullUpload(gl, layer) {
+      if (!layer || layer._ggwebglPointUploadScheduled || layer._ggwebglPointUploadComplete) {
+        return;
+      }
+      layer._ggwebglPointUploadScheduled = true;
+      var started = (window.performance && performance.now) ? performance.now() : Date.now();
+      var run = function() {
+        if (!state.gl || state.gl !== gl || !state.x) {
+          layer._ggwebglPointUploadScheduled = false;
+          return;
+        }
+        var flat = flattenPointLayer(layer);
+        var fullPayload = createPointLayerGpuPayloadFromFlat(gl, flat);
+        fullPayload.progressive = false;
+        fullPayload.complete = true;
+        fullPayload.uploaded = flat.count;
+        fullPayload.rows = layer.rows || flat.count;
+        fullPayload.full_upload_ms = ((window.performance && performance.now) ? performance.now() : Date.now()) - started;
+        disposePointLayerPayload(layer);
+        layer._ggwebglPointPayload = fullPayload;
+        layer._ggwebglPointUploadScheduled = false;
+        layer._ggwebglPointUploadComplete = true;
+        layer._ggwebglTransportMetrics = {
+          mode: layer.transport && layer.transport.mode ? layer.transport.mode : "compact",
+          uploaded: fullPayload.uploaded,
+          rows: fullPayload.rows,
+          full_upload_ms: fullPayload.full_upload_ms,
+          decoded_bytes: layer.compact && layer.compact.decoded_bytes ? Number(layer.compact.decoded_bytes) : null
+        };
+        recordPointTransportMetrics(layer, {
+          mode: layer._ggwebglTransportMetrics.mode,
+          uploaded: fullPayload.uploaded,
+          rows: fullPayload.rows,
+          full_upload_ms: fullPayload.full_upload_ms,
+          decoded_bytes: layer._ggwebglTransportMetrics.decoded_bytes,
+          complete: true
+        });
+        redrawCurrent();
+      };
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(run, { timeout: 750 });
+      } else {
+        requestAnimationFrame(run);
+      }
     }
 
     function ensurePointLayerGpuPayload(gl, layer) {
       var cached = layer._ggwebglPointPayload;
       var expectedCount = Number(layer.rows || 0);
 
-      if (cached && cached.gl === gl && cached.count === expectedCount) {
+      if (cached && cached.gl === gl && (cached.count === expectedCount || cached.progressive === true)) {
         return cached;
       }
 

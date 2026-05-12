@@ -26,6 +26,7 @@ theme_webgl(
   depth_test = NULL,
   blend_mode = "auto",
   timeline = NULL,
+  transport = NULL,
   ...
 )
 ```
@@ -110,6 +111,13 @@ theme_webgl(
   Optional
   [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md)
   specification for runtime playback controls.
+
+- transport:
+
+  Optional
+  [`ggwebgl_transport()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_transport.md)
+  object controlling compact typed-array payloads, LOD previews, and
+  progressive upload for large point layers.
 
 - ...:
 
@@ -270,6 +278,32 @@ plot$ggwebgl
 #> 
 #> $blend_mode
 #> [1] "auto"
+#> 
+#> $transport
+#> $transport$mode
+#> [1] "auto"
+#> 
+#> $transport$threshold
+#> [1] 100000
+#> 
+#> $transport$progressive
+#> [1] "auto"
+#> 
+#> $transport$chunk_size
+#> [1] 100000
+#> 
+#> $transport$position
+#> [1] "float32"
+#> 
+#> $transport$colors
+#> [1] "auto"
+#> 
+#> $transport$lod
+#> [1] "auto"
+#> 
+#> $transport$lod_max_points
+#> [1] 5000
+#> 
 #> 
 #> $line_mode
 #> [1] "auto"

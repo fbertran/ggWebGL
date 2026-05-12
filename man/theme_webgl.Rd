@@ -22,6 +22,7 @@ theme_webgl(
   depth_test = NULL,
   blend_mode = "auto",
   timeline = NULL,
+  transport = NULL,
   ...
 )
 }
@@ -75,6 +76,10 @@ for 2D scenes and enabled for 3D scenes. Set explicitly to override.}
 
 \item{timeline}{Optional \code{ggwebgl_timeline()} specification for runtime
 playback controls.}
+
+\item{transport}{Optional \code{ggwebgl_transport()} object controlling compact
+typed-array payloads, LOD previews, and progressive upload for large point
+layers.}
 
 \item{...}{Reserved for future backend-specific options.}
 }

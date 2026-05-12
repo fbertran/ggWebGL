@@ -24,6 +24,7 @@ ggwebgl_scene_webgl_options <- function(webgl, explicit_fields = NULL) {
 #'   precedence over `camera`, `projection`, and `dimension`.
 #' @param selection Optional [ggwebgl_selection()] object.
 #' @param timeline Optional [ggwebgl_timeline()] object.
+#' @param transport Optional `ggwebgl_transport()` object.
 #' @param ... Additional renderer options stored under `webgl$extra`.
 #'
 #' @return A normalized renderer option list.
@@ -41,6 +42,7 @@ webgl_spec <- function(camera = c("panzoom", "orbit", "trackball"),
                        view = NULL,
                        selection = NULL,
                        timeline = NULL,
+                       transport = NULL,
                        ...) {
   camera <- match.arg(camera)
   projection <- match.arg(projection)
@@ -63,6 +65,7 @@ webgl_spec <- function(camera = c("panzoom", "orbit", "trackball"),
     depth_test = depth_test,
     blend_mode = blend_mode,
     timeline = timeline,
+    transport = transport,
     extra = list(...)
   )), explicit_fields = c(
     if (!is.null(shader)) "shader",
@@ -72,6 +75,7 @@ webgl_spec <- function(camera = c("panzoom", "orbit", "trackball"),
     "depth_test",
     "blend_mode",
     if (!is.null(timeline)) "timeline",
+    if (!is.null(transport)) "transport",
     names(list(...))
   ))
 }

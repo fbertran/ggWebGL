@@ -50,7 +50,15 @@ performance_500k_widget <- function(point_count = 500000L,
     ggWebGL::theme_webgl(
       shader = shader,
       interactions = c("pan", "zoom"),
-      transparent = FALSE
+      transparent = FALSE,
+      transport = ggWebGL::ggwebgl_transport(
+        mode = "auto",
+        threshold = 100000L,
+        progressive = "auto",
+        chunk_size = 100000L,
+        colors = "auto",
+        lod = "auto"
+      )
     )
 
   widget <- ggWebGL::ggplot_webgl(plot, width = width, height = height)
@@ -92,6 +100,23 @@ run_manual_500k_performance_smoke_test <- function(output = tempfile(fileext = "
   }
 
   invisible(output)
+}
+
+run_manual_1m_progressive_performance_smoke_test <- function(output = tempfile(fileext = ".html"),
+                                                             browse = interactive(),
+                                                             selfcontained = FALSE,
+                                                             shader = "density_splat",
+                                                             frame_count = 120L,
+                                                             warmup_frames = 20L) {
+  run_manual_500k_performance_smoke_test(
+    output = output,
+    browse = browse,
+    selfcontained = selfcontained,
+    point_count = 1000000L,
+    shader = shader,
+    frame_count = frame_count,
+    warmup_frames = warmup_frames
+  )
 }
 
 run_chromote_500k_performance_smoke_test <- function(output_dir = tempdir(),
@@ -179,6 +204,11 @@ ggwebgl_500k_metrics_row <- function(metrics,
     p95_frame_time_ms = as.numeric(metrics$p95_frame_time_ms %||% NA_real_),
     median_fps = as.numeric(metrics$median_fps %||% NA_real_),
     p95_fps = as.numeric(metrics$p95_fps %||% NA_real_),
+    transport_mode = as.character(metrics$transport_mode %||% NA_character_),
+    transport_decoded_bytes = as.numeric(metrics$transport_decoded_bytes %||% NA_real_),
+    transport_uploaded = as.numeric(metrics$transport_uploaded %||% NA_real_),
+    progressive_first_chunk_points = as.numeric(metrics$progressive_first_chunk_points %||% NA_real_),
+    progressive_complete_ms = as.numeric(metrics$progressive_complete_ms %||% NA_real_),
     browser_version = as.character(browser_version %||% NA_character_),
     gpu_renderer = as.character(metrics$gpu_renderer %||% NA_character_),
     user_agent = as.character(metrics$user_agent %||% NA_character_),
@@ -246,12 +276,16 @@ ggwebgl_500k_smoke_js <- function(point_count,
         const debug = gl.getExtension('WEBGL_debug_renderer_info');
         return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null;
       }
+      function transportMetrics() {
+        return el.__ggwebgl_transport_metrics || window.__ggwebgl_transport_metrics || {};
+      }
       function metrics(status, frameTimes) {
         const canvas = el.querySelector('canvas');
         const rect = canvas ? canvas.getBoundingClientRect() : { width: null, height: null };
         const samples = (frameTimes || []).slice(config.warmup_frames);
         const med = median(samples);
         const p95 = percentile(samples, 95);
+        const transport = transportMetrics();
         return {
           status: status,
           point_count: config.point_count,
@@ -265,6 +299,11 @@ ggwebgl_500k_smoke_js <- function(point_count,
           p95_frame_time_ms: round(p95, 2),
           median_fps: round(fps(med), 1),
           p95_fps: round(fps(p95), 1),
+          transport_mode: transport.mode || 'legacy',
+          transport_decoded_bytes: transport.decoded_bytes || null,
+          transport_uploaded: transport.uploaded || null,
+          progressive_first_chunk_points: transport.first_chunk_points || null,
+          progressive_complete_ms: round(transport.full_upload_ms, 1),
           gpu_renderer: gpuRenderer(),
           user_agent: navigator.userAgent
         };
@@ -275,6 +314,10 @@ ggwebgl_500k_smoke_js <- function(point_count,
           'points: ' + current.point_count.toLocaleString(),
           'shader: ' + current.shader,
           'status: ' + current.status,
+          'transport: ' + current.transport_mode,
+          'decoded bytes: ' + (current.transport_decoded_bytes === null ? 'pending' : current.transport_decoded_bytes.toLocaleString()),
+          'uploaded: ' + (current.transport_uploaded === null ? 'pending' : current.transport_uploaded.toLocaleString()),
+          'full upload: ' + (current.progressive_complete_ms === null ? 'pending' : current.progressive_complete_ms + ' ms'),
           'first render: ' + (current.first_render_ms === null ? 'pending' : current.first_render_ms + ' ms'),
           'median frame: ' + (current.median_frame_time_ms === null ? 'pending' : current.median_frame_time_ms + ' ms'),
           'p95 frame: ' + (current.p95_frame_time_ms === null ? 'pending' : current.p95_frame_time_ms + ' ms'),

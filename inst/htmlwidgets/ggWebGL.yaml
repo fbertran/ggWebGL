@@ -7,6 +7,8 @@ dependencies:
       - lib/scene.js
       - lib/camera.js
       - lib/program-registry.js
+      - lib/buffers.js
+      - lib/lod.js
       - lib/picking.js
       - lib/interactions/hover.js
       - lib/interactions/brush.js

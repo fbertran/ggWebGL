@@ -7,6 +7,10 @@ if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
 library(ggplot2)
 library(htmlwidgets)
 
+`%||%` <- function(x, y) {
+  if (is.null(x) || !length(x)) y else x
+}
+
 benchmark_family_plot <- function(family = c("dense_points", "raster_field", "faceted_dense_points"),
                                   use_webgl_geoms = TRUE) {
   family <- match.arg(family)
@@ -123,16 +127,46 @@ measure_browser_render <- function(file, timeout_seconds = 10) {
       }
     }
 
+    transport_metrics <- tryCatch(
+      session$Runtime$evaluate("window.__ggwebgl_transport_metrics || null", returnByValue = TRUE)$result$value,
+      error = function(e) NULL
+    )
+
     if (is.numeric(render_ms) && length(render_ms) == 1L && is.finite(render_ms)) {
-      list(browser_first_render_ms = as.numeric(render_ms), browser_status = "ok")
+      list(
+        browser_first_render_ms = as.numeric(render_ms),
+        browser_status = "ok",
+        transport_uploaded = as.numeric(transport_metrics$uploaded %||% NA_real_),
+        transport_full_upload_ms = as.numeric(transport_metrics$full_upload_ms %||% NA_real_)
+      )
     } else {
-      list(browser_first_render_ms = NA_real_, browser_status = "timeout")
+      list(
+        browser_first_render_ms = NA_real_,
+        browser_status = "timeout",
+        transport_uploaded = NA_real_,
+        transport_full_upload_ms = NA_real_
+      )
     }
   }, error = function(e) {
-    list(browser_first_render_ms = NA_real_, browser_status = "browser_unavailable")
+    list(
+      browser_first_render_ms = NA_real_,
+      browser_status = "browser_unavailable",
+      transport_uploaded = NA_real_,
+      transport_full_upload_ms = NA_real_
+    )
   })
 
   out
+}
+
+widget_transport_summary <- function(widget) {
+  transport <- widget$x$render$transport %||% list()
+  list(
+    transport_mode = as.character(transport$mode %||% "legacy"),
+    transport_compact_layers = as.integer(transport$compact_layers %||% 0L),
+    transport_compact_point_count = as.integer(transport$compact_point_count %||% 0L),
+    transport_decoded_bytes = as.numeric(transport$decoded_bytes %||% NA_real_)
+  )
 }
 
 fps_claim_required_columns <- function() {
@@ -242,8 +276,14 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
       )
     })[["elapsed"]]
     browser <- if (isTRUE(include_browser)) measure_browser_render(file) else {
-      list(browser_first_render_ms = NA_real_, browser_status = "skipped")
+      list(
+        browser_first_render_ms = NA_real_,
+        browser_status = "skipped",
+        transport_uploaded = NA_real_,
+        transport_full_upload_ms = NA_real_
+      )
     }
+    transport <- widget_transport_summary(widget)
 
     return(data.frame(
       family = family,
@@ -258,6 +298,13 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
       artifact_file = normalizePath(file, winslash = "/", mustWork = FALSE),
       browser_first_render_ms = browser$browser_first_render_ms,
       browser_status = browser$browser_status,
+      startup_latency_ms = browser$browser_first_render_ms,
+      transport_mode = transport$transport_mode,
+      transport_compact_layers = transport$transport_compact_layers,
+      transport_compact_point_count = transport$transport_compact_point_count,
+      transport_decoded_bytes = transport$transport_decoded_bytes,
+      transport_uploaded = browser$transport_uploaded,
+      progressive_complete_ms = browser$transport_full_upload_ms,
       stringsAsFactors = FALSE
     ))
   }
@@ -277,6 +324,13 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
         artifact_file = NA_character_,
         browser_first_render_ms = NA_real_,
         browser_status = "skipped",
+        startup_latency_ms = NA_real_,
+        transport_mode = NA_character_,
+        transport_compact_layers = NA_integer_,
+        transport_compact_point_count = NA_integer_,
+        transport_decoded_bytes = NA_real_,
+        transport_uploaded = NA_real_,
+        progressive_complete_ms = NA_real_,
         stringsAsFactors = FALSE
       ))
     }
@@ -294,7 +348,12 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
       )
     })[["elapsed"]]
     browser <- if (isTRUE(include_browser)) measure_browser_render(file) else {
-      list(browser_first_render_ms = NA_real_, browser_status = "skipped")
+      list(
+        browser_first_render_ms = NA_real_,
+        browser_status = "skipped",
+        transport_uploaded = NA_real_,
+        transport_full_upload_ms = NA_real_
+      )
     }
 
     return(data.frame(
@@ -310,6 +369,13 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
       artifact_file = normalizePath(file, winslash = "/", mustWork = FALSE),
       browser_first_render_ms = browser$browser_first_render_ms,
       browser_status = browser$browser_status,
+      startup_latency_ms = browser$browser_first_render_ms,
+      transport_mode = NA_character_,
+      transport_compact_layers = NA_integer_,
+      transport_compact_point_count = NA_integer_,
+      transport_decoded_bytes = NA_real_,
+      transport_uploaded = NA_real_,
+      progressive_complete_ms = NA_real_,
       stringsAsFactors = FALSE
     ))
   }
@@ -324,7 +390,12 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
     write_static_wrapper(png_file, html_file, title = paste("Benchmark", family, engine))
   })[["elapsed"]]
   browser <- if (isTRUE(include_browser)) measure_browser_render(html_file) else {
-    list(browser_first_render_ms = NA_real_, browser_status = "skipped")
+    list(
+      browser_first_render_ms = NA_real_,
+      browser_status = "skipped",
+      transport_uploaded = NA_real_,
+      transport_full_upload_ms = NA_real_
+    )
   }
 
   data.frame(
@@ -340,6 +411,13 @@ build_engine_artifact <- function(engine = c("ggwebgl", "plotly", "ggplot2"),
     artifact_file = normalizePath(png_file, winslash = "/", mustWork = FALSE),
     browser_first_render_ms = browser$browser_first_render_ms,
     browser_status = browser$browser_status,
+    startup_latency_ms = browser$browser_first_render_ms,
+    transport_mode = NA_character_,
+    transport_compact_layers = NA_integer_,
+    transport_compact_point_count = NA_integer_,
+    transport_decoded_bytes = NA_real_,
+    transport_uploaded = NA_real_,
+    progressive_complete_ms = NA_real_,
     stringsAsFactors = FALSE
   )
 }
