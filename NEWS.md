@@ -8,6 +8,14 @@
   and timeline/time state while preserving existing timeline update APIs.
 - Added a CRAN-safe Shiny interaction demo that exercises hover, click, brush,
   camera, and time events without custom JavaScript.
+- Added compact point transport and deterministic LOD metadata for large point
+  scenes, plus manual dense-scene smoke helpers that record payload and browser
+  diagnostics without making fixed performance statements.
+- Added neutral scene-type benchmark helpers and public examples for dense
+  embeddings, trajectory timelines, surface/mesh rendering, Shiny interaction,
+  and static-versus-WebGL workflow comparison.
+- Added surface/mesh and interactive benchmark vignettes built from small
+  deterministic examples and manual metric schemas.
 
 # ggWebGL 0.6.0
 

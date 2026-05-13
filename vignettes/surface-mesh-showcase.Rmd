@@ -1,0 +1,67 @@
+---
+title: "Surface and mesh rendering with ggWebGL"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Surface and mesh rendering with ggWebGL}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else if (file.exists("../DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else {
+  library(ggWebGL)
+}
+
+example_candidates <- c(
+  "inst/examples/htmlwidget/surface-gallery.R",
+  file.path("..", "inst", "examples", "htmlwidget", "surface-gallery.R"),
+  system.file("examples", "htmlwidget", "surface-gallery.R", package = "ggWebGL")
+)
+example_candidates <- example_candidates[nzchar(example_candidates) & file.exists(example_candidates)]
+if (!length(example_candidates)) {
+  stop("Could not find surface-gallery.R")
+}
+sys.source(example_candidates[[1L]], envir = knitr::knit_global())
+```
+
+# Purpose
+
+`ggWebGL` separates structured surfaces from unstructured meshes. Structured
+surfaces are rectilinear grids that can carry height colormaps, normals,
+wireframes, and optional contour overlays. Meshes are indexed triangle geometry
+with scalar coloring, wireframe edges, and renderer-owned face or vertex ids.
+
+Both examples below use small deterministic in-memory data. They are intended to
+show the renderer contracts, not to report performance numbers.
+
+# Structured Surface
+
+The `volcano` matrix is converted with `surface_matrix()` and rendered as a
+first-class surface primitive. The widget uses a perspective orbit view and the
+`surface_height_colormap` shader.
+
+```{r volcano-surface, out.width='100%'}
+surface_gallery_volcano_widget(height = 460)
+```
+
+# Unstructured Mesh
+
+The mesh example uses explicit vertices and triangle indices. Scalar values are
+stored on vertices and displayed with `mesh_scalar_colormap`; face ids remain
+available to the renderer for hover or selection payloads.
+
+```{r scalar-mesh, out.width='100%'}
+surface_gallery_mesh_widget(height = 460)
+```
+
+# Notes
+
+The core package keeps rendering in the browser through WebGL. Any expensive
+terrain preprocessing, mesh simplification, or device-specific acceleration is
+left to upstream analysis code or optional companion tooling.

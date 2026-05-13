@@ -8,6 +8,10 @@
   Capabilities](https://fbertran.github.io/ggWebGL/articles/renderer-capabilities.md):
 - [Temporal and 3D trajectories with
   ggWebGL](https://fbertran.github.io/ggWebGL/articles/temporal-trajectories.md):
+- [Surface and mesh rendering with
+  ggWebGL](https://fbertran.github.io/ggWebGL/articles/surface-mesh-showcase.md):
+- [Interactive benchmark metrics with
+  ggWebGL](https://fbertran.github.io/ggWebGL/articles/interactive-benchmarks.md):
 - [Renderer Showcase
   Examples](https://fbertran.github.io/ggWebGL/articles/renderer-showcase-examples.md):
 - [Real-Data

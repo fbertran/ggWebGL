@@ -4,12 +4,14 @@ pkgdown_sha: ~
 articles:
   boids4r-animation: boids4r-animation.html
   getting-started: getting-started.html
+  interactive-benchmarks: interactive-benchmarks.html
   real-data-evidence: real-data-evidence.html
   renderer-capabilities: renderer-capabilities.html
   renderer-showcase-examples: renderer-showcase-examples.html
+  surface-mesh-showcase: surface-mesh-showcase.html
   temporal-trajectories: temporal-trajectories.html
   xgeortr-bridge: xgeortr-bridge.html
-last_built: 2026-05-12T18:29Z
+last_built: 2026-05-13T13:25Z
 urls:
   reference: https://fbertran.github.io/ggWebGL/reference
   article: https://fbertran.github.io/ggWebGL/articles

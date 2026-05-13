@@ -39,6 +39,8 @@ articles:
       - getting-started
       - renderer-capabilities
       - temporal-trajectories
+      - surface-mesh-showcase
+      - interactive-benchmarks
       - renderer-showcase-examples
       - real-data-evidence
   - title: Optional downstream bridges

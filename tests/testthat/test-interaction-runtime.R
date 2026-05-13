@@ -36,8 +36,7 @@ with_widget_page <- function(widget, code, width = 760, height = 520) {
   session <- browser$new_session(width = width, height = height, wait_ = TRUE)
   on.exit(try(session$close(), silent = TRUE), add = TRUE)
   session$Page$navigate(paste0("file://", normalizePath(output)), wait_ = TRUE)
-  try(session$Page$loadEventFired(wait_ = TRUE), silent = TRUE)
-  Sys.sleep(0.8)
+  wait_for_widget_ready(session, timeout_seconds = 5, settle_seconds = 0.35)
   force(code)(session)
 }
 

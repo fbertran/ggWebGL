@@ -142,8 +142,7 @@ test_that("browser layout keeps each canvas inside its widget stage", {
   on.exit(try(session$close(), silent = TRUE), add = TRUE)
 
   session$Page$navigate(paste0("file://", normalizePath(output)), wait_ = TRUE)
-  try(session$Page$loadEventFired(wait_ = TRUE), silent = TRUE)
-  Sys.sleep(0.5)
+  wait_for_widget_ready(session, timeout_seconds = 5, settle_seconds = 0.35)
 
   result <- session$Runtime$evaluate(
     paste(
@@ -204,8 +203,7 @@ test_that("browser layout keeps stage below chrome and stable after interactions
     libdir <- tempfile()
     htmlwidgets::saveWidget(widget, output, selfcontained = FALSE, libdir = libdir)
     session$Page$navigate(paste0("file://", normalizePath(output)), wait_ = TRUE)
-    try(session$Page$loadEventFired(wait_ = TRUE), silent = TRUE)
-    Sys.sleep(0.35)
+    wait_for_widget_ready(session, timeout_seconds = 5, settle_seconds = 0.35)
   }
 
   probe <- function() {
