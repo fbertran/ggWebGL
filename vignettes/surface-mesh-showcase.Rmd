@@ -40,6 +40,11 @@ with scalar coloring, wireframe edges, and renderer-owned face or vertex ids.
 Both examples below use small deterministic in-memory data. They are intended to
 show the renderer contracts, not to report performance numbers.
 
+**Status.** Structured surfaces and unstructured meshes are `Experimental`
+public APIs. They cover browser-side indexed geometry examples, while terrain
+preprocessing, mesh simplification, and high-scale mesh optimization remain
+outside the core package.
+
 # Structured Surface
 
 The `volcano` matrix is converted with `surface_matrix()` and rendered as a
