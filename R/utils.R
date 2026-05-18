@@ -886,42 +886,128 @@ rgba_to_bytes <- function(rgba) {
   as.integer(pmax(0, pmin(255, round(rgba * 255))))
 }
 
+ggwebgl_geom_registry <- function() {
+  list(
+    list(
+      name = "vectors",
+      primitive = "vectors",
+      classes = "GeomVectorWebGL",
+      inherits = character(),
+      extractor = "extract_vector_payloads"
+    ),
+    list(
+      name = "mesh",
+      primitive = "mesh",
+      classes = "GeomMeshWebGL",
+      inherits = character(),
+      extractor = "extract_mesh_payloads"
+    ),
+    list(
+      name = "surface",
+      primitive = "surface",
+      classes = "GeomSurfaceWebGL",
+      inherits = character(),
+      extractor = "extract_surface_payloads"
+    ),
+    list(
+      name = "path3d",
+      primitive = "lines",
+      classes = "GeomPath3DWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      subtype = "path3d"
+    ),
+    list(
+      name = "points",
+      primitive = "points",
+      classes = "GeomPointWebGL",
+      inherits = "GeomPoint",
+      extractor = "extract_point_payloads"
+    ),
+    list(
+      name = "lines",
+      primitive = "lines",
+      classes = "GeomLineWebGL",
+      inherits = c("GeomLine", "GeomPath"),
+      extractor = "extract_line_payloads"
+    ),
+    list(
+      name = "raster",
+      primitive = "raster",
+      classes = "GeomRasterWebGL",
+      inherits = "GeomRaster",
+      extractor = "extract_raster_payloads"
+    )
+  )
+}
+
+ggwebgl_geom_class <- function(layer) {
+  class(layer$geom)[1] %||% ""
+}
+
+ggwebgl_geom_entry_matches <- function(entry, layer) {
+  geom_class <- ggwebgl_geom_class(layer)
+
+  if (length(entry$classes %||% character()) && geom_class %in% entry$classes) {
+    return(TRUE)
+  }
+
+  inherited <- entry$inherits %||% character()
+  if (length(inherited)) {
+    return(any(vapply(inherited, function(class) inherits(layer$geom, class), logical(1))))
+  }
+
+  FALSE
+}
+
+ggwebgl_geom_registry_match <- function(layer) {
+  registry <- ggwebgl_geom_registry()
+
+  for (entry in registry) {
+    if (ggwebgl_geom_entry_matches(entry, layer)) {
+      return(entry)
+    }
+  }
+
+  NULL
+}
+
+ggwebgl_geom_matches_primitive <- function(layer, primitive) {
+  entry <- ggwebgl_geom_registry_match(layer)
+  !is.null(entry) && identical(entry$primitive, primitive)
+}
+
 is_point_geom <- function(layer) {
-  !is_mesh_geom(layer) &&
-    (inherits(layer$geom, "GeomPoint") || identical(class(layer$geom)[1], "GeomPointWebGL"))
+  ggwebgl_geom_matches_primitive(layer, "points")
 }
 
 is_line_geom <- function(layer) {
-  inherits(layer$geom, "GeomLine") ||
-    inherits(layer$geom, "GeomPath") ||
-    identical(class(layer$geom)[1], "GeomLineWebGL") ||
-    is_path3d_geom(layer)
+  ggwebgl_geom_matches_primitive(layer, "lines")
 }
 
 is_path3d_geom <- function(layer) {
-  identical(class(layer$geom)[1], "GeomPath3DWebGL")
+  entry <- ggwebgl_geom_registry_match(layer)
+  !is.null(entry) && identical(entry$subtype %||% NULL, "path3d")
 }
 
 is_raster_geom <- function(layer) {
-  !is_surface_geom(layer) &&
-    (inherits(layer$geom, "GeomRaster") || identical(class(layer$geom)[1], "GeomRasterWebGL"))
+  ggwebgl_geom_matches_primitive(layer, "raster")
 }
 
 is_vector_geom <- function(layer) {
-  identical(class(layer$geom)[1], "GeomVectorWebGL")
+  ggwebgl_geom_matches_primitive(layer, "vectors")
 }
 
 is_mesh_geom <- function(layer) {
-  identical(class(layer$geom)[1], "GeomMeshWebGL")
+  ggwebgl_geom_matches_primitive(layer, "mesh")
 }
 
 is_surface_geom <- function(layer) {
-  identical(class(layer$geom)[1], "GeomSurfaceWebGL")
+  ggwebgl_geom_matches_primitive(layer, "surface")
 }
 
 is_supported_geom <- function(layer) {
-  is_vector_geom(layer) || is_mesh_geom(layer) || is_surface_geom(layer) ||
-    is_point_geom(layer) || is_line_geom(layer) || is_raster_geom(layer)
+  !is.null(ggwebgl_geom_registry_match(layer))
 }
 
 split_path_runs <- function(data) {

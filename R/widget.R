@@ -483,57 +483,17 @@ extract_surface_payloads <- function(layer, data) {
 }
 
 extract_supported_layer_source <- function(layer, data, index) {
-  if (is_vector_geom(layer)) {
-    return(compact_list(list(
-      index = index,
-      type = "vectors",
-      geom = class(layer$geom)[1],
-      payloads = extract_vector_payloads(layer, data)
-    )))
-  }
+  registry_entry <- ggwebgl_geom_registry_match(layer)
 
-  if (is_mesh_geom(layer)) {
-    return(compact_list(list(
-      index = index,
-      type = "mesh",
-      geom = class(layer$geom)[1],
-      payloads = extract_mesh_payloads(layer, data)
-    )))
-  }
+  if (!is.null(registry_entry)) {
+    extractor <- get(registry_entry$extractor, mode = "function", inherits = TRUE)
 
-  if (is_surface_geom(layer)) {
     return(compact_list(list(
       index = index,
-      type = "surface",
+      type = registry_entry$primitive,
       geom = class(layer$geom)[1],
-      payloads = extract_surface_payloads(layer, data)
-    )))
-  }
-
-  if (is_point_geom(layer)) {
-    return(compact_list(list(
-      index = index,
-      type = "points",
-      geom = class(layer$geom)[1],
-      payloads = extract_point_payloads(layer, data)
-    )))
-  }
-
-  if (is_line_geom(layer)) {
-    return(compact_list(list(
-      index = index,
-      type = "lines",
-      geom = class(layer$geom)[1],
-      payloads = extract_line_payloads(layer, data)
-    )))
-  }
-
-  if (is_raster_geom(layer)) {
-    return(compact_list(list(
-      index = index,
-      type = "raster",
-      geom = class(layer$geom)[1],
-      payloads = extract_raster_payloads(layer, data)
+      subtype = registry_entry$subtype %||% NULL,
+      payloads = extractor(layer, data)
     )))
   }
 
