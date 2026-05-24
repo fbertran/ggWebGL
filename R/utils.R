@@ -903,6 +903,20 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_vector_payloads"
     ),
     list(
+      name = "rects",
+      primitive = "rects",
+      classes = "GeomRectWebGL",
+      inherits = character(),
+      extractor = "extract_rect_payloads"
+    ),
+    list(
+      name = "tiles",
+      primitive = "rects",
+      classes = "GeomTileWebGL",
+      inherits = character(),
+      extractor = "extract_rect_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

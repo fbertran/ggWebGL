@@ -299,6 +299,58 @@ extract_vector_payloads <- function(layer, data) {
   payloads
 }
 
+extract_rect_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  required <- c("xmin", "xmax", "ymin", "ymax")
+  if (!all(required %in% names(data))) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    panel_data <- data[split_index[[id]], , drop = FALSE]
+    bounds <- panel_data[, required, drop = FALSE]
+    finite_bounds <- Reduce(`&`, lapply(bounds, function(column) is.finite(as.numeric(column))))
+    panel_data <- panel_data[finite_bounds, , drop = FALSE]
+
+    if (!nrow(panel_data)) {
+      return(NULL)
+    }
+
+    fill <- panel_data$fill %||% rep("#2C3E50", nrow(panel_data))
+    stroke <- panel_data$colour %||% panel_data$color %||% NULL
+    if (!is.null(stroke) && all(is.na(stroke))) {
+      stroke <- NULL
+    }
+    linewidth <- panel_data$linewidth %||% panel_data$size %||% rep(if (is.null(stroke)) 0 else 0.5, nrow(panel_data))
+    linewidth <- mm_to_pixels(linewidth)
+    linewidth[!is.finite(linewidth) | linewidth < 0] <- 0
+
+    ggwebgl_layer_rects(
+      xmin = panel_data$xmin,
+      xmax = panel_data$xmax,
+      ymin = panel_data$ymin,
+      ymax = panel_data$ymax,
+      fill = fill,
+      colour = stroke,
+      alpha = panel_data$alpha %||% NULL,
+      linewidth = linewidth,
+      frame = if ("frame" %in% names(panel_data)) panel_data$frame else NULL,
+      time = if ("time" %in% names(panel_data)) panel_data$time else NULL,
+      panel_id = as.integer(id),
+      geom = class(layer$geom)[1]
+    )
+  })
+  names(payloads) <- names(split_index)
+  Filter(Negate(is.null), payloads)
+}
+
 extract_raster_panel_payload <- function(layer, data, panel_id) {
   data <- as.data.frame(data)
 

@@ -30,6 +30,18 @@ GeomPath3DWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPath$optional_aes, "z", "frame", "time")
 )
 GeomRasterWebGL <- ggplot2::ggproto("GeomRasterWebGL", ggplot2::GeomRaster)
+GeomRectWebGL <- ggplot2::ggproto(
+  "GeomRectWebGL",
+  ggplot2::GeomRect,
+  optional_aes = c(ggplot2::GeomRect$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomRect$extra_params, "lineend", "linejoin")
+)
+GeomTileWebGL <- ggplot2::ggproto(
+  "GeomTileWebGL",
+  ggplot2::GeomTile,
+  optional_aes = c(ggplot2::GeomTile$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomTile$extra_params, "lineend", "linejoin")
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -292,6 +304,102 @@ geom_raster_webgl <- function(mapping = NULL,
       hjust = hjust,
       vjust = vjust,
       interpolate = interpolate,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Rectangle Layer
+#'
+#' Add a rectangle layer tagged for the `ggWebGL` renderer. Boundaries are taken
+#' from the data built by `ggplot2`, so `xmin`, `xmax`, `ymin`, and `ymax`
+#' follow the same setup rules as [ggplot2::geom_rect()].
+#'
+#' @inheritParams ggplot2::geom_rect
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' rects <- data.frame(
+#'   xmin = c(0, 1.2),
+#'   xmax = c(0.8, 2),
+#'   ymin = c(0, 0.4),
+#'   ymax = c(1, 1.4),
+#'   group = c("a", "b")
+#' )
+#'
+#' ggplot2::ggplot(
+#'   rects,
+#'   ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = group)
+#' ) +
+#'   geom_rect_webgl(alpha = 0.7)
+#' @export
+geom_rect_webgl <- function(mapping = NULL,
+                            data = NULL,
+                            stat = "identity",
+                            position = "identity",
+                            ...,
+                            lineend = "butt",
+                            linejoin = "mitre",
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomRectWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Tile Layer
+#'
+#' Add a tile layer tagged for the `ggWebGL` renderer. Tile boundaries are read
+#' from `ggplot2`'s built layer data, which preserves `geom_tile()` width,
+#' height, and irregular-spacing behavior.
+#'
+#' @inheritParams ggplot2::geom_tile
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' tiles <- expand.grid(x = 1:3, y = 1:2)
+#' tiles$value <- with(tiles, x + y)
+#'
+#' ggplot2::ggplot(tiles, ggplot2::aes(x, y, fill = value)) +
+#'   geom_tile_webgl(alpha = 0.85)
+#' @export
+geom_tile_webgl <- function(mapping = NULL,
+                            data = NULL,
+                            stat = "identity",
+                            position = "identity",
+                            ...,
+                            lineend = "butt",
+                            linejoin = "mitre",
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomTileWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      linejoin = linejoin,
       na.rm = na.rm,
       ...
     )

@@ -40,11 +40,17 @@
 - [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md)
   : WebGL Raster Layer
 
+- [`geom_rect_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_rect_webgl.md)
+  : WebGL Rectangle Layer
+
 - [`geom_segment_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_segment_webgl.md)
   : WebGL Segment Layer
 
 - [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md)
   : WebGL Structured Grid Surface Layer
+
+- [`geom_tile_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_tile_webgl.md)
+  : WebGL Tile Layer
 
 - [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md)
   : WebGL Vector Arrow Layer

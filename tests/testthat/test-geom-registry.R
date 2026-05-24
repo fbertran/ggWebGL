@@ -10,17 +10,19 @@ test_that("internal geom registry declares current primitive extractors", {
 
   expect_equal(
     names,
-    c("vectors", "segments", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
+    c("vectors", "segments", "rects", "tiles", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
   )
   expect_equal(
     primitives,
-    c("vectors", "vectors", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
+    c("vectors", "vectors", "rects", "rects", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
   )
   expect_equal(
     extractors,
     c(
       "extract_vector_payloads",
       "extract_vector_payloads",
+      "extract_rect_payloads",
+      "extract_rect_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
       "extract_line_payloads",
@@ -68,6 +70,20 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_segment_webgl()
   )
+  rect <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
+      ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax)
+    ) +
+      geom_rect_webgl()
+  )
+  tile <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = 1, y = 1),
+      ggplot2::aes(x, y)
+    ) +
+      geom_tile_webgl()
+  )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(
@@ -100,6 +116,10 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(segment$type, "vectors")
   expect_equal(segment$geom, "GeomSegmentWebGL")
   expect_equal(segment$head_size, 0)
+  expect_equal(rect$type, "rects")
+  expect_equal(rect$geom, "GeomRectWebGL")
+  expect_equal(tile$type, "rects")
+  expect_equal(tile$geom, "GeomTileWebGL")
   expect_equal(mesh$type, "mesh")
   expect_equal(surface$type, "surface")
 })
