@@ -58,10 +58,12 @@ test_that("publication rendering defaults and explicit overrides are normalized"
 test_that("WebGL geoms use distinct geom classes", {
   point_layer <- geom_point_webgl()
   line_layer <- geom_line_webgl()
+  path_layer <- geom_path_webgl()
   raster_layer <- geom_raster_webgl()
 
   expect_equal(class(point_layer$geom)[1], "GeomPointWebGL")
   expect_equal(class(line_layer$geom)[1], "GeomLineWebGL")
+  expect_equal(class(path_layer$geom)[1], "GeomPathWebGL")
   expect_equal(class(raster_layer$geom)[1], "GeomRasterWebGL")
 })
 

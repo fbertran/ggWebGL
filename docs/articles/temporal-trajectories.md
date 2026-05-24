@@ -9,6 +9,12 @@ report performance numbers. The widgets autoplay by default and can be
 paused, scrubbed, or reset with the timeline controls. If a browser
 throttles a background tab, pressing **Play** resumes the timeline.
 
+**Status.** Trajectory paths, trajectory shader encodings,
+exact/cumulative timeline controls, and Shiny timeline messages are
+`Experimental` public APIs. They are suitable for renderer evaluation
+and small examples, but should not be described as stable performance or
+animation guarantees.
+
 The relevant renderer pieces are:
 
 - [`geom_path3d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_path3d_webgl.md)

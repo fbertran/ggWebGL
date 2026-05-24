@@ -13,5 +13,6 @@
 ^extra_docs$
 ^\.Rproj\.user$
 ^cran-comments\.md$
+^vignettes/temporal-trajectories[.]R$
 
 ^internal.*$

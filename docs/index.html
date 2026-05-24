@@ -78,7 +78,7 @@
 <div class="section level2">
 <h2 id="frédéric-bertrand">Frédéric Bertrand<a class="anchor" aria-label="anchor" href="#fr%C3%A9d%C3%A9ric-bertrand"></a>
 </h2>
-<p><code>ggWebGL</code> is an R package for browser-native <code>WebGL</code> rendering of R graphics through <code>htmlwidgets</code>. It supports grammar-style graphics workflows and renderer-ready specifications for dense analytical and scientific scenes. The stable current scope covers point, line, trajectory, raster, fixed-scale facet, shader, pan/zoom/hover, <code>Shiny</code>, and publication-oriented static export paths. Vector, mesh, surface, timeline, brush/lasso, and structured 3D view support are implemented <code>ggWebGL</code> public APIs and optional GeoXGL extension classes.</p>
+<p><code>ggWebGL</code> is an R package for browser-native <code>WebGL</code> rendering of R graphics through <code>htmlwidgets</code>. It supports grammar-style graphics workflows and renderer-ready specifications for dense analytical and scientific scenes. The stable current scope covers core widget/specification construction, point, line, raster, fixed-scale facet, pan/zoom/hover, <code>Shiny</code> output, and static export helpers. Vector, mesh, surface, trajectory, timeline, brush/lasso, transport, and structured 3D view support are implemented public APIs but remain experimental unless a future release explicitly promotes them.</p>
 <p>The package keeps rendering in the browser and avoids any mandatory <code>CUDA</code>, <code>Metal</code>, or <code>OpenCL</code> toolchain. Heavier preprocessing, large-data preparation, and device-specific acceleration are left to companion packages.</p>
 <p>Suggested integrations extend this renderer boundary without becoming core requirements: <code>XGeoRTR</code> can provide explainable-geometry state that is adapted to renderer-ready primitives, and <code>boids4R</code> can provide swarm simulation frames rendered as animated point/vector timelines. These packages own their domain semantics; <code>ggWebGL</code> owns the browser renderer and widget behavior.</p>
 </div>
@@ -93,119 +93,216 @@
 <p>The package provides browser-native rendering, widget construction, renderer-ready specifications, shader modes, interaction contracts, optional extension classes, and static export surfaces. It does not implement downstream scientific, simulation, topological, model-explanation, or domain-specific semantics. Those semantics should enter <code>ggWebGL</code> through explicit adapter boundaries such as backend-neutral tables, renderer-ready primitive layers, or <code>ggwebgl_spec</code> payloads.</p>
 </div>
 <div class="section level2">
-<h2 id="stable-current-scope">Stable current scope<a class="anchor" aria-label="anchor" href="#stable-current-scope"></a>
+<h2 id="support-matrix">Support matrix<a class="anchor" aria-label="anchor" href="#support-matrix"></a>
 </h2>
-<p>The current implementation supports:</p>
+<p>Status labels are conservative. <code>Stable</code> means the API is part of the core package path; <code>Experimental</code> means it is exported and tested but still subject to renderer-contract refinement; <code>Optional extension</code> means the feature depends on a suggested downstream package; <code>Metadata-only</code> means the package records information without claiming full rendering support; <code>Deferred</code> means the item is intentionally out of the current core package.</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
 </colgroup>
 <thead><tr>
-<th>Feature</th>
-<th>Current status</th>
-</tr></thead>
-<tbody>
-<tr>
-<td><code><a href="reference/geom_point_webgl.html">geom_point_webgl()</a></code></td>
-<td>Rendered in <code>WebGL</code>
-</td>
-</tr>
-<tr>
-<td><code><a href="reference/geom_line_webgl.html">geom_line_webgl()</a></code></td>
-<td>Rendered in <code>WebGL</code>
-</td>
-</tr>
-<tr>
-<td><code><a href="reference/geom_raster_webgl.html">geom_raster_webgl()</a></code></td>
-<td>Rendered in <code>WebGL</code>
-</td>
-</tr>
-<tr>
-<td>Renderer-ready stable layers</td>
-<td>Points, lines, and rasters through <code>ggwebgl_layer_*()</code> helpers</td>
-</tr>
-<tr>
-<td>Renderer specification</td>
-<td>
-<code><a href="reference/ggwebgl_spec.html">ggwebgl_spec()</a></code> and <code><a href="reference/as_ggwebgl_spec.html">as_ggwebgl_spec()</a></code> adapter boundaries</td>
-</tr>
-<tr>
-<td>Shader modes</td>
-<td>
-<code>default</code>, <code>density_splat</code>, <code>trajectory_age</code>, <code>trajectory_age_glow</code>, <code>trajectory_velocity</code>, <code>trajectory_direction</code>
-</td>
-</tr>
-<tr>
-<td>Interaction</td>
-<td>
-<code>pan</code>, <code>zoom</code>, and <code>hover</code>
-</td>
-</tr>
-<tr>
-<td>Output targets</td>
-<td>R Markdown / Quarto HTML, <code>Shiny</code>, and static image export helpers</td>
-</tr>
-<tr>
-<td>
-<code>ggplot2</code> compatibility</td>
-<td>Focused grammar-preserving paths for dense scenes and fixed-scale facets</td>
-</tr>
-<tr>
-<td>Unsupported facet mode</td>
-<td>Free x/y scales fall back to metadata</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level2">
-<h2 id="implemented-optional-extension-classes">Implemented optional extension classes<a class="anchor" aria-label="anchor" href="#implemented-optional-extension-classes"></a>
-</h2>
-<p>These are implemented <code>ggWebGL</code> public APIs and are covered by package tests, examples, or vignettes. They are optional GeoXGL extension classes rather than requirements of the minimal stable GeoXGL scene contract.</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr>
-<th>Feature</th>
+<th>Public API</th>
+<th>Status</th>
 <th>Evidence</th>
+<th>Notes</th>
 </tr></thead>
 <tbody>
 <tr>
 <td>
-<code><a href="reference/geom_vector_webgl.html">geom_vector_webgl()</a></code> and <code><a href="reference/ggwebgl_layer_vectors.html">ggwebgl_layer_vectors()</a></code> for vector-arrow layers</td>
+<code><a href="reference/ggWebGL.html">ggWebGL()</a></code>, <code><a href="reference/ggplot_webgl.html">ggplot_webgl()</a></code>, <code><a href="reference/ggwebgl_spec.html">ggwebgl_spec()</a></code>, <code><a href="reference/as_ggwebgl_spec.html">as_ggwebgl_spec()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-api-scaffold.R</code>, <code>tests/testthat/test-render-schema-v2.R</code>
+</td>
+<td>Core widget and renderer-specification construction.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/theme_webgl.html">theme_webgl()</a></code>, <code><a href="reference/webgl_spec.html">webgl_spec()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-api-scaffold.R</code>, <code>tests/testthat/test-render-schema-v2.R</code>
+</td>
+<td>Core renderer option normalization.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/geom_point_webgl.html">geom_point_webgl()</a></code>, <code><a href="reference/geom_line_webgl.html">geom_line_webgl()</a></code>, <code><a href="reference/geom_raster_webgl.html">geom_raster_webgl()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-api-scaffold.R</code>, <code>vignettes/getting-started.Rmd</code>
+</td>
+<td>Focused grammar-style <code>ggplot2</code> rendering paths.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_layer_points.html">ggwebgl_layer_points()</a></code>, <code><a href="reference/ggwebgl_layer_lines.html">ggwebgl_layer_lines()</a></code>, <code><a href="reference/ggwebgl_layer_raster.html">ggwebgl_layer_raster()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-adapter-interfaces.R</code>, <code>tests/testthat/test-render-schema-v2.R</code>
+</td>
+<td>Renderer-ready primitive layer helpers.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggWebGLOutput.html">ggWebGLOutput()</a></code>, <code><a href="reference/renderGgWebGL.html">renderGgWebGL()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-rd-example-coverage.R</code>, <code>inst/examples/shiny/basic-app.R</code>
+</td>
+<td>Shiny output/render bindings.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/snapshot_ggwebgl.html">snapshot_ggwebgl()</a></code>, <code><a href="reference/compose_ggwebgl_figure.html">compose_ggwebgl_figure()</a></code>
+</td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-static-export.R</code>, <code>tests/testthat/test-publication-rendering.R</code>
+</td>
+<td>Static export and figure composition helpers; browser capture dependencies are optional.</td>
+</tr>
+<tr>
+<td><code><a href="reference/ggwebgl_example_data.html">ggwebgl_example_data()</a></code></td>
+<td>Stable</td>
+<td>
+<code>tests/testthat/test-real-data-and-benchmarks.R</code>, <code>vignettes/real-data-evidence.Rmd</code>
+</td>
+<td>Packaged example data only.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/geom_vector_webgl.html">geom_vector_webgl()</a></code>, <code><a href="reference/ggwebgl_layer_vectors.html">ggwebgl_layer_vectors()</a></code>
+</td>
+<td>Experimental</td>
 <td>
 <code>tests/testthat/test-future-work-roadmap.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
 </td>
+<td>2D/3D vector glyph rendering and renderer-owned ids.</td>
+</tr>
+<tr>
+<td><code><a href="reference/geom_path3d_webgl.html">geom_path3d_webgl()</a></code></td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-path3d-webgl.R</code>, <code>vignettes/temporal-trajectories.Rmd</code>
+</td>
+<td>Ordered 3D path serialization; timeline behavior remains experimental.</td>
 </tr>
 <tr>
 <td>
-<code><a href="reference/geom_mesh_webgl.html">geom_mesh_webgl()</a></code>, <code><a href="reference/geom_surface_webgl.html">geom_surface_webgl()</a></code>, <code><a href="reference/ggwebgl_layer_mesh.html">ggwebgl_layer_mesh()</a></code>, and <code><a href="reference/ggwebgl_layer_surface.html">ggwebgl_layer_surface()</a></code> for mesh/surface payloads</td>
-<td>
-<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+<code><a href="reference/ggwebgl_timeline.html">ggwebgl_timeline()</a></code>, <code><a href="reference/animation_spec.html">animation_spec()</a></code>, <code><a href="reference/scale_time_webgl.html">scale_time_webgl()</a></code>, <code><a href="reference/updateGgWebGLTimeline.html">updateGgWebGLTimeline()</a></code>
 </td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-timeline-metadata.R</code>, <code>tests/testthat/test-shiny-timeline.R</code>, <code>vignettes/temporal-trajectories.Rmd</code>
+</td>
+<td>Timeline metadata, browser controls, and Shiny timeline messages.</td>
 </tr>
 <tr>
 <td>
-<code><a href="reference/ggwebgl_timeline.html">ggwebgl_timeline()</a></code> for exact/cumulative frame controls and timeline-aware trajectories</td>
-<td>
-<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>tests/testthat/test-timeline-metadata.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>, <code>vignettes/temporal-trajectories.Rmd</code>
+<code><a href="reference/coord_webgl_3d.html">coord_webgl_3d()</a></code>, <code><a href="reference/ggwebgl_view.html">ggwebgl_view()</a></code>
 </td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-render-schema-v2.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+<td>3D view metadata and browser camera controllers.</td>
 </tr>
 <tr>
 <td>
-<code><a href="reference/ggwebgl_selection.html">ggwebgl_selection()</a></code> for brush/lasso selection metadata and browser interaction</td>
-<td>
-<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+<code><a href="reference/geom_mesh_webgl.html">geom_mesh_webgl()</a></code>, <code><a href="reference/ggwebgl_layer_mesh.html">ggwebgl_layer_mesh()</a></code>, <code><a href="reference/as_mesh_webgl.html">as_mesh_webgl()</a></code>, <code><a href="reference/ggwebgl_mesh.html">ggwebgl_mesh()</a></code>
 </td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-mesh-webgl.R</code>, <code>vignettes/surface-mesh-showcase.Rmd</code>
+</td>
+<td>Unstructured indexed triangle mesh path; high-scale decimation is not core.</td>
 </tr>
 <tr>
 <td>
-<code><a href="reference/ggwebgl_view.html">ggwebgl_view()</a></code> for structured 2D/3D view and camera metadata</td>
-<td>
-<code>tests/testthat/test-future-work-roadmap.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+<code><a href="reference/geom_surface_webgl.html">geom_surface_webgl()</a></code>, <code><a href="reference/stat_surface_webgl.html">stat_surface_webgl()</a></code>, <code><a href="reference/ggwebgl_layer_surface.html">ggwebgl_layer_surface()</a></code>, <code><a href="reference/surface_matrix.html">surface_matrix()</a></code>
 </td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-surface-webgl.R</code>, <code>vignettes/surface-mesh-showcase.Rmd</code>
+</td>
+<td>Structured-grid surface path; terrain preprocessing remains external.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_selection.html">ggwebgl_selection()</a></code>, <code><a href="reference/ggwebgl_interactions.html">ggwebgl_interactions()</a></code>
+</td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-interaction-spec.R</code>, <code>tests/testthat/test-interaction-runtime.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+<td>Brush/lasso/click/hover metadata and browser interaction contract.</td>
+</tr>
+<tr>
+<td><code><a href="reference/ggwebgl_magnify_region.html">ggwebgl_magnify_region()</a></code></td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-magnify-region.R</code>, <code>vignettes/renderer-capabilities.Rmd</code>
+</td>
+<td>Static and interactive linked zoom metadata.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ggwebgl_material.html">ggwebgl_material()</a></code>, <code><a href="reference/ggwebgl_publication_figure.html">ggwebgl_publication_figure()</a></code>
+</td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-mesh-webgl.R</code>, <code>tests/testthat/test-publication-rendering.R</code>
+</td>
+<td>Renderer material metadata and publication-oriented composition path.</td>
+</tr>
+<tr>
+<td><code><a href="reference/ggwebgl_transport.html">ggwebgl_transport()</a></code></td>
+<td>Experimental</td>
+<td>
+<code>tests/testthat/test-transport-lod.R</code>, <code>tests/testthat/test-performance-500k-smoke.R</code>, <code>vignettes/interactive-benchmarks.Rmd</code>
+</td>
+<td>Compact point transport and LOD metadata; browser metrics are diagnostics, not fixed performance claims.</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/as_ggwebgl_spec.xgeo_state.html">as_ggwebgl_spec.xgeo_state()</a></code>, <code>XGeoRTR</code> examples</td>
+<td>Optional extension</td>
+<td>
+<code>tests/testthat/test-xgeo-adapter.R</code>, <code>vignettes/xgeortr-bridge.Rmd</code>
+</td>
+<td>Suggested package integration; <code>XGeoRTR</code> owns explainable-geometry semantics.</td>
+</tr>
+<tr>
+<td>
+<code>boids4R</code> animation examples</td>
+<td>Optional extension</td>
+<td>
+<code>tests/testthat/test-downstream-boids4r-example.R</code>, <code>vignettes/boids4r-animation.Rmd</code>
+</td>
+<td>Suggested package integration; <code>boids4R</code> owns swarm simulation semantics.</td>
+</tr>
+<tr>
+<td>Free-scale facet handling and unsupported layer notes</td>
+<td>Metadata-only</td>
+<td><code>tests/testthat/test-api-scaffold.R</code></td>
+<td>Metadata is retained without claiming full renderer parity.</td>
+</tr>
+<tr>
+<td>Native GPU preprocessing, fixed FPS statements, external shader plugin API, high-scale mesh decimation, and domain semantics</td>
+<td>Deferred</td>
+<td>
+<code>inst/specs/user-api-v2.md</code>, <code>vignettes/interactive-benchmarks.Rmd</code>
+</td>
+<td>Out of core unless a future package or benchmark artifact supplies complete evidence.</td>
 </tr>
 </tbody>
 </table>

@@ -10,11 +10,11 @@ test_that("internal geom registry declares current primitive extractors", {
 
   expect_equal(
     names,
-    c("vectors", "mesh", "surface", "path3d", "points", "lines", "raster")
+    c("vectors", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
   )
   expect_equal(
     primitives,
-    c("vectors", "mesh", "surface", "lines", "points", "lines", "raster")
+    c("vectors", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
   )
   expect_equal(
     extractors,
@@ -22,6 +22,7 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_vector_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
+      "extract_line_payloads",
       "extract_line_payloads",
       "extract_point_payloads",
       "extract_line_payloads",

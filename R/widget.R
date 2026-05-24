@@ -200,7 +200,7 @@ extract_line_payloads <- function(layer, data) {
   subtype <- if (is_path3d_geom(layer)) "path3d" else NULL
   payloads <- lapply(names(split_index), function(id) {
     panel_data <- data[split_index[[id]], , drop = FALSE]
-    path_runs <- if (identical(subtype, "path3d")) {
+    path_runs <- if (is_ordered_path_geom(layer)) {
       split_ordered_group_path_runs(panel_data)
     } else {
       split_path_runs(panel_data)

@@ -8,6 +8,10 @@ diagnostic: rows without browser metadata are not complete browser
 measurements, and fixed performance numbers should not be reported from
 incomplete rows.
 
+**Status.** Compact transport, progressive upload metadata, and browser
+metric helpers are `Experimental` diagnostics. They support local
+measurement and smoke testing, not public fixed-FPS claims.
+
 The benchmark scripts are not run automatically by package checks. They
 write only to an explicit `output_dir` or
 [`tempdir()`](https://rdrr.io/r/base/tempfile.html).

@@ -915,7 +915,16 @@ ggwebgl_geom_registry <- function() {
       classes = "GeomPath3DWebGL",
       inherits = character(),
       extractor = "extract_line_payloads",
+      ordered = TRUE,
       subtype = "path3d"
+    ),
+    list(
+      name = "path",
+      primitive = "lines",
+      classes = "GeomPathWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      ordered = TRUE
     ),
     list(
       name = "points",
@@ -988,6 +997,11 @@ is_line_geom <- function(layer) {
 is_path3d_geom <- function(layer) {
   entry <- ggwebgl_geom_registry_match(layer)
   !is.null(entry) && identical(entry$subtype %||% NULL, "path3d")
+}
+
+is_ordered_path_geom <- function(layer) {
+  entry <- ggwebgl_geom_registry_match(layer)
+  !is.null(entry) && isTRUE(entry$ordered %||% FALSE)
 }
 
 is_raster_geom <- function(layer) {

@@ -51,5 +51,5 @@ server
 #>             theme_webgl())
 #>     })
 #> }
-#> <environment: 0x105898d20>
+#> <environment: 0x10baa49e0>
 ```

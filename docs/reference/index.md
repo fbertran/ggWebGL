@@ -31,6 +31,9 @@
 - [`geom_path3d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_path3d_webgl.md)
   : WebGL Ordered 3D Path Layer
 
+- [`geom_path_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_path_webgl.md)
+  : WebGL Ordered Path Layer
+
 - [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md)
   : WebGL Point Layer
 
