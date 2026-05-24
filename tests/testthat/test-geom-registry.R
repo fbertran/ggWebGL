@@ -10,11 +10,17 @@ test_that("internal geom registry declares current primitive extractors", {
 
   expect_equal(
     names,
-    c("vectors", "segments", "rects", "tiles", "bars", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
+    c(
+      "vectors", "segments", "rects", "tiles", "bars", "mesh", "surface",
+      "path3d", "path", "freqpoly", "density", "points", "lines", "raster"
+    )
   )
   expect_equal(
     primitives,
-    c("vectors", "vectors", "rects", "rects", "rects", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
+    c(
+      "vectors", "vectors", "rects", "rects", "rects", "mesh", "surface",
+      "lines", "lines", "lines", "lines", "points", "lines", "raster"
+    )
   )
   expect_equal(
     extractors,
@@ -26,6 +32,8 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_rect_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
+      "extract_line_payloads",
+      "extract_line_payloads",
       "extract_line_payloads",
       "extract_line_payloads",
       "extract_point_payloads",
@@ -92,6 +100,20 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_bar_webgl()
   )
+  freqpoly <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = c(0.1, 0.2, 0.7, 1.2, 1.6, 2.1)),
+      ggplot2::aes(x)
+    ) +
+      geom_freqpoly_webgl(binwidth = 0.5)
+  )
+  density <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = seq(-2, 2, length.out = 40)),
+      ggplot2::aes(x)
+    ) +
+      geom_density_webgl()
+  )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(
@@ -130,6 +152,10 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(tile$geom, "GeomTileWebGL")
   expect_equal(bar$type, "rects")
   expect_equal(bar$geom, "GeomBarWebGL")
+  expect_equal(freqpoly$type, "lines")
+  expect_equal(freqpoly$geom, "GeomFreqpolyWebGL")
+  expect_equal(density$type, "lines")
+  expect_equal(density$geom, "GeomDensityWebGL")
   expect_equal(mesh$type, "mesh")
   expect_equal(surface$type, "surface")
 })

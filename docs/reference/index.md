@@ -25,6 +25,12 @@
 - [`geom_bar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bar_webgl.md)
   : WebGL Bar Layer
 
+- [`geom_density_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.md)
+  : WebGL Density Curve Layer
+
+- [`geom_freqpoly_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_freqpoly_webgl.md)
+  : WebGL Frequency Polygon Layer
+
 - [`geom_histogram_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_histogram_webgl.md)
   : WebGL Histogram Layer
 

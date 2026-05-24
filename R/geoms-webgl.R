@@ -29,6 +29,16 @@ GeomPath3DWebGL <- ggplot2::ggproto(
   ggplot2::GeomPath,
   optional_aes = c(ggplot2::GeomPath$optional_aes, "z", "frame", "time")
 )
+GeomFreqpolyWebGL <- ggplot2::ggproto(
+  "GeomFreqpolyWebGL",
+  ggplot2::GeomPath,
+  optional_aes = c(ggplot2::GeomPath$optional_aes, "fill", "frame", "time")
+)
+GeomDensityWebGL <- ggplot2::ggproto(
+  "GeomDensityWebGL",
+  ggplot2::GeomPath,
+  optional_aes = c(ggplot2::GeomPath$optional_aes, "fill", "frame", "time")
+)
 GeomRasterWebGL <- ggplot2::ggproto("GeomRasterWebGL", ggplot2::GeomRaster)
 GeomRectWebGL <- ggplot2::ggproto(
   "GeomRectWebGL",
@@ -257,6 +267,89 @@ geom_path3d_webgl <- function(mapping = NULL,
       linejoin = linejoin,
       linemitre = linemitre,
       arrow = arrow,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Frequency Polygon Layer
+#'
+#' Add a frequency polygon layer tagged for the `ggWebGL` renderer. Binning is
+#' delegated to `ggplot2::StatBin`; the WebGL layer consumes the built path
+#' coordinates.
+#'
+#' @inheritParams ggplot2::geom_freqpoly
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' values <- data.frame(x = c(0.1, 0.2, 0.7, 1.2, 1.6, 2.1))
+#'
+#' ggplot2::ggplot(values, ggplot2::aes(x)) +
+#'   geom_freqpoly_webgl(binwidth = 0.5, colour = "#2563eb")
+#' @export
+geom_freqpoly_webgl <- function(mapping = NULL,
+                                data = NULL,
+                                stat = "bin",
+                                position = "identity",
+                                ...,
+                                na.rm = FALSE,
+                                show.legend = NA,
+                                inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomFreqpolyWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(na.rm = na.rm, ...)
+  )
+}
+
+#' WebGL Density Curve Layer
+#'
+#' Add a density curve layer tagged for the `ggWebGL` renderer. Density
+#' estimation is delegated to `ggplot2::StatDensity`; this geom serializes the
+#' resulting curve as a line path. Filled densities are not rendered by this
+#' layer.
+#'
+#' @inheritParams ggplot2::geom_density
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' values <- data.frame(x = seq(-2, 2, length.out = 40))
+#'
+#' ggplot2::ggplot(values, ggplot2::aes(x)) +
+#'   geom_density_webgl(colour = "#0f766e")
+#' @export
+geom_density_webgl <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "density",
+                               position = "identity",
+                               ...,
+                               outline.type = "upper",
+                               lineend = "butt",
+                               linejoin = "round",
+                               linemitre = 10,
+                               na.rm = FALSE,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomDensityWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
       na.rm = na.rm,
       ...
     )

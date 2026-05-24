@@ -853,6 +853,22 @@ coalesce_colour <- function(data) {
   colour
 }
 
+coalesce_line_colour <- function(data, layer) {
+  geom_class <- ggwebgl_geom_class(layer)
+
+  if (geom_class %in% c("GeomFreqpolyWebGL", "GeomDensityWebGL")) {
+    colour <- data$colour %||% data$color %||% NULL
+
+    if (is.null(colour) || all(is.na(colour))) {
+      colour <- rep("#2C3E50", nrow(data))
+    }
+
+    return(colour)
+  }
+
+  coalesce_colour(data)
+}
+
 colour_to_rgba <- function(colour, alpha = NULL) {
   colour <- as.character(colour)
   colour[is.na(colour)] <- "#2C3E50"
@@ -950,6 +966,22 @@ ggwebgl_geom_registry <- function() {
       name = "path",
       primitive = "lines",
       classes = "GeomPathWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      ordered = TRUE
+    ),
+    list(
+      name = "freqpoly",
+      primitive = "lines",
+      classes = "GeomFreqpolyWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      ordered = TRUE
+    ),
+    list(
+      name = "density",
+      primitive = "lines",
+      classes = "GeomDensityWebGL",
       inherits = character(),
       extractor = "extract_line_payloads",
       ordered = TRUE

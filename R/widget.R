@@ -212,7 +212,7 @@ extract_line_payloads <- function(layer, data) {
 
     paths <- lapply(path_runs, function(idx) {
       path <- panel_data[idx, , drop = FALSE]
-      colour <- coalesce_colour(path)
+      colour <- coalesce_line_colour(path, layer)
       rgba <- colour_to_rgba(colour, path$alpha %||% NULL)
       linewidth <- path$linewidth %||% path$size %||% rep(1, nrow(path))
       linewidth <- mm_to_pixels(linewidth)
