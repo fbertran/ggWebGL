@@ -57,6 +57,7 @@ test_that("publication rendering defaults and explicit overrides are normalized"
 
 test_that("WebGL geoms use distinct geom classes", {
   bar_layer <- geom_bar_webgl()
+  bin2d_layer <- geom_bin2d_webgl()
   freqpoly_layer <- geom_freqpoly_webgl()
   density_layer <- geom_density_webgl()
   point_layer <- geom_point_webgl()
@@ -69,6 +70,8 @@ test_that("WebGL geoms use distinct geom classes", {
   segment_layer <- geom_segment_webgl()
 
   expect_equal(class(bar_layer$geom)[1], "GeomBarWebGL")
+  expect_equal(class(bin2d_layer$geom)[1], "GeomBin2dWebGL")
+  expect_equal(class(bin2d_layer$stat)[1], "StatBin2d")
   expect_equal(class(freqpoly_layer$geom)[1], "GeomFreqpolyWebGL")
   expect_equal(class(freqpoly_layer$stat)[1], "StatBin")
   expect_equal(class(density_layer$geom)[1], "GeomDensityWebGL")

@@ -25,6 +25,9 @@
 - [`geom_bar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bar_webgl.md)
   : WebGL Bar Layer
 
+- [`geom_bin2d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bin2d_webgl.md)
+  : WebGL 2D Binned Rectangles
+
 - [`geom_density_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.md)
   : WebGL Density Curve Layer
 

@@ -940,6 +940,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_rect_payloads"
     ),
     list(
+      name = "bin2d",
+      primitive = "rects",
+      classes = "GeomBin2dWebGL",
+      inherits = character(),
+      extractor = "extract_rect_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

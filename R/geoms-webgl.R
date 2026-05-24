@@ -58,6 +58,12 @@ GeomBarWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomBar$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomBar$extra_params, "lineend", "linejoin")
 )
+GeomBin2dWebGL <- ggplot2::ggproto(
+  "GeomBin2dWebGL",
+  ggplot2::GeomBin2d,
+  optional_aes = c(ggplot2::GeomBin2d$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomBin2d$extra_params, "lineend", "linejoin")
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -589,6 +595,52 @@ geom_histogram_webgl <- function(mapping = NULL,
       binwidth = binwidth,
       bins = bins,
       orientation = orientation,
+      lineend = lineend,
+      linejoin = linejoin,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL 2D Binned Rectangles
+#'
+#' Add a 2D binned layer tagged for the `ggWebGL` renderer. Binning is delegated
+#' to `ggplot2::StatBin2d`; the WebGL layer consumes the built rectangle
+#' boundaries and count/density metadata.
+#'
+#' @inheritParams ggplot2::geom_bin_2d
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' bin_data <- data.frame(
+#'   x = c(0.1, 0.2, 0.7, 1.2, 1.8, 2.1),
+#'   y = c(0.1, 0.5, 0.6, 1.1, 1.3, 1.8)
+#' )
+#'
+#' ggplot2::ggplot(bin_data, ggplot2::aes(x, y)) +
+#'   geom_bin2d_webgl(binwidth = c(1, 1))
+#' @export
+geom_bin2d_webgl <- function(mapping = NULL,
+                             data = NULL,
+                             stat = "bin2d",
+                             position = "identity",
+                             ...,
+                             lineend = "butt",
+                             linejoin = "mitre",
+                             na.rm = FALSE,
+                             show.legend = NA,
+                             inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomBin2dWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
       lineend = lineend,
       linejoin = linejoin,
       na.rm = na.rm,

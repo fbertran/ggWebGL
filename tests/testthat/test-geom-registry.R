@@ -11,14 +11,14 @@ test_that("internal geom registry declares current primitive extractors", {
   expect_equal(
     names,
     c(
-      "vectors", "segments", "rects", "tiles", "bars", "mesh", "surface",
+      "vectors", "segments", "rects", "tiles", "bars", "bin2d", "mesh", "surface",
       "path3d", "path", "freqpoly", "density", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
-      "vectors", "vectors", "rects", "rects", "rects", "mesh", "surface",
+      "vectors", "vectors", "rects", "rects", "rects", "rects", "mesh", "surface",
       "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
@@ -27,6 +27,7 @@ test_that("internal geom registry declares current primitive extractors", {
     c(
       "extract_vector_payloads",
       "extract_vector_payloads",
+      "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
@@ -100,6 +101,16 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_bar_webgl()
   )
+  bin2d <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(
+        x = c(0.1, 0.2, 0.7, 1.2, 1.8, 2.1),
+        y = c(0.1, 0.5, 0.6, 1.1, 1.3, 1.8)
+      ),
+      ggplot2::aes(x, y)
+    ) +
+      geom_bin2d_webgl(binwidth = c(1, 1), boundary = c(0, 0))
+  )
   freqpoly <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(x = c(0.1, 0.2, 0.7, 1.2, 1.6, 2.1)),
@@ -152,6 +163,8 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(tile$geom, "GeomTileWebGL")
   expect_equal(bar$type, "rects")
   expect_equal(bar$geom, "GeomBarWebGL")
+  expect_equal(bin2d$type, "rects")
+  expect_equal(bin2d$geom, "GeomBin2dWebGL")
   expect_equal(freqpoly$type, "lines")
   expect_equal(freqpoly$geom, "GeomFreqpolyWebGL")
   expect_equal(density$type, "lines")
