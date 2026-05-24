@@ -293,6 +293,88 @@ ggwebgl_layer_vectors <- function(data,
   ))
 }
 
+ggwebgl_layer_rects <- function(data = NULL,
+                                xmin = NULL,
+                                xmax = NULL,
+                                ymin = NULL,
+                                ymax = NULL,
+                                fill = NULL,
+                                colour = NULL,
+                                rgba = NULL,
+                                alpha = NULL,
+                                linewidth = NULL,
+                                frame = NULL,
+                                time = NULL,
+                                panel_id = 1L,
+                                geom = "adapter_rects") {
+  data <- ggwebgl_adapter_data(data)
+  env <- parent.frame()
+  xmins <- ggwebgl_resolve_arg(data, substitute(xmin), env, "xmin", required = TRUE)
+  xmaxs <- ggwebgl_resolve_arg(data, substitute(xmax), env, "xmax", required = TRUE)
+  ymins <- ggwebgl_resolve_arg(data, substitute(ymin), env, "ymin", required = TRUE)
+  ymaxs <- ggwebgl_resolve_arg(data, substitute(ymax), env, "ymax", required = TRUE)
+  n <- ggwebgl_rect_common_length(xmin = xmins, xmax = xmaxs, ymin = ymins, ymax = ymaxs)
+
+  xmins <- ggwebgl_recycle(xmins, n, "xmin")
+  xmaxs <- ggwebgl_recycle(xmaxs, n, "xmax")
+  ymins <- ggwebgl_recycle(ymins, n, "ymin")
+  ymaxs <- ggwebgl_recycle(ymaxs, n, "ymax")
+
+  xmins <- unname(as.numeric(xmins))
+  xmaxs <- unname(as.numeric(xmaxs))
+  ymins <- unname(as.numeric(ymins))
+  ymaxs <- unname(as.numeric(ymaxs))
+
+  if (any(!is.finite(c(xmins, xmaxs, ymins, ymaxs)))) {
+    rlang::abort("Rectangle bounds must be finite numeric values.")
+  }
+  if (any(xmins > xmaxs) || any(ymins > ymaxs)) {
+    rlang::abort("Rectangle bounds must satisfy `xmin <= xmax` and `ymin <= ymax`.")
+  }
+
+  fill_values <- ggwebgl_resolve_arg(data, substitute(fill), env, "fill", default = NULL)
+  colour_values <- ggwebgl_resolve_arg(data, substitute(colour), env, "colour", default = NULL)
+  rgba_values <- ggwebgl_resolve_arg(data, substitute(rgba), env, "rgba", default = NULL)
+  alpha_values <- ggwebgl_resolve_arg(data, substitute(alpha), env, "alpha", default = NULL)
+  linewidth_values <- ggwebgl_resolve_arg(data, substitute(linewidth), env, "linewidth", default = NULL)
+  frame_values <- ggwebgl_resolve_arg(data, substitute(frame), env, "frame", default = NULL)
+  time_values <- ggwebgl_resolve_arg(data, substitute(time), env, "time", default = NULL)
+
+  rgba_matrix <- if (n) {
+    ggwebgl_resolve_rgba(rgba_values, fill_values, alpha_values, n)
+  } else {
+    matrix(numeric(), ncol = 4L)
+  }
+  stroke_matrix <- if (!is.null(colour_values) && n) {
+    ggwebgl_resolve_rgba(NULL, colour_values, alpha_values, n)
+  } else {
+    NULL
+  }
+  linewidth_values <- ggwebgl_recycle(linewidth_values %||% if (!is.null(stroke_matrix)) 1 else 0, n, "linewidth")
+  frame_values <- if (is.null(frame_values)) NULL else as.integer(ggwebgl_recycle(frame_values, n, "frame"))
+  time_values <- if (is.null(time_values)) NULL else as.numeric(ggwebgl_recycle(time_values, n, "time"))
+
+  # Internal rectangle payloads are first-class `rects` primitives. The current
+  # renderer draws filled quads as two triangles; stroke metadata is serialized
+  # now so later public rectangle geoms can add outline rendering without a
+  # payload contract change.
+  compact_list(list(
+    panel_id = ggwebgl_panel_id(panel_id),
+    type = "rects",
+    geom = as.character(geom)[[1L]],
+    rows = as.integer(n),
+    xmin = xmins,
+    xmax = xmaxs,
+    ymin = ymins,
+    ymax = ymaxs,
+    linewidth = unname(as.numeric(linewidth_values)),
+    frame = unname(frame_values),
+    time = unname(time_values),
+    rgba = unname(as.numeric(t(rgba_matrix))),
+    stroke_rgba = if (is.null(stroke_matrix)) NULL else unname(as.numeric(t(stroke_matrix)))
+  ))
+}
+
 #' Renderer-Ready Raster Layer
 #'
 #' Build a normalized raster layer from RGBA byte payloads.
@@ -503,6 +585,20 @@ ggwebgl_common_length <- function(...) {
   as.integer(lengths[[1L]])
 }
 
+ggwebgl_rect_common_length <- function(...) {
+  values <- list(...)
+  lengths <- vapply(values, length, integer(1))
+
+  if (all(lengths == 0L)) {
+    return(0L)
+  }
+  if (any(lengths == 0L)) {
+    rlang::abort("Rectangle bounds must all be empty or all have length 1 or a common length.")
+  }
+
+  ggwebgl_common_length(...)
+}
+
 ggwebgl_recycle <- function(value, n, name) {
   if (length(value) == n) {
     return(value)
@@ -562,8 +658,8 @@ ggwebgl_scalar_number <- function(value, name) {
 
 ggwebgl_validate_layer <- function(layer) {
   if (!is.list(layer) || is.null(layer$type) ||
-      !layer$type %in% c("points", "lines", "raster", "vectors", "mesh", "surface")) {
-    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, mesh, or surface layer.")
+      !layer$type %in% c("points", "lines", "raster", "vectors", "rects", "mesh", "surface")) {
+    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, rects, mesh, or surface layer.")
   }
 
   layer
@@ -652,6 +748,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
   line_layers <- Filter(function(x) identical(x$type, "lines"), layers)
   raster_layers <- Filter(function(x) identical(x$type, "raster"), layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), layers)
+  rect_layers <- Filter(function(x) identical(x$type, "rects"), layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), layers)
 
@@ -668,6 +765,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
     path_count = sum(vapply(line_layers, `[[`, integer(1), "path_count")),
     raster_cell_count = sum(vapply(raster_layers, function(x) x$width * x$height, integer(1))),
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
+    rect_count = sum(vapply(rect_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -705,6 +803,8 @@ ggwebgl_viewport_from_layers <- function(layers) {
       extend(c(layer$xmin, layer$xmax), c(layer$ymin, layer$ymax))
     } else if (identical(layer$type, "vectors")) {
       extend(c(layer$x, layer$xend), c(layer$y, layer$yend))
+    } else if (identical(layer$type, "rects")) {
+      extend(c(layer$xmin, layer$xmax), c(layer$ymin, layer$ymax))
     } else if (identical(layer$type, "mesh")) {
       extend(layer$x, layer$y)
     } else if (identical(layer$type, "surface")) {
@@ -728,6 +828,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
   path_count <- sum(vapply(panels, `[[`, integer(1), "path_count"))
   raster_cell_count <- sum(vapply(panels, `[[`, integer(1), "raster_cell_count"))
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
+  rect_count <- sum(vapply(panels, `[[`, integer(1), "rect_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -749,6 +850,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
     path_count = path_count,
     raster_cell_count = raster_cell_count,
     vector_count = vector_count,
+    rect_count = rect_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,

@@ -1110,6 +1110,45 @@ HTMLWidgets.widget({
         };
       }
 
+      if (type === "rects") {
+        var rectRows = Number(source.rows);
+        var rectXmin = Array.isArray(source.xmin) ? source.xmin.map(Number) : [];
+        var rectXmax = Array.isArray(source.xmax) ? source.xmax.map(Number) : [];
+        var rectYmin = Array.isArray(source.ymin) ? source.ymin.map(Number) : [];
+        var rectYmax = Array.isArray(source.ymax) ? source.ymax.map(Number) : [];
+        var rectRgba = Array.isArray(source.rgba) ? source.rgba.map(Number) : [];
+        var rectStrokeRgba = Array.isArray(source.stroke_rgba) ? source.stroke_rgba.map(Number) : [];
+        var rectLinewidth = Array.isArray(source.linewidth) ? source.linewidth.map(Number) : [];
+        var rectFrame = Array.isArray(source.frame) ? source.frame.map(Number) : [];
+        var rectTime = Array.isArray(source.time) ? source.time.map(Number) : [];
+        var rectCount = Math.min(
+          isFinite(rectRows) && rectRows > 0 ? rectRows : Number.MAX_SAFE_INTEGER,
+          rectXmin.length,
+          rectXmax.length,
+          rectYmin.length,
+          rectYmax.length
+        );
+
+        if (!isFinite(rectCount) || rectCount < 0) {
+          rectCount = 0;
+        }
+
+        return {
+          type: "rects",
+          geom: source.geom ? String(source.geom) : null,
+          rows: rectCount,
+          xmin: rectXmin.slice(0, rectCount),
+          xmax: rectXmax.slice(0, rectCount),
+          ymin: rectYmin.slice(0, rectCount),
+          ymax: rectYmax.slice(0, rectCount),
+          rgba: rectRgba.slice(0, rectCount * 4),
+          stroke_rgba: rectStrokeRgba.slice(0, rectCount * 4),
+          linewidth: rectLinewidth.slice(0, rectCount),
+          frame: rectFrame.slice(0, rectCount),
+          time: rectTime.slice(0, rectCount)
+        };
+      }
+
       if (type === "lines") {
         var paths = linePathList(source.paths).map(normalizeLinePath).filter(function(pathSpec) {
           return pathSpec.rows >= 2;
@@ -1260,6 +1299,9 @@ HTMLWidgets.widget({
       var vectorCount = layers
         .filter(function(layerSpec) { return layerSpec.type === "vectors"; })
         .reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0);
+      var rectCount = layers
+        .filter(function(layerSpec) { return layerSpec.type === "rects"; })
+        .reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0);
       var meshVertexCount = layers
         .filter(function(layerSpec) { return layerSpec.type === "mesh"; })
         .reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0);
@@ -1291,6 +1333,7 @@ HTMLWidgets.widget({
         path_count: pathCount,
         raster_cell_count: rasterCellCount,
         vector_count: vectorCount,
+        rect_count: rectCount,
         mesh_vertex_count: meshVertexCount,
         mesh_triangle_count: meshTriangleCount,
         surface_vertex_count: surfaceVertexCount,
@@ -1324,6 +1367,7 @@ HTMLWidgets.widget({
         path_count: layers.filter(function(layerSpec) { return layerSpec.type === "lines"; }).reduce(function(total, layerSpec) { return total + layerSpec.path_count; }, 0),
         raster_cell_count: layers.filter(function(layerSpec) { return layerSpec.type === "raster"; }).reduce(function(total, layerSpec) { return total + (layerSpec.width * layerSpec.height); }, 0),
         vector_count: layers.filter(function(layerSpec) { return layerSpec.type === "vectors"; }).reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0),
+        rect_count: layers.filter(function(layerSpec) { return layerSpec.type === "rects"; }).reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0),
         mesh_vertex_count: layers.filter(function(layerSpec) { return layerSpec.type === "mesh"; }).reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0),
         mesh_triangle_count: layers.filter(function(layerSpec) { return layerSpec.type === "mesh"; }).reduce(function(total, layerSpec) { return total + layerSpec.triangle_count; }, 0),
         surface_vertex_count: layers.filter(function(layerSpec) { return layerSpec.type === "surface"; }).reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0),
@@ -1365,6 +1409,7 @@ HTMLWidgets.widget({
       var pathCount = panels.reduce(function(total, panel) { return total + panel.path_count; }, 0);
       var rasterCellCount = panels.reduce(function(total, panel) { return total + panel.raster_cell_count; }, 0);
       var vectorCount = panels.reduce(function(total, panel) { return total + (panel.vector_count || 0); }, 0);
+      var rectCount = panels.reduce(function(total, panel) { return total + (panel.rect_count || 0); }, 0);
       var meshVertexCount = panels.reduce(function(total, panel) { return total + (panel.mesh_vertex_count || 0); }, 0);
       var meshTriangleCount = panels.reduce(function(total, panel) { return total + (panel.mesh_triangle_count || 0); }, 0);
       var surfaceVertexCount = panels.reduce(function(total, panel) { return total + (panel.surface_vertex_count || 0); }, 0);
@@ -1389,6 +1434,7 @@ HTMLWidgets.widget({
         path_count: pathCount,
         raster_cell_count: rasterCellCount,
         vector_count: vectorCount,
+        rect_count: rectCount,
         mesh_vertex_count: meshVertexCount,
         mesh_triangle_count: meshTriangleCount,
         surface_vertex_count: surfaceVertexCount,
@@ -5424,6 +5470,7 @@ HTMLWidgets.widget({
         "Points: <strong>" + escapeHtml(render.point_count || 0) + "</strong>",
         "Line vertices: <strong>" + escapeHtml(render.line_vertex_count || 0) + "</strong>",
         "Vectors: <strong>" + escapeHtml(render.vector_count || 0) + "</strong>",
+        "Rects: <strong>" + escapeHtml(render.rect_count || 0) + "</strong>",
         "Mesh triangles: <strong>" + escapeHtml(render.mesh_triangle_count || 0) + "</strong>",
         "Surface triangles: <strong>" + escapeHtml(render.surface_triangle_count || 0) + "</strong>",
         "Raster cells: <strong>" + escapeHtml(render.raster_cell_count || 0) + "</strong>"
@@ -5957,6 +6004,83 @@ HTMLWidgets.widget({
       }
 
       configurePrimitiveLayerShader(gl, primitive, x, "vectors", drawViewport, layer);
+      if (primitive.attributes.size >= 0) {
+        gl.disableVertexAttribArray(primitive.attributes.size);
+        gl.vertexAttrib1f(primitive.attributes.size, 1.0);
+      }
+
+      var positionBuffer = bindPositionAttribute(gl, primitive, payload.positions);
+      var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
+      var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+      bindConstantMetricAttribute(gl, primitive);
+      gl.drawArrays(gl.TRIANGLES, 0, payload.count);
+      gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(ageBuffer);
+      gl.deleteBuffer(colorBuffer);
+    }
+
+    function flattenRectLayer(layer, x) {
+      var n = layer.rows || 0;
+      var xmins = layer.xmin || [];
+      var xmaxs = layer.xmax || [];
+      var ymins = layer.ymin || [];
+      var ymaxs = layer.ymax || [];
+      var rgba = layer.rgba || [];
+      var positions = [];
+      var ages = [];
+      var colors = [];
+
+      function pushVertex(xValue, yValue, r, g, b, a) {
+        positions.push(xValue, yValue);
+        ages.push(1);
+        colors.push(r, g, b, a);
+      }
+
+      for (var i = 0; i < n; i += 1) {
+        if (!layerIndexVisible(layer, i, x)) {
+          continue;
+        }
+        var xmin = Number(xmins[i]);
+        var xmax = Number(xmaxs[i]);
+        var ymin = Number(ymins[i]);
+        var ymax = Number(ymaxs[i]);
+        if (!isFinite(xmin) || !isFinite(xmax) || !isFinite(ymin) || !isFinite(ymax) ||
+            xmin === xmax || ymin === ymax) {
+          continue;
+        }
+        var r = normalizeColorComponent(rgba[i * 4 + 0], 0.18);
+        var g = normalizeColorComponent(rgba[i * 4 + 1], 0.34);
+        var b = normalizeColorComponent(rgba[i * 4 + 2], 0.46);
+        var a = normalizeColorComponent(rgba[i * 4 + 3], 1);
+
+        // Rectangles are filled quads represented as two triangles in the
+        // primitive shader path. Stroke metadata is preserved in the layer but
+        // outline drawing is deferred to the future public rectangle geoms.
+        pushVertex(xmin, ymin, r, g, b, a);
+        pushVertex(xmax, ymin, r, g, b, a);
+        pushVertex(xmax, ymax, r, g, b, a);
+        pushVertex(xmin, ymin, r, g, b, a);
+        pushVertex(xmax, ymax, r, g, b, a);
+        pushVertex(xmin, ymax, r, g, b, a);
+      }
+
+      return {
+        count: ages.length,
+        positions: new Float32Array(positions),
+        ages: new Float32Array(ages),
+        colors: new Float32Array(colors)
+      };
+    }
+
+    function drawRectLayer(gl, programs, layer, x, viewport) {
+      var payload = flattenRectLayer(layer, x);
+      var primitive = programs.primitive;
+
+      if (!payload || payload.count < 3) {
+        return;
+      }
+
+      configurePrimitiveLayerShader(gl, primitive, x, "rects", viewport, layer);
       if (primitive.attributes.size >= 0) {
         gl.disableVertexAttribArray(primitive.attributes.size);
         gl.vertexAttrib1f(primitive.attributes.size, 1.0);
@@ -6566,6 +6690,10 @@ HTMLWidgets.widget({
       drawVectorLayer(gl, programs, layer, scene, viewport, box);
     }
 
+    function drawRectsLayer(gl, programs, layer, scene, panel, viewport, box) {
+      drawRectLayer(gl, programs, layer, scene, viewport);
+    }
+
     function drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
       drawMeshLayer(gl, programs, layer, scene, viewport, box);
     }
@@ -6584,6 +6712,8 @@ HTMLWidgets.widget({
         drawLinesLayer(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "vectors") {
         drawVectorsLayer(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "rects") {
+        drawRectsLayer(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "mesh") {
         drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "surface") {
@@ -6597,7 +6727,7 @@ HTMLWidgets.widget({
       var panels = panelList(x);
 
       if (!panels.length) {
-        setEmpty("No supported point, line, raster, vector, mesh, or surface layers are available for rendering yet.");
+        setEmpty("No supported point, line, raster, vector, rectangle, mesh, or surface layers are available for rendering yet.");
         return;
       }
 

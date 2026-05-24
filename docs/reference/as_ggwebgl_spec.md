@@ -39,7 +39,7 @@ as_ggwebgl_spec(spec)
 #> [1] 2
 #> 
 #> $package_version
-#> [1] "0.7.0"
+#> [1] "0.8.0"
 #> 
 #> $labels
 #> named list()
@@ -315,6 +315,9 @@ as_ggwebgl_spec(spec)
 #> $render$panels[[1]]$vector_count
 #> [1] 0
 #> 
+#> $render$panels[[1]]$rect_count
+#> [1] 0
+#> 
 #> $render$panels[[1]]$mesh_vertex_count
 #> [1] 0
 #> 
@@ -377,6 +380,9 @@ as_ggwebgl_spec(spec)
 #> [1] 0
 #> 
 #> $render$vector_count
+#> [1] 0
+#> 
+#> $render$rect_count
 #> [1] 0
 #> 
 #> $render$mesh_vertex_count

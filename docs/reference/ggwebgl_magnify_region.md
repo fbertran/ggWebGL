@@ -134,7 +134,7 @@ ggwebgl_magnify_region(
 #> [1] 2
 #> 
 #> $package_version
-#> [1] "0.7.0"
+#> [1] "0.8.0"
 #> 
 #> $labels
 #> named list()
@@ -453,6 +453,9 @@ ggwebgl_magnify_region(
 #> $render$panels[[1]]$vector_count
 #> [1] 0
 #> 
+#> $render$panels[[1]]$rect_count
+#> [1] 0
+#> 
 #> $render$panels[[1]]$mesh_vertex_count
 #> [1] 0
 #> 
@@ -596,6 +599,9 @@ ggwebgl_magnify_region(
 #> $render$panels[[2]]$vector_count
 #> [1] 0
 #> 
+#> $render$panels[[2]]$rect_count
+#> [1] 0
+#> 
 #> $render$panels[[2]]$mesh_vertex_count
 #> [1] 0
 #> 
@@ -659,6 +665,9 @@ ggwebgl_magnify_region(
 #> [1] 0
 #> 
 #> $render$vector_count
+#> [1] 0
+#> 
+#> $render$rect_count
 #> [1] 0
 #> 
 #> $render$mesh_vertex_count

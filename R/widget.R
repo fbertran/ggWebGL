@@ -557,6 +557,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
   line_layers <- Filter(function(x) identical(x$type, "lines"), render_layers)
   raster_layers <- Filter(function(x) identical(x$type, "raster"), render_layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), render_layers)
+  rect_layers <- Filter(function(x) identical(x$type, "rects"), render_layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), render_layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), render_layers)
 
@@ -573,6 +574,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
     path_count = sum(vapply(line_layers, `[[`, integer(1), "path_count")),
     raster_cell_count = sum(vapply(raster_layers, function(x) x$width * x$height, integer(1))),
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
+    rect_count = sum(vapply(rect_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -595,6 +597,7 @@ empty_panel_render <- function(panel_contract) {
     path_count = 0L,
     raster_cell_count = 0L,
     vector_count = 0L,
+    rect_count = 0L,
     mesh_vertex_count = 0L,
     mesh_triangle_count = 0L,
     surface_vertex_count = 0L,
@@ -627,6 +630,7 @@ build_render_plan <- function(scene_source) {
       path_count = 0L,
       raster_cell_count = 0L,
       vector_count = 0L,
+      rect_count = 0L,
       mesh_vertex_count = 0L,
       mesh_triangle_count = 0L,
       surface_vertex_count = 0L,
@@ -645,6 +649,7 @@ build_render_plan <- function(scene_source) {
   path_count <- sum(vapply(panels, `[[`, integer(1), "path_count"))
   raster_cell_count <- sum(vapply(panels, `[[`, integer(1), "raster_cell_count"))
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
+  rect_count <- sum(vapply(panels, `[[`, integer(1), "rect_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -655,7 +660,7 @@ build_render_plan <- function(scene_source) {
   if (!has_renderable_content) {
     messages <- c(
       messages,
-      "No supported point, line, raster, vector, mesh, or surface layers are currently available for the WebGL renderer."
+      "No supported point, line, raster, vector, rectangle, mesh, or surface layers are currently available for the WebGL renderer."
     )
   }
 
@@ -669,6 +674,7 @@ build_render_plan <- function(scene_source) {
     path_count = path_count,
     raster_cell_count = raster_cell_count,
     vector_count = vector_count,
+    rect_count = rect_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,
