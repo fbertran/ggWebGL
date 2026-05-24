@@ -30,6 +30,12 @@ GeomPath3DWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPath$optional_aes, "z", "frame", "time")
 )
 GeomRasterWebGL <- ggplot2::ggproto("GeomRasterWebGL", ggplot2::GeomRaster)
+GeomSegmentWebGL <- ggplot2::ggproto(
+  "GeomSegmentWebGL",
+  ggplot2::GeomSegment,
+  optional_aes = c(ggplot2::GeomSegment$optional_aes, "z", "zend", "id", "frame", "time"),
+  extra_params = c(ggplot2::GeomSegment$extra_params, "head_size")
+)
 GeomVectorWebGL <- ggplot2::ggproto(
   "GeomVectorWebGL",
   ggplot2::GeomSegment,
@@ -289,6 +295,46 @@ geom_raster_webgl <- function(mapping = NULL,
       na.rm = na.rm,
       ...
     )
+  )
+}
+
+#' WebGL Segment Layer
+#'
+#' Add a pure line-segment layer tagged for the `ggWebGL` renderer. Segments use
+#' the vector primitive with arrowheads disabled; use [geom_vector_webgl()] when
+#' arrowheads are wanted.
+#'
+#' @inheritParams ggplot2::geom_segment
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' segments <- data.frame(
+#'   x = c(0, 1),
+#'   y = c(0, 0.2),
+#'   xend = c(0.8, 1.6),
+#'   yend = c(0.7, 1)
+#' )
+#' ggplot2::ggplot(segments, ggplot2::aes(x, y, xend = xend, yend = yend)) +
+#'   geom_segment_webgl(linewidth = 1.2)
+#' @export
+geom_segment_webgl <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "identity",
+                               position = "identity",
+                               ...,
+                               na.rm = FALSE,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomSegmentWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(head_size = 0, na.rm = na.rm, ...)
   )
 }
 

@@ -5909,11 +5909,13 @@ HTMLWidgets.widget({
         var nx = -ty;
         var ny = tx;
         var halfWidth = Math.max(1, Number(widths[i]) || 1.5) * 0.5;
-        var head = Math.max(3, Number(heads[i]) || 8);
+        var rawHead = Number(heads[i]);
+        var hasHead = isFinite(rawHead) ? rawHead > 0 : true;
+        var head = hasHead ? Math.max(3, rawHead || 8) : 0;
         var sx = xSpan / box.plotWidth;
         var sy = ySpan / box.plotHeight;
-        var shaftEndX = x1 - tx * head * sx;
-        var shaftEndY = y1 - ty * head * sy;
+        var shaftEndX = hasHead ? x1 - tx * head * sx : x1;
+        var shaftEndY = hasHead ? y1 - ty * head * sy : y1;
         var ox = nx * halfWidth * sx;
         var oy = ny * halfWidth * sy;
         var hx = nx * head * 0.55 * sx;
@@ -5930,9 +5932,11 @@ HTMLWidgets.widget({
         pushVertex(x0 + ox, y0 + oy, r, g, b, a);
         pushVertex(shaftEndX + ox, shaftEndY + oy, r, g, b, a);
 
-        pushVertex(x1, y1, r, g, b, a);
-        pushVertex(shaftEndX + hx, shaftEndY + hy, r, g, b, a);
-        pushVertex(shaftEndX - hx, shaftEndY - hy, r, g, b, a);
+        if (hasHead) {
+          pushVertex(x1, y1, r, g, b, a);
+          pushVertex(shaftEndX + hx, shaftEndY + hy, r, g, b, a);
+          pushVertex(shaftEndX - hx, shaftEndY - hy, r, g, b, a);
+        }
       }
 
       return {

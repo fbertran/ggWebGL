@@ -896,6 +896,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_vector_payloads"
     ),
     list(
+      name = "segments",
+      primitive = "vectors",
+      classes = "GeomSegmentWebGL",
+      inherits = character(),
+      extractor = "extract_vector_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

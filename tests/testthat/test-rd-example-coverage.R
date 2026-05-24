@@ -6,6 +6,7 @@ required_example_topics <- c(
   "geom_path3d_webgl.Rd",
   "geom_point_webgl.Rd",
   "geom_raster_webgl.Rd",
+  "geom_segment_webgl.Rd",
   "ggWebGL.Rd",
   "ggWebGLOutput.Rd",
   "ggplot_webgl.Rd",

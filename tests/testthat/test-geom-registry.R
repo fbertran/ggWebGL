@@ -10,15 +10,16 @@ test_that("internal geom registry declares current primitive extractors", {
 
   expect_equal(
     names,
-    c("vectors", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
+    c("vectors", "segments", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
   )
   expect_equal(
     primitives,
-    c("vectors", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
+    c("vectors", "vectors", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
   )
   expect_equal(
     extractors,
     c(
+      "extract_vector_payloads",
       "extract_vector_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
@@ -29,7 +30,8 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_raster_payloads"
     )
   )
-  expect_equal(registry[[4L]]$subtype, "path3d")
+  path3d_entry <- registry[[match("path3d", names)]]
+  expect_equal(path3d_entry$subtype, "path3d")
 })
 
 test_that("geom registry preserves point, line, path3d, raster, vector, mesh, and surface serialization", {
@@ -58,6 +60,13 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
       ggplot2::aes(x, y, xend = xend, yend = yend)
     ) +
       geom_vector_webgl()
+  )
+  segment <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = 0, y = 0, xend = 1, yend = 1),
+      ggplot2::aes(x, y, xend = xend, yend = yend)
+    ) +
+      geom_segment_webgl()
   )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
@@ -88,6 +97,9 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(path3d$paths[[1L]]$subtype, "path3d")
   expect_equal(raster$type, "raster")
   expect_equal(vector$type, "vectors")
+  expect_equal(segment$type, "vectors")
+  expect_equal(segment$geom, "GeomSegmentWebGL")
+  expect_equal(segment$head_size, 0)
   expect_equal(mesh$type, "mesh")
   expect_equal(surface$type, "surface")
 })

@@ -40,6 +40,9 @@
 - [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md)
   : WebGL Raster Layer
 
+- [`geom_segment_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_segment_webgl.md)
+  : WebGL Segment Layer
+
 - [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md)
   : WebGL Structured Grid Surface Layer
 
