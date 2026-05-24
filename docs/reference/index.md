@@ -22,6 +22,12 @@
 - [`coord_webgl_3d()`](https://fbertran.github.io/ggWebGL/reference/coord_webgl_3d.md)
   : Request a 3D WebGL Coordinate System
 
+- [`geom_bar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bar_webgl.md)
+  : WebGL Bar Layer
+
+- [`geom_histogram_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_histogram_webgl.md)
+  : WebGL Histogram Layer
+
 - [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
   : WebGL Line Layer
 

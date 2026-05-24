@@ -42,6 +42,12 @@ GeomTileWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomTile$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomTile$extra_params, "lineend", "linejoin")
 )
+GeomBarWebGL <- ggplot2::ggproto(
+  "GeomBarWebGL",
+  ggplot2::GeomBar,
+  optional_aes = c(ggplot2::GeomBar$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomBar$extra_params, "lineend", "linejoin")
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -398,6 +404,98 @@ geom_tile_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Bar Layer
+#'
+#' Add a bar layer tagged for the `ggWebGL` renderer. Counts and rectangle
+#' boundaries are produced by `ggplot2` through the selected stat and position.
+#'
+#' @inheritParams ggplot2::geom_bar
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' bar_data <- data.frame(group = c("a", "a", "b", "c", "c", "c"))
+#'
+#' ggplot2::ggplot(bar_data, ggplot2::aes(group)) +
+#'   geom_bar_webgl(fill = "#2563eb")
+#' @export
+geom_bar_webgl <- function(mapping = NULL,
+                           data = NULL,
+                           stat = "count",
+                           position = "stack",
+                           ...,
+                           just = 0.5,
+                           lineend = "butt",
+                           linejoin = "mitre",
+                           na.rm = FALSE,
+                           show.legend = NA,
+                           inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomBarWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      just = just,
+      lineend = lineend,
+      linejoin = linejoin,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Histogram Layer
+#'
+#' Add a histogram layer tagged for the `ggWebGL` renderer. Binning is delegated
+#' to `ggplot2::StatBin`; the WebGL layer consumes the built bar rectangles.
+#'
+#' @inheritParams ggplot2::geom_histogram
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' hist_data <- data.frame(x = c(0.1, 0.2, 0.7, 1.2, 1.6, 2.1))
+#'
+#' ggplot2::ggplot(hist_data, ggplot2::aes(x)) +
+#'   geom_histogram_webgl(binwidth = 0.5, fill = "#0f766e")
+#' @export
+geom_histogram_webgl <- function(mapping = NULL,
+                                 data = NULL,
+                                 stat = "bin",
+                                 position = "stack",
+                                 ...,
+                                 binwidth = NULL,
+                                 bins = NULL,
+                                 orientation = NA,
+                                 lineend = "butt",
+                                 linejoin = "mitre",
+                                 na.rm = FALSE,
+                                 show.legend = NA,
+                                 inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomBarWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      binwidth = binwidth,
+      bins = bins,
+      orientation = orientation,
       lineend = lineend,
       linejoin = linejoin,
       na.rm = na.rm,

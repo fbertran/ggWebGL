@@ -1,6 +1,8 @@
 required_example_topics <- c(
   "as_ggwebgl_spec.Rd",
   "as_ggwebgl_spec.xgeo_state.Rd",
+  "geom_bar_webgl.Rd",
+  "geom_histogram_webgl.Rd",
   "geom_line_webgl.Rd",
   "geom_path_webgl.Rd",
   "geom_path3d_webgl.Rd",

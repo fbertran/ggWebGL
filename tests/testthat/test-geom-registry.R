@@ -10,17 +10,18 @@ test_that("internal geom registry declares current primitive extractors", {
 
   expect_equal(
     names,
-    c("vectors", "segments", "rects", "tiles", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
+    c("vectors", "segments", "rects", "tiles", "bars", "mesh", "surface", "path3d", "path", "points", "lines", "raster")
   )
   expect_equal(
     primitives,
-    c("vectors", "vectors", "rects", "rects", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
+    c("vectors", "vectors", "rects", "rects", "rects", "mesh", "surface", "lines", "lines", "points", "lines", "raster")
   )
   expect_equal(
     extractors,
     c(
       "extract_vector_payloads",
       "extract_vector_payloads",
+      "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_mesh_payloads",
@@ -84,6 +85,13 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_tile_webgl()
   )
+  bar <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = c("a", "a", "b")),
+      ggplot2::aes(x)
+    ) +
+      geom_bar_webgl()
+  )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(
@@ -120,6 +128,8 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(rect$geom, "GeomRectWebGL")
   expect_equal(tile$type, "rects")
   expect_equal(tile$geom, "GeomTileWebGL")
+  expect_equal(bar$type, "rects")
+  expect_equal(bar$geom, "GeomBarWebGL")
   expect_equal(mesh$type, "mesh")
   expect_equal(surface$type, "surface")
 })

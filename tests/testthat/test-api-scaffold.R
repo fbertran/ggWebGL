@@ -56,20 +56,25 @@ test_that("publication rendering defaults and explicit overrides are normalized"
 })
 
 test_that("WebGL geoms use distinct geom classes", {
+  bar_layer <- geom_bar_webgl()
   point_layer <- geom_point_webgl()
   line_layer <- geom_line_webgl()
   path_layer <- geom_path_webgl()
   raster_layer <- geom_raster_webgl()
   rect_layer <- geom_rect_webgl()
   tile_layer <- geom_tile_webgl()
+  histogram_layer <- geom_histogram_webgl()
   segment_layer <- geom_segment_webgl()
 
+  expect_equal(class(bar_layer$geom)[1], "GeomBarWebGL")
   expect_equal(class(point_layer$geom)[1], "GeomPointWebGL")
   expect_equal(class(line_layer$geom)[1], "GeomLineWebGL")
   expect_equal(class(path_layer$geom)[1], "GeomPathWebGL")
   expect_equal(class(raster_layer$geom)[1], "GeomRasterWebGL")
   expect_equal(class(rect_layer$geom)[1], "GeomRectWebGL")
   expect_equal(class(tile_layer$geom)[1], "GeomTileWebGL")
+  expect_equal(class(histogram_layer$geom)[1], "GeomBarWebGL")
+  expect_equal(class(histogram_layer$stat)[1], "StatBin")
   expect_equal(class(segment_layer$geom)[1], "GeomSegmentWebGL")
 })
 

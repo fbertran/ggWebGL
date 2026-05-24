@@ -341,6 +341,8 @@ extract_rect_payloads <- function(layer, data) {
       colour = stroke,
       alpha = panel_data$alpha %||% NULL,
       linewidth = linewidth,
+      count = if ("count" %in% names(panel_data)) panel_data$count else NULL,
+      density = if ("density" %in% names(panel_data)) panel_data$density else NULL,
       frame = if ("frame" %in% names(panel_data)) panel_data$frame else NULL,
       time = if ("time" %in% names(panel_data)) panel_data$time else NULL,
       panel_id = as.integer(id),

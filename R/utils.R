@@ -917,6 +917,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_rect_payloads"
     ),
     list(
+      name = "bars",
+      primitive = "rects",
+      classes = "GeomBarWebGL",
+      inherits = character(),
+      extractor = "extract_rect_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

@@ -303,6 +303,8 @@ ggwebgl_layer_rects <- function(data = NULL,
                                 rgba = NULL,
                                 alpha = NULL,
                                 linewidth = NULL,
+                                count = NULL,
+                                density = NULL,
                                 frame = NULL,
                                 time = NULL,
                                 panel_id = 1L,
@@ -337,6 +339,8 @@ ggwebgl_layer_rects <- function(data = NULL,
   rgba_values <- ggwebgl_resolve_arg(data, substitute(rgba), env, "rgba", default = NULL)
   alpha_values <- ggwebgl_resolve_arg(data, substitute(alpha), env, "alpha", default = NULL)
   linewidth_values <- ggwebgl_resolve_arg(data, substitute(linewidth), env, "linewidth", default = NULL)
+  count_values <- ggwebgl_resolve_arg(data, substitute(count), env, "count", default = NULL)
+  density_values <- ggwebgl_resolve_arg(data, substitute(density), env, "density", default = NULL)
   frame_values <- ggwebgl_resolve_arg(data, substitute(frame), env, "frame", default = NULL)
   time_values <- ggwebgl_resolve_arg(data, substitute(time), env, "time", default = NULL)
 
@@ -351,6 +355,8 @@ ggwebgl_layer_rects <- function(data = NULL,
     NULL
   }
   linewidth_values <- ggwebgl_recycle(linewidth_values %||% if (!is.null(stroke_matrix)) 1 else 0, n, "linewidth")
+  count_values <- if (is.null(count_values)) NULL else as.numeric(ggwebgl_recycle(count_values, n, "count"))
+  density_values <- if (is.null(density_values)) NULL else as.numeric(ggwebgl_recycle(density_values, n, "density"))
   frame_values <- if (is.null(frame_values)) NULL else as.integer(ggwebgl_recycle(frame_values, n, "frame"))
   time_values <- if (is.null(time_values)) NULL else as.numeric(ggwebgl_recycle(time_values, n, "time"))
 
@@ -368,6 +374,8 @@ ggwebgl_layer_rects <- function(data = NULL,
     ymin = ymins,
     ymax = ymaxs,
     linewidth = unname(as.numeric(linewidth_values)),
+    count = unname(count_values),
+    density = unname(density_values),
     frame = unname(frame_values),
     time = unname(time_values),
     rgba = unname(as.numeric(t(rgba_matrix))),

@@ -1119,6 +1119,8 @@ HTMLWidgets.widget({
         var rectRgba = Array.isArray(source.rgba) ? source.rgba.map(Number) : [];
         var rectStrokeRgba = Array.isArray(source.stroke_rgba) ? source.stroke_rgba.map(Number) : [];
         var rectLinewidth = Array.isArray(source.linewidth) ? source.linewidth.map(Number) : [];
+        var rectCountValues = Array.isArray(source.count) ? source.count.map(Number) : [];
+        var rectDensityValues = Array.isArray(source.density) ? source.density.map(Number) : [];
         var rectFrame = Array.isArray(source.frame) ? source.frame.map(Number) : [];
         var rectTime = Array.isArray(source.time) ? source.time.map(Number) : [];
         var rectCount = Math.min(
@@ -1144,6 +1146,8 @@ HTMLWidgets.widget({
           rgba: rectRgba.slice(0, rectCount * 4),
           stroke_rgba: rectStrokeRgba.slice(0, rectCount * 4),
           linewidth: rectLinewidth.slice(0, rectCount),
+          count: rectCountValues.slice(0, rectCount),
+          density: rectDensityValues.slice(0, rectCount),
           frame: rectFrame.slice(0, rectCount),
           time: rectTime.slice(0, rectCount)
         };
