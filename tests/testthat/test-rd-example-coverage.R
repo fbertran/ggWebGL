@@ -3,6 +3,7 @@ required_example_topics <- c(
   "as_ggwebgl_spec.xgeo_state.Rd",
   "geom_bar_webgl.Rd",
   "geom_bin2d_webgl.Rd",
+  "geom_crossbar_webgl.Rd",
   "geom_density_webgl.Rd",
   "geom_errorbar_webgl.Rd",
   "geom_freqpoly_webgl.Rd",

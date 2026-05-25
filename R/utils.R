@@ -940,6 +940,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_pointrange_payloads"
     ),
     list(
+      name = "crossbar",
+      primitive = "mixed",
+      classes = "GeomCrossbarWebGL",
+      inherits = character(),
+      extractor = "extract_crossbar_payloads"
+    ),
+    list(
       name = "rects",
       primitive = "rects",
       classes = "GeomRectWebGL",

@@ -31,6 +31,9 @@
 - [`geom_bin2d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bin2d_webgl.md)
   : WebGL 2D Binned Rectangles
 
+- [`geom_crossbar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_crossbar_webgl.md)
+  : WebGL Crossbar Layer
+
 - [`geom_density_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.md)
   : WebGL Density Curve Layer
 

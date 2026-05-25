@@ -11,14 +11,14 @@ test_that("internal geom registry declares current primitive extractors", {
   expect_equal(
     names,
     c(
-      "vectors", "segments", "linerange", "errorbar", "pointrange", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "mesh", "surface",
+      "vectors", "segments", "linerange", "errorbar", "pointrange", "crossbar", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "mesh", "surface",
       "path3d", "path", "freqpoly", "density", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
-      "vectors", "vectors", "vectors", "vectors", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "surface",
+      "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "surface",
       "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
@@ -30,6 +30,7 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_linerange_payloads",
       "extract_errorbar_payloads",
       "extract_pointrange_payloads",
+      "extract_crossbar_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
@@ -107,6 +108,14 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
       geom_pointrange_webgl()
   )
   pointrange_layers <- pointrange_widget$x$render$panels[[1L]]$layers
+  crossbar_widget <- ggplot_webgl(
+    ggplot2::ggplot(
+      data.frame(x = 1, y = 2, ymin = 1, ymax = 3),
+      ggplot2::aes(x, y, ymin = ymin, ymax = ymax)
+    ) +
+      geom_crossbar_webgl(width = 0.3)
+  )
+  crossbar_layers <- crossbar_widget$x$render$panels[[1L]]$layers
   rect <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(xmin = 0, xmax = 1, ymin = 0, ymax = 1),
@@ -206,6 +215,8 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(errorbar$head_size, rep(0, 3))
   expect_equal(vapply(pointrange_layers, `[[`, character(1), "type"), c("points", "vectors"))
   expect_equal(vapply(pointrange_layers, `[[`, character(1), "geom"), rep("GeomPointrangeWebGL", 2))
+  expect_equal(vapply(crossbar_layers, `[[`, character(1), "type"), c("rects", "vectors"))
+  expect_equal(vapply(crossbar_layers, `[[`, character(1), "geom"), rep("GeomCrossbarWebGL", 2))
   expect_equal(rect$type, "rects")
   expect_equal(rect$geom, "GeomRectWebGL")
   expect_equal(tile$type, "rects")

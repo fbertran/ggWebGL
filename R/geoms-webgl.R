@@ -100,6 +100,12 @@ GeomPointrangeWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPointrange$optional_aes, "frame", "time"),
   extra_params = ggplot2::GeomPointrange$extra_params
 )
+GeomCrossbarWebGL <- ggplot2::ggproto(
+  "GeomCrossbarWebGL",
+  ggplot2::GeomCrossbar,
+  optional_aes = c(ggplot2::GeomCrossbar$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomCrossbar$extra_params
+)
 GeomVectorWebGL <- ggplot2::ggproto(
   "GeomVectorWebGL",
   ggplot2::GeomSegment,
@@ -941,6 +947,54 @@ geom_pointrange_webgl <- function(mapping = NULL,
       orientation = orientation,
       lineend = lineend,
       na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Crossbar Layer
+#'
+#' Add a crossbar layer tagged for the `ggWebGL` renderer. Crossbars serialize
+#' to one filled rectangle payload for the body and one pure segment payload for
+#' the middle line.
+#'
+#' @inheritParams ggplot2::geom_crossbar
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' crossbars <- data.frame(x = 1:3, y = c(2, 3, 2.5), ymin = c(1, 2, 1.8), ymax = c(3, 4, 3.2))
+#' ggplot2::ggplot(crossbars, ggplot2::aes(x, y, ymin = ymin, ymax = ymax)) +
+#'   geom_crossbar_webgl(width = 0.35, fill = "#93c5fd")
+#' @export
+geom_crossbar_webgl <- function(mapping = NULL,
+                                data = NULL,
+                                stat = "identity",
+                                position = "identity",
+                                ...,
+                                middle.colour = NULL,
+                                middle.color = NULL,
+                                middle.linetype = NULL,
+                                middle.linewidth = NULL,
+                                box.colour = NULL,
+                                box.color = NULL,
+                                box.linetype = NULL,
+                                box.linewidth = NULL,
+                                na.rm = FALSE,
+                                orientation = NA,
+                                show.legend = NA,
+                                inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomCrossbarWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      na.rm = na.rm,
+      orientation = orientation,
       ...
     )
   )

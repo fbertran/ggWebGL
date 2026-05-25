@@ -268,7 +268,8 @@ extract_vector_payloads <- function(layer, data) {
     "GeomSegmentWebGL",
     "GeomLinerangeWebGL",
     "GeomErrorbarWebGL",
-    "GeomPointrangeWebGL"
+    "GeomPointrangeWebGL",
+    "GeomCrossbarWebGL"
   )
   default_head_size <- if (class(layer$geom)[1] %in% no_head_geoms) 0 else 9
   head_size <- layer$geom_params$head_size %||% rep(default_head_size, nrow(data))
@@ -365,6 +366,41 @@ extract_pointrange_payloads <- function(layer, data) {
     Filter(
       Negate(is.null),
       list(point_payloads[[id]] %||% NULL, range_payloads[[id]] %||% NULL)
+    )
+  })
+  names(payloads) <- panel_names
+  payloads
+}
+
+crossbar_middle_data <- function(data) {
+  required <- c("xmin", "xmax")
+  if (!all(required %in% names(data))) {
+    return(data.frame())
+  }
+
+  middle <- if ("middle" %in% names(data)) data$middle else data$y %||% NULL
+  if (is.null(middle)) {
+    return(data.frame())
+  }
+
+  out <- data
+  out$x <- data$xmin
+  out$y <- middle
+  out$xend <- data$xmax
+  out$yend <- middle
+  out
+}
+
+extract_crossbar_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+  rect_payloads <- extract_rect_payloads(layer, data)
+  middle_payloads <- extract_vector_payloads(layer, crossbar_middle_data(data))
+  panel_names <- union(names(rect_payloads), names(middle_payloads))
+
+  payloads <- lapply(panel_names, function(id) {
+    Filter(
+      Negate(is.null),
+      list(rect_payloads[[id]] %||% NULL, middle_payloads[[id]] %||% NULL)
     )
   })
   names(payloads) <- panel_names
