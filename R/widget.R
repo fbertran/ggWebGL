@@ -264,7 +264,14 @@ extract_vector_payloads <- function(layer, data) {
   width <- data$linewidth %||% data$size %||% rep(1, nrow(data))
   width <- mm_to_pixels(width)
   width[!is.finite(width) | width <= 0] <- 1.5
-  head_size <- layer$geom_params$head_size %||% rep(9, nrow(data))
+  no_head_geoms <- c(
+    "GeomSegmentWebGL",
+    "GeomLinerangeWebGL",
+    "GeomErrorbarWebGL",
+    "GeomPointrangeWebGL"
+  )
+  default_head_size <- if (class(layer$geom)[1] %in% no_head_geoms) 0 else 9
+  head_size <- layer$geom_params$head_size %||% rep(default_head_size, nrow(data))
   head_size <- rep(as.numeric(head_size)[[1]], nrow(data))
   ids <- point_selection_ids(data)
   z <- if ("z" %in% names(data)) as.numeric(data$z) else NULL
@@ -296,6 +303,71 @@ extract_vector_payloads <- function(layer, data) {
     ))
   })
   names(payloads) <- names(split_index)
+  payloads
+}
+
+range_segment_data <- function(data) {
+  required <- c("x", "ymin", "ymax")
+  if (!all(required %in% names(data))) {
+    return(data.frame())
+  }
+
+  out <- data
+  out$y <- data$ymin
+  out$xend <- data$x
+  out$yend <- data$ymax
+  out
+}
+
+extract_linerange_payloads <- function(layer, data) {
+  segment_data <- range_segment_data(as.data.frame(data))
+  if (!nrow(segment_data)) {
+    return(empty_payload_map())
+  }
+
+  extract_vector_payloads(layer, segment_data)
+}
+
+extract_errorbar_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+  segment_data <- range_segment_data(data)
+
+  if (!nrow(segment_data)) {
+    return(empty_payload_map())
+  }
+
+  if (all(c("xmin", "xmax") %in% names(data))) {
+    lower_cap <- data
+    lower_cap$x <- data$xmin
+    lower_cap$y <- data$ymin
+    lower_cap$xend <- data$xmax
+    lower_cap$yend <- data$ymin
+
+    upper_cap <- data
+    upper_cap$x <- data$xmin
+    upper_cap$y <- data$ymax
+    upper_cap$xend <- data$xmax
+    upper_cap$yend <- data$ymax
+
+    segment_data <- rbind(segment_data, lower_cap, upper_cap)
+  }
+
+  extract_vector_payloads(layer, segment_data)
+}
+
+extract_pointrange_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+  point_payloads <- extract_point_payloads(layer, data)
+  range_payloads <- extract_linerange_payloads(layer, data)
+  panel_names <- union(names(point_payloads), names(range_payloads))
+
+  payloads <- lapply(panel_names, function(id) {
+    Filter(
+      Negate(is.null),
+      list(point_payloads[[id]] %||% NULL, range_payloads[[id]] %||% NULL)
+    )
+  })
+  names(payloads) <- panel_names
   payloads
 }
 
@@ -661,15 +733,23 @@ extract_ggplot_scene_source <- function(plot) {
   ))
 }
 
-panel_layer_payload <- function(layer_source, panel_id) {
-  layer_source$payloads[[as.character(panel_id)]] %||% NULL
+panel_layer_payloads <- function(layer_source, panel_id) {
+  payload <- layer_source$payloads[[as.character(panel_id)]] %||% NULL
+
+  if (is.null(payload)) {
+    return(list())
+  }
+  if (!is.null(payload$type)) {
+    return(list(payload))
+  }
+  payload
 }
 
 build_panel_spec <- function(panel_contract, layer_sources) {
   panel_id <- panel_contract$panel_id
   render_layers <- Filter(
     Negate(is.null),
-    lapply(layer_sources, panel_layer_payload, panel_id = panel_id)
+    unlist(lapply(layer_sources, panel_layer_payloads, panel_id = panel_id), recursive = FALSE)
   )
 
   point_layers <- Filter(function(x) identical(x$type, "points"), render_layers)

@@ -23,13 +23,16 @@
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_bar_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_bin2d_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_errorbar_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_freqpoly_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_histogram_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_linerange_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_path3d_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_path_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_pointrange_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_rect_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_ribbon_webgl.html</loc></url>

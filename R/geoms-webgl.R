@@ -82,6 +82,24 @@ GeomSegmentWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomSegment$optional_aes, "z", "zend", "id", "frame", "time"),
   extra_params = c(ggplot2::GeomSegment$extra_params, "head_size")
 )
+GeomLinerangeWebGL <- ggplot2::ggproto(
+  "GeomLinerangeWebGL",
+  ggplot2::GeomLinerange,
+  optional_aes = c(ggplot2::GeomLinerange$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomLinerange$extra_params
+)
+GeomErrorbarWebGL <- ggplot2::ggproto(
+  "GeomErrorbarWebGL",
+  ggplot2::GeomErrorbar,
+  optional_aes = c(ggplot2::GeomErrorbar$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomErrorbar$extra_params
+)
+GeomPointrangeWebGL <- ggplot2::ggproto(
+  "GeomPointrangeWebGL",
+  ggplot2::GeomPointrange,
+  optional_aes = c(ggplot2::GeomPointrange$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomPointrange$extra_params
+)
 GeomVectorWebGL <- ggplot2::ggproto(
   "GeomVectorWebGL",
   ggplot2::GeomSegment,
@@ -800,6 +818,131 @@ geom_segment_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(head_size = 0, na.rm = na.rm, ...)
+  )
+}
+
+#' WebGL Linerange Layer
+#'
+#' Add a vertical range layer tagged for the `ggWebGL` renderer. The renderer
+#' consumes `ggplot2`-built `x`, `ymin`, and `ymax` values and serializes ranges
+#' as pure segment primitives.
+#'
+#' @inheritParams ggplot2::geom_linerange
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' ranges <- data.frame(x = 1:3, y = c(2, 3, 2.5), ymin = c(1, 2, 1.8), ymax = c(3, 4, 3.2))
+#' ggplot2::ggplot(ranges, ggplot2::aes(x, y, ymin = ymin, ymax = ymax)) +
+#'   geom_linerange_webgl(linewidth = 1)
+#' @export
+geom_linerange_webgl <- function(mapping = NULL,
+                                 data = NULL,
+                                 stat = "identity",
+                                 position = "identity",
+                                 ...,
+                                 orientation = NA,
+                                 lineend = "butt",
+                                 na.rm = FALSE,
+                                 show.legend = NA,
+                                 inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomLinerangeWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      orientation = orientation,
+      lineend = lineend,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Errorbar Layer
+#'
+#' Add a vertical error-bar layer tagged for the `ggWebGL` renderer. The
+#' renderer consumes `ggplot2`-built range and cap columns and serializes them
+#' as pure segment primitives.
+#'
+#' @inheritParams ggplot2::geom_errorbar
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' errors <- data.frame(x = 1:3, y = c(2, 3, 2.5), ymin = c(1, 2, 1.8), ymax = c(3, 4, 3.2))
+#' ggplot2::ggplot(errors, ggplot2::aes(x, y, ymin = ymin, ymax = ymax)) +
+#'   geom_errorbar_webgl(width = 0.2)
+#' @export
+geom_errorbar_webgl <- function(mapping = NULL,
+                                data = NULL,
+                                stat = "identity",
+                                position = "identity",
+                                ...,
+                                orientation = NA,
+                                lineend = "butt",
+                                na.rm = FALSE,
+                                show.legend = NA,
+                                inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomErrorbarWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      orientation = orientation,
+      lineend = lineend,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Pointrange Layer
+#'
+#' Add a point plus vertical range layer tagged for the `ggWebGL` renderer.
+#' Pointranges serialize to one point payload and one pure segment payload.
+#'
+#' @inheritParams ggplot2::geom_pointrange
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' ranges <- data.frame(x = 1:3, y = c(2, 3, 2.5), ymin = c(1, 2, 1.8), ymax = c(3, 4, 3.2))
+#' ggplot2::ggplot(ranges, ggplot2::aes(x, y, ymin = ymin, ymax = ymax)) +
+#'   geom_pointrange_webgl()
+#' @export
+geom_pointrange_webgl <- function(mapping = NULL,
+                                  data = NULL,
+                                  stat = "identity",
+                                  position = "identity",
+                                  ...,
+                                  orientation = NA,
+                                  lineend = "butt",
+                                  na.rm = FALSE,
+                                  show.legend = NA,
+                                  inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomPointrangeWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      orientation = orientation,
+      lineend = lineend,
+      na.rm = na.rm,
+      ...
+    )
   )
 }
 

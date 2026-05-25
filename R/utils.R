@@ -919,6 +919,27 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_vector_payloads"
     ),
     list(
+      name = "linerange",
+      primitive = "vectors",
+      classes = "GeomLinerangeWebGL",
+      inherits = character(),
+      extractor = "extract_linerange_payloads"
+    ),
+    list(
+      name = "errorbar",
+      primitive = "vectors",
+      classes = "GeomErrorbarWebGL",
+      inherits = character(),
+      extractor = "extract_errorbar_payloads"
+    ),
+    list(
+      name = "pointrange",
+      primitive = "mixed",
+      classes = "GeomPointrangeWebGL",
+      inherits = character(),
+      extractor = "extract_pointrange_payloads"
+    ),
+    list(
       name = "rects",
       primitive = "rects",
       classes = "GeomRectWebGL",

@@ -34,6 +34,9 @@
 - [`geom_density_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.md)
   : WebGL Density Curve Layer
 
+- [`geom_errorbar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_errorbar_webgl.md)
+  : WebGL Errorbar Layer
+
 - [`geom_freqpoly_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_freqpoly_webgl.md)
   : WebGL Frequency Polygon Layer
 
@@ -42,6 +45,9 @@
 
 - [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
   : WebGL Line Layer
+
+- [`geom_linerange_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_linerange_webgl.md)
+  : WebGL Linerange Layer
 
 - [`geom_mesh_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.md)
   : WebGL Unstructured Mesh Layer
@@ -54,6 +60,9 @@
 
 - [`geom_point_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_point_webgl.md)
   : WebGL Point Layer
+
+- [`geom_pointrange_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_pointrange_webgl.md)
+  : WebGL Pointrange Layer
 
 - [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md)
   : WebGL Raster Layer
