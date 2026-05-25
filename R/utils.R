@@ -996,6 +996,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_ribbon_payloads"
     ),
     list(
+      name = "polygon",
+      primitive = "mesh",
+      classes = "GeomPolygonWebGL",
+      inherits = character(),
+      extractor = "extract_polygon_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

@@ -76,6 +76,9 @@
 - [`geom_pointrange_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_pointrange_webgl.md)
   : WebGL Pointrange Layer
 
+- [`geom_polygon_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_polygon_webgl.md)
+  : WebGL Simple Polygon Layer
+
 - [`geom_raster_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.md)
   : WebGL Raster Layer
 

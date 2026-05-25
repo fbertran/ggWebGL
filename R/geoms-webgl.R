@@ -86,6 +86,12 @@ GeomAreaWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomArea$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomArea$extra_params, "lineend", "linejoin", "linemitre", "outline.type")
 )
+GeomPolygonWebGL <- ggplot2::ggproto(
+  "GeomPolygonWebGL",
+  ggplot2::GeomPolygon,
+  optional_aes = c(ggplot2::GeomPolygon$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomPolygon$extra_params, "rule", "lineend", "linejoin", "linemitre")
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -900,6 +906,57 @@ geom_area_webgl <- function(mapping = NULL,
     params = list(
       orientation = orientation,
       outline.type = outline.type,
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Simple Polygon Layer
+#'
+#' Add a simple polygon layer tagged for the `ggWebGL` renderer. The renderer
+#' triangulates each `ggplot2`-built group as one simple, non-self-intersecting
+#' ring and sends the result through the existing mesh primitive. Holes,
+#' multipolygons, and self-intersections are not supported.
+#'
+#' @inheritParams ggplot2::geom_polygon
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' polygon_data <- data.frame(
+#'   x = c(0, 1, 0.8, 0.2),
+#'   y = c(0, 0.1, 1, 0.8)
+#' )
+#'
+#' ggplot2::ggplot(polygon_data, ggplot2::aes(x, y)) +
+#'   geom_polygon_webgl(fill = "#38bdf8", alpha = 0.7)
+#' @export
+geom_polygon_webgl <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "identity",
+                               position = "identity",
+                               ...,
+                               rule = "evenodd",
+                               lineend = "butt",
+                               linejoin = "round",
+                               linemitre = 10,
+                               na.rm = FALSE,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomPolygonWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      rule = rule,
       lineend = lineend,
       linejoin = linejoin,
       linemitre = linemitre,

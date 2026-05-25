@@ -15,6 +15,7 @@ required_example_topics <- c(
   "geom_linerange_webgl.Rd",
   "geom_path_webgl.Rd",
   "geom_path3d_webgl.Rd",
+  "geom_polygon_webgl.Rd",
   "geom_pointrange_webgl.Rd",
   "geom_point_webgl.Rd",
   "geom_raster_webgl.Rd",

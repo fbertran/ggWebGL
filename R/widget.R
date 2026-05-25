@@ -681,6 +681,131 @@ extract_raster_payloads <- function(layer, data) {
   Filter(Negate(is.null), payloads)
 }
 
+polygon_has_multiple_subgroups <- function(data) {
+  if (!"subgroup" %in% names(data)) {
+    return(FALSE)
+  }
+
+  length(unique(as.character(data$subgroup))) > 1L
+}
+
+polygon_fill_values <- function(data) {
+  fill <- data$fill %||% NULL
+  if (is.null(fill) || all(is.na(fill))) {
+    fill <- data$colour %||% data$color %||% NULL
+  }
+  fill %||% rep("#2C3E50", nrow(data))
+}
+
+polygon_outline_colour <- function(data) {
+  stroke <- data$colour %||% data$color %||% NULL
+  if (is.null(stroke) || all(is.na(stroke))) {
+    return(rep(NA_character_, nrow(data)))
+  }
+  stroke
+}
+
+polygon_outline_width <- function(data) {
+  width <- data$linewidth %||% data$size %||% rep(0, nrow(data))
+  width <- mm_to_pixels(width)
+  width[!is.finite(width) | width < 0] <- 0
+  width
+}
+
+extract_polygon_panel_payload <- function(layer, panel_data, panel_id) {
+  group_chr <- as.character(panel_data$group %||% seq_len(nrow(panel_data)))
+  group_index <- split(seq_len(nrow(panel_data)), group_chr)
+  vertices <- list()
+  triangles <- list()
+  outline <- list()
+  offset <- 0L
+
+  for (group_name in names(group_index)) {
+    ring <- panel_data[group_index[[group_name]], , drop = FALSE]
+    if (polygon_has_multiple_subgroups(ring)) {
+      rlang::abort("`geom_polygon_webgl()` does not support holes or multiple rings within one polygon group.")
+    }
+
+    ring <- ggwebgl_polygon_prepare_ring(ring)
+    tri <- ggwebgl_polygon_triangulate_ring(ring$x, ring$y)
+    tri$pick_id <- group_name
+    tri[, c("i", "j", "k")] <- tri[, c("i", "j", "k"), drop = FALSE] + offset
+
+    fill <- polygon_fill_values(ring)
+    alpha <- ring$alpha %||% rep(1, nrow(ring))
+    vertices[[length(vertices) + 1L]] <- data.frame(
+      x = as.numeric(ring$x),
+      y = as.numeric(ring$y),
+      z = 0,
+      fill = fill,
+      alpha = alpha,
+      id = rep(group_name, nrow(ring)),
+      stringsAsFactors = FALSE
+    )
+    triangles[[length(triangles) + 1L]] <- tri
+
+    outline[[length(outline) + 1L]] <- compact_list(list(
+      group = group_name,
+      colour = as.character(polygon_outline_colour(ring)[[1L]]),
+      linewidth = as.numeric(polygon_outline_width(ring)[[1L]])
+    ))
+    offset <- offset + nrow(ring)
+  }
+
+  if (!length(vertices) || !length(triangles)) {
+    return(NULL)
+  }
+
+  vertices <- do.call(rbind, vertices)
+  triangles <- do.call(rbind, triangles)
+  wireframe <- any(vapply(outline, function(item) {
+    !is.na(item$colour %||% NA_character_) && isTRUE((item$linewidth %||% 0) > 0)
+  }, logical(1)))
+
+  payload <- ggwebgl_layer_mesh(
+    vertices = vertices,
+    x = "x",
+    y = "y",
+    z = "z",
+    triangles = triangles,
+    i = "i",
+    j = "j",
+    k = "k",
+    colour = "fill",
+    alpha = "alpha",
+    id = "id",
+    material = layer$geom_params$material %||% ggwebgl_material(shading = "mesh_flat", wireframe = wireframe),
+    shading = layer$geom_params$shading %||% "mesh_flat",
+    pick_id = "pick_id",
+    panel_id = as.integer(panel_id),
+    geom = class(layer$geom)[1],
+    wireframe = wireframe
+  )
+  payload$polygon_meta <- compact_list(list(
+    simple = TRUE,
+    triangulation = "ear_clipping",
+    groups = names(group_index),
+    outline = outline
+  ))
+  payload
+}
+
+extract_polygon_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    extract_polygon_panel_payload(layer, data[split_index[[id]], , drop = FALSE], panel_id = as.integer(id))
+  })
+  names(payloads) <- names(split_index)
+  Filter(Negate(is.null), payloads)
+}
+
 extract_mesh_payloads <- function(layer, data) {
   data <- as.data.frame(data)
 
