@@ -220,6 +220,12 @@ extract_line_payloads <- function(layer, data) {
       z <- if ("z" %in% names(path)) as.numeric(path$z) else NULL
       frame <- if ("frame" %in% names(path)) as.integer(path$frame) else NULL
       time <- if ("time" %in% names(path)) as.numeric(path$time) else NULL
+      level <- if ("level" %in% names(path)) path$level else NULL
+      level <- if (length(level)) {
+        if (is.factor(level)) as.character(level) else unname(level)
+      } else {
+        NULL
+      }
 
       compact_list(list(
         rows = nrow(path),
@@ -232,6 +238,7 @@ extract_line_payloads <- function(layer, data) {
         age = if (nrow(path) <= 1L) rep(1, nrow(path)) else seq(0, 1, length.out = nrow(path)),
         frame = unname(frame),
         time = unname(time),
+        level = level,
         rgba = unname(as.numeric(t(rgba)))
       ))
     })

@@ -34,8 +34,14 @@
 - [`geom_boxplot_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_boxplot_webgl.md)
   : WebGL Boxplot Layer
 
+- [`geom_contour_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_contour_webgl.md)
+  : WebGL Contour Line Layer
+
 - [`geom_crossbar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_crossbar_webgl.md)
   : WebGL Crossbar Layer
+
+- [`geom_density2d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density2d_webgl.md)
+  : WebGL 2D Density Contour Layer
 
 - [`geom_density_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density_webgl.md)
   : WebGL Density Curve Layer

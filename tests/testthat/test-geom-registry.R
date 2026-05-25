@@ -12,14 +12,14 @@ test_that("internal geom registry declares current primitive extractors", {
     names,
     c(
       "vectors", "segments", "linerange", "errorbar", "pointrange", "crossbar", "boxplot", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "mesh", "surface",
-      "path3d", "path", "freqpoly", "density", "points", "lines", "raster"
+      "path3d", "path", "freqpoly", "density", "density2d", "contour", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
       "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "surface",
-      "lines", "lines", "lines", "lines", "points", "lines", "raster"
+      "lines", "lines", "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
   expect_equal(
@@ -40,6 +40,8 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_ribbon_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
+      "extract_line_payloads",
+      "extract_line_payloads",
       "extract_line_payloads",
       "extract_line_payloads",
       "extract_line_payloads",

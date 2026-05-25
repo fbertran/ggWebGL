@@ -1043,6 +1043,22 @@ ggwebgl_geom_registry <- function() {
       ordered = TRUE
     ),
     list(
+      name = "density2d",
+      primitive = "lines",
+      classes = "GeomDensity2dWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      ordered = TRUE
+    ),
+    list(
+      name = "contour",
+      primitive = "lines",
+      classes = "GeomContourWebGL",
+      inherits = character(),
+      extractor = "extract_line_payloads",
+      ordered = TRUE
+    ),
+    list(
       name = "points",
       primitive = "points",
       classes = "GeomPointWebGL",

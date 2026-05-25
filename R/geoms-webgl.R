@@ -39,6 +39,16 @@ GeomDensityWebGL <- ggplot2::ggproto(
   ggplot2::GeomPath,
   optional_aes = c(ggplot2::GeomPath$optional_aes, "fill", "frame", "time")
 )
+GeomDensity2dWebGL <- ggplot2::ggproto(
+  "GeomDensity2dWebGL",
+  ggplot2::GeomDensity2d,
+  optional_aes = c(ggplot2::GeomDensity2d$optional_aes, "frame", "time")
+)
+GeomContourWebGL <- ggplot2::ggproto(
+  "GeomContourWebGL",
+  ggplot2::GeomContour,
+  optional_aes = c(ggplot2::GeomContour$optional_aes, "frame", "time")
+)
 GeomRasterWebGL <- ggplot2::ggproto("GeomRasterWebGL", ggplot2::GeomRaster)
 GeomRectWebGL <- ggplot2::ggproto(
   "GeomRectWebGL",
@@ -395,6 +405,112 @@ geom_density_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL 2D Density Contour Layer
+#'
+#' Add a line-contour density layer tagged for the `ggWebGL` renderer. The 2D
+#' density estimate and contour lines are computed by `ggplot2`; this layer
+#' serializes the built contour paths as grouped WebGL line primitives. Filled
+#' density contours are not rendered by this layer.
+#'
+#' @inheritParams ggplot2::geom_density2d
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' density_points <- expand.grid(x = seq(-1, 1, length.out = 6), y = seq(-1, 1, length.out = 6))
+#'
+#' ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
+#'   geom_density2d_webgl(bins = 3)
+#' @export
+geom_density2d_webgl <- function(mapping = NULL,
+                                 data = NULL,
+                                 stat = "density_2d",
+                                 position = "identity",
+                                 ...,
+                                 contour_var = "density",
+                                 lineend = "butt",
+                                 linejoin = "round",
+                                 linemitre = 10,
+                                 na.rm = FALSE,
+                                 show.legend = NA,
+                                 inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomDensity2dWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
+      contour = TRUE,
+      contour_var = contour_var,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Contour Line Layer
+#'
+#' Add a line-contour layer tagged for the `ggWebGL` renderer. Contour
+#' generation is delegated to `ggplot2::StatContour`; this layer serializes the
+#' built contour paths as grouped WebGL line primitives. Filled contours are not
+#' rendered by this layer.
+#'
+#' @inheritParams ggplot2::geom_contour
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' grid <- expand.grid(x = seq(-1, 1, length.out = 5), y = seq(-1, 1, length.out = 5))
+#' grid$z <- with(grid, x^2 - y^2)
+#'
+#' ggplot2::ggplot(grid, ggplot2::aes(x, y, z = z)) +
+#'   geom_contour_webgl(bins = 4)
+#' @export
+geom_contour_webgl <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "contour",
+                               position = "identity",
+                               ...,
+                               bins = NULL,
+                               binwidth = NULL,
+                               breaks = NULL,
+                               arrow = NULL,
+                               arrow.fill = NULL,
+                               lineend = "butt",
+                               linejoin = "round",
+                               linemitre = 10,
+                               na.rm = FALSE,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomContourWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      bins = bins,
+      binwidth = binwidth,
+      breaks = breaks,
+      arrow = arrow,
+      arrow.fill = arrow.fill,
       lineend = lineend,
       linejoin = linejoin,
       linemitre = linemitre,
