@@ -454,8 +454,8 @@ ggwebgl_layer_raster <- function(rgba,
 
 #' Build a ggWebGL Specification from Renderer-Ready Layers
 #'
-#' @param layers A list of normalized point, line, raster, vector, mesh, or surface
-#'   layers.
+#' @param layers A list of normalized point, line, raster, vector, ribbon, mesh,
+#'   or surface layers.
 #' @param labels Optional labels list (`title`, `subtitle`, `x`, `y`).
 #' @param webgl Optional renderer options passed to [theme_webgl()].
 #' @param grid Optional list with `rows` and `cols`.
@@ -666,8 +666,8 @@ ggwebgl_scalar_number <- function(value, name) {
 
 ggwebgl_validate_layer <- function(layer) {
   if (!is.list(layer) || is.null(layer$type) ||
-      !layer$type %in% c("points", "lines", "raster", "vectors", "rects", "mesh", "surface")) {
-    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, rects, mesh, or surface layer.")
+      !layer$type %in% c("points", "lines", "raster", "vectors", "rects", "ribbons", "mesh", "surface")) {
+    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, rects, ribbons, mesh, or surface layer.")
   }
 
   layer
@@ -757,6 +757,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
   raster_layers <- Filter(function(x) identical(x$type, "raster"), layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), layers)
   rect_layers <- Filter(function(x) identical(x$type, "rects"), layers)
+  ribbon_layers <- Filter(function(x) identical(x$type, "ribbons"), layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), layers)
 
@@ -774,6 +775,9 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
     raster_cell_count = sum(vapply(raster_layers, function(x) x$width * x$height, integer(1))),
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
     rect_count = sum(vapply(rect_layers, `[[`, integer(1), "rows")),
+    ribbon_count = sum(vapply(ribbon_layers, `[[`, integer(1), "strip_count")),
+    ribbon_vertex_count = sum(vapply(ribbon_layers, `[[`, integer(1), "rows")),
+    ribbon_triangle_count = sum(vapply(ribbon_layers, `[[`, integer(1), "triangle_count")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -813,6 +817,10 @@ ggwebgl_viewport_from_layers <- function(layers) {
       extend(c(layer$x, layer$xend), c(layer$y, layer$yend))
     } else if (identical(layer$type, "rects")) {
       extend(c(layer$xmin, layer$xmax), c(layer$ymin, layer$ymax))
+    } else if (identical(layer$type, "ribbons")) {
+      for (strip in layer$strips %||% list()) {
+        extend(c(strip$x, strip$x), c(strip$ymin, strip$ymax))
+      }
     } else if (identical(layer$type, "mesh")) {
       extend(layer$x, layer$y)
     } else if (identical(layer$type, "surface")) {
@@ -837,6 +845,9 @@ ggwebgl_build_render <- function(panels, messages = character()) {
   raster_cell_count <- sum(vapply(panels, `[[`, integer(1), "raster_cell_count"))
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
   rect_count <- sum(vapply(panels, `[[`, integer(1), "rect_count"))
+  ribbon_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_count"))
+  ribbon_vertex_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_vertex_count"))
+  ribbon_triangle_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_triangle_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -859,6 +870,9 @@ ggwebgl_build_render <- function(panels, messages = character()) {
     raster_cell_count = raster_cell_count,
     vector_count = vector_count,
     rect_count = rect_count,
+    ribbon_count = ribbon_count,
+    ribbon_vertex_count = ribbon_vertex_count,
+    ribbon_triangle_count = ribbon_triangle_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,

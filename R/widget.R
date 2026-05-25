@@ -353,6 +353,71 @@ extract_rect_payloads <- function(layer, data) {
   Filter(Negate(is.null), payloads)
 }
 
+extract_ribbon_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  required <- c("x", "ymin", "ymax")
+  if (!all(required %in% names(data))) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    panel_data <- data[split_index[[id]], , drop = FALSE]
+    ribbon_runs <- split_ribbon_runs(panel_data)
+
+    if (!length(ribbon_runs)) {
+      return(NULL)
+    }
+
+    strips <- lapply(ribbon_runs, function(idx) {
+      strip <- panel_data[idx, , drop = FALSE]
+      fill <- strip$fill %||% rep("#2C3E50", nrow(strip))
+      rgba <- colour_to_rgba(fill, strip$alpha %||% NULL)
+      stroke <- strip$colour %||% strip$color %||% NULL
+      if (!is.null(stroke) && all(is.na(stroke))) {
+        stroke <- NULL
+      }
+      stroke_rgba <- if (is.null(stroke)) NULL else colour_to_rgba(stroke, strip$alpha %||% NULL)
+      linewidth <- strip$linewidth %||% strip$size %||% rep(if (is.null(stroke)) 0 else 0.5, nrow(strip))
+      linewidth <- mm_to_pixels(linewidth)
+      linewidth <- linewidth[is.finite(linewidth) & linewidth >= 0]
+      frame <- if ("frame" %in% names(strip)) as.integer(strip$frame) else NULL
+      time <- if ("time" %in% names(strip)) as.numeric(strip$time) else NULL
+
+      compact_list(list(
+        rows = nrow(strip),
+        group = first_group_value(strip),
+        x = unname(as.numeric(strip$x)),
+        ymin = unname(as.numeric(strip$ymin)),
+        ymax = unname(as.numeric(strip$ymax)),
+        width = if (length(linewidth)) as.numeric(linewidth[[1]]) else 0,
+        frame = unname(frame),
+        time = unname(time),
+        rgba = unname(as.numeric(t(rgba))),
+        stroke_rgba = if (is.null(stroke_rgba)) NULL else unname(as.numeric(t(stroke_rgba)))
+      ))
+    })
+
+    compact_list(list(
+      panel_id = as.integer(id),
+      type = "ribbons",
+      geom = class(layer$geom)[1],
+      rows = sum(vapply(strips, `[[`, integer(1), "rows")),
+      strip_count = length(strips),
+      triangle_count = sum(pmax(0L, vapply(strips, `[[`, integer(1), "rows") - 1L) * 2L),
+      strips = strips
+    ))
+  })
+  names(payloads) <- names(split_index)
+  Filter(Negate(is.null), payloads)
+}
+
 extract_raster_panel_payload <- function(layer, data, panel_id) {
   data <- as.data.frame(data)
 
@@ -612,6 +677,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
   raster_layers <- Filter(function(x) identical(x$type, "raster"), render_layers)
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), render_layers)
   rect_layers <- Filter(function(x) identical(x$type, "rects"), render_layers)
+  ribbon_layers <- Filter(function(x) identical(x$type, "ribbons"), render_layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), render_layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), render_layers)
 
@@ -629,6 +695,9 @@ build_panel_spec <- function(panel_contract, layer_sources) {
     raster_cell_count = sum(vapply(raster_layers, function(x) x$width * x$height, integer(1))),
     vector_count = sum(vapply(vector_layers, `[[`, integer(1), "rows")),
     rect_count = sum(vapply(rect_layers, `[[`, integer(1), "rows")),
+    ribbon_count = sum(vapply(ribbon_layers, `[[`, integer(1), "strip_count")),
+    ribbon_vertex_count = sum(vapply(ribbon_layers, `[[`, integer(1), "rows")),
+    ribbon_triangle_count = sum(vapply(ribbon_layers, `[[`, integer(1), "triangle_count")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -652,6 +721,9 @@ empty_panel_render <- function(panel_contract) {
     raster_cell_count = 0L,
     vector_count = 0L,
     rect_count = 0L,
+    ribbon_count = 0L,
+    ribbon_vertex_count = 0L,
+    ribbon_triangle_count = 0L,
     mesh_vertex_count = 0L,
     mesh_triangle_count = 0L,
     surface_vertex_count = 0L,
@@ -685,6 +757,9 @@ build_render_plan <- function(scene_source) {
       raster_cell_count = 0L,
       vector_count = 0L,
       rect_count = 0L,
+      ribbon_count = 0L,
+      ribbon_vertex_count = 0L,
+      ribbon_triangle_count = 0L,
       mesh_vertex_count = 0L,
       mesh_triangle_count = 0L,
       surface_vertex_count = 0L,
@@ -704,6 +779,9 @@ build_render_plan <- function(scene_source) {
   raster_cell_count <- sum(vapply(panels, `[[`, integer(1), "raster_cell_count"))
   vector_count <- sum(vapply(panels, `[[`, integer(1), "vector_count"))
   rect_count <- sum(vapply(panels, `[[`, integer(1), "rect_count"))
+  ribbon_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_count"))
+  ribbon_vertex_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_vertex_count"))
+  ribbon_triangle_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_triangle_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -714,7 +792,7 @@ build_render_plan <- function(scene_source) {
   if (!has_renderable_content) {
     messages <- c(
       messages,
-      "No supported point, line, raster, vector, rectangle, mesh, or surface layers are currently available for the WebGL renderer."
+      "No supported point, line, raster, vector, rectangle, ribbon, mesh, or surface layers are currently available for the WebGL renderer."
     )
   }
 
@@ -729,6 +807,9 @@ build_render_plan <- function(scene_source) {
     raster_cell_count = raster_cell_count,
     vector_count = vector_count,
     rect_count = rect_count,
+    ribbon_count = ribbon_count,
+    ribbon_vertex_count = ribbon_vertex_count,
+    ribbon_triangle_count = ribbon_triangle_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,

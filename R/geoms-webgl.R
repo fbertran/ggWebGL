@@ -64,6 +64,18 @@ GeomBin2dWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomBin2d$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomBin2d$extra_params, "lineend", "linejoin")
 )
+GeomRibbonWebGL <- ggplot2::ggproto(
+  "GeomRibbonWebGL",
+  ggplot2::GeomRibbon,
+  optional_aes = c(ggplot2::GeomRibbon$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomRibbon$extra_params, "lineend", "linejoin", "linemitre", "outline.type")
+)
+GeomAreaWebGL <- ggplot2::ggproto(
+  "GeomAreaWebGL",
+  ggplot2::GeomArea,
+  optional_aes = c(ggplot2::GeomArea$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomArea$extra_params, "lineend", "linejoin", "linemitre", "outline.type")
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -643,6 +655,108 @@ geom_bin2d_webgl <- function(mapping = NULL,
     params = list(
       lineend = lineend,
       linejoin = linejoin,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Ribbon Layer
+#'
+#' Add a filled ribbon layer tagged for the `ggWebGL` renderer. The renderer
+#' consumes `ggplot2`-built `x`, `ymin`, and `ymax` values and draws each
+#' group/run as a filled triangle strip.
+#'
+#' @inheritParams ggplot2::geom_ribbon
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' ribbon_data <- data.frame(
+#'   x = 1:4,
+#'   ymin = c(0.1, 0.2, 0.1, 0.3),
+#'   ymax = c(0.4, 0.7, 0.5, 0.8)
+#' )
+#'
+#' ggplot2::ggplot(ribbon_data, ggplot2::aes(x, ymin = ymin, ymax = ymax)) +
+#'   geom_ribbon_webgl(fill = "#38bdf8", alpha = 0.6)
+#' @export
+geom_ribbon_webgl <- function(mapping = NULL,
+                              data = NULL,
+                              stat = "identity",
+                              position = "identity",
+                              ...,
+                              orientation = NA,
+                              lineend = "butt",
+                              linejoin = "round",
+                              linemitre = 10,
+                              outline.type = "both",
+                              na.rm = FALSE,
+                              show.legend = NA,
+                              inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomRibbonWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      orientation = orientation,
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
+      outline.type = outline.type,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Area Layer
+#'
+#' Add a filled area layer tagged for the `ggWebGL` renderer. Stacking and
+#' alignment are delegated to `ggplot2`; the WebGL layer consumes the built
+#' ribbon boundaries.
+#'
+#' @inheritParams ggplot2::geom_area
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' area_data <- data.frame(x = 1:4, y = c(1, 2, 1, 3))
+#'
+#' ggplot2::ggplot(area_data, ggplot2::aes(x, y)) +
+#'   geom_area_webgl(fill = "#0f766e", alpha = 0.7)
+#' @export
+geom_area_webgl <- function(mapping = NULL,
+                            data = NULL,
+                            stat = "align",
+                            position = "stack",
+                            ...,
+                            orientation = NA,
+                            outline.type = "upper",
+                            lineend = "butt",
+                            linejoin = "round",
+                            linemitre = 10,
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomAreaWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      orientation = orientation,
+      outline.type = outline.type,
+      lineend = lineend,
+      linejoin = linejoin,
+      linemitre = linemitre,
       na.rm = na.rm,
       ...
     )

@@ -947,6 +947,20 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_rect_payloads"
     ),
     list(
+      name = "ribbon",
+      primitive = "ribbons",
+      classes = "GeomRibbonWebGL",
+      inherits = character(),
+      extractor = "extract_ribbon_payloads"
+    ),
+    list(
+      name = "area",
+      primitive = "ribbons",
+      classes = "GeomAreaWebGL",
+      inherits = character(),
+      extractor = "extract_ribbon_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",
@@ -1089,6 +1103,43 @@ is_surface_geom <- function(layer) {
 
 is_supported_geom <- function(layer) {
   !is.null(ggwebgl_geom_registry_match(layer))
+}
+
+split_ribbon_runs <- function(data) {
+  if (!nrow(data)) {
+    return(list())
+  }
+
+  group_chr <- as.character(data$group %||% seq_len(nrow(data)))
+  x_ok <- is.finite(as.numeric(data$x))
+  ymin_ok <- is.finite(as.numeric(data$ymin))
+  ymax_ok <- is.finite(as.numeric(data$ymax))
+  valid <- x_ok & ymin_ok & ymax_ok
+  group_levels <- unique(group_chr)
+  out <- list()
+
+  for (group_name in group_levels) {
+    group_idx <- which(group_chr == group_name)
+    if (!length(group_idx)) {
+      next
+    }
+
+    run_break <- rep(TRUE, length(group_idx))
+    if (length(group_idx) > 1L) {
+      run_break[-1] <- !(valid[group_idx][-1] & valid[group_idx][-length(group_idx)])
+    }
+
+    group_runs <- split(group_idx, cumsum(run_break))
+    group_runs <- Filter(
+      f = function(idx) {
+        length(idx) >= 2L && all(valid[idx])
+      },
+      x = group_runs
+    )
+    out <- c(out, group_runs)
+  }
+
+  out
 }
 
 split_path_runs <- function(data) {

@@ -20,8 +20,8 @@ ggwebgl_spec(
 
 - layers:
 
-  A list of normalized point, line, raster, vector, mesh, or surface
-  layers.
+  A list of normalized point, line, raster, vector, ribbon, mesh, or
+  surface layers.
 
 - labels:
 

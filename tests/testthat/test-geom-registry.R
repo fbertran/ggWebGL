@@ -11,14 +11,14 @@ test_that("internal geom registry declares current primitive extractors", {
   expect_equal(
     names,
     c(
-      "vectors", "segments", "rects", "tiles", "bars", "bin2d", "mesh", "surface",
+      "vectors", "segments", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "mesh", "surface",
       "path3d", "path", "freqpoly", "density", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
-      "vectors", "vectors", "rects", "rects", "rects", "rects", "mesh", "surface",
+      "vectors", "vectors", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "surface",
       "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
@@ -31,6 +31,8 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_rect_payloads",
       "extract_rect_payloads",
       "extract_rect_payloads",
+      "extract_ribbon_payloads",
+      "extract_ribbon_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
       "extract_line_payloads",
@@ -111,6 +113,20 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_bin2d_webgl(binwidth = c(1, 1), boundary = c(0, 0))
   )
+  ribbon <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = 1:3, ymin = c(0, 0.2, 0.1), ymax = c(1, 0.9, 1.2)),
+      ggplot2::aes(x, ymin = ymin, ymax = ymax)
+    ) +
+      geom_ribbon_webgl()
+  )
+  area <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = 1:3, y = c(1, 2, 1)),
+      ggplot2::aes(x, y)
+    ) +
+      geom_area_webgl()
+  )
   freqpoly <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(x = c(0.1, 0.2, 0.7, 1.2, 1.6, 2.1)),
@@ -165,6 +181,10 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(bar$geom, "GeomBarWebGL")
   expect_equal(bin2d$type, "rects")
   expect_equal(bin2d$geom, "GeomBin2dWebGL")
+  expect_equal(ribbon$type, "ribbons")
+  expect_equal(ribbon$geom, "GeomRibbonWebGL")
+  expect_equal(area$type, "ribbons")
+  expect_equal(area$geom, "GeomAreaWebGL")
   expect_equal(freqpoly$type, "lines")
   expect_equal(freqpoly$geom, "GeomFreqpolyWebGL")
   expect_equal(density$type, "lines")

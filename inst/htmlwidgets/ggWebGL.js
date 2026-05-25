@@ -1153,6 +1153,58 @@ HTMLWidgets.widget({
         };
       }
 
+      if (type === "ribbons") {
+        var ribbonStrips = Array.isArray(source.strips)
+          ? source.strips.map(function(stripSource) {
+              var strip = stripSource && typeof stripSource === "object" ? stripSource : {};
+              var stripRows = Number(strip.rows);
+              var stripX = Array.isArray(strip.x) ? strip.x.map(Number) : [];
+              var stripYmin = Array.isArray(strip.ymin) ? strip.ymin.map(Number) : [];
+              var stripYmax = Array.isArray(strip.ymax) ? strip.ymax.map(Number) : [];
+              var stripRgba = Array.isArray(strip.rgba) ? strip.rgba.map(Number) : [];
+              var stripStrokeRgba = Array.isArray(strip.stroke_rgba) ? strip.stroke_rgba.map(Number) : [];
+              var stripFrame = Array.isArray(strip.frame) ? strip.frame.map(Number) : [];
+              var stripTime = Array.isArray(strip.time) ? strip.time.map(Number) : [];
+              var stripCount = Math.min(
+                isFinite(stripRows) && stripRows > 0 ? stripRows : Number.MAX_SAFE_INTEGER,
+                stripX.length,
+                stripYmin.length,
+                stripYmax.length
+              );
+
+              if (!isFinite(stripCount) || stripCount < 0) {
+                stripCount = 0;
+              }
+
+              return {
+                rows: stripCount,
+                group: strip.group !== undefined ? String(strip.group) : null,
+                x: stripX.slice(0, stripCount),
+                ymin: stripYmin.slice(0, stripCount),
+                ymax: stripYmax.slice(0, stripCount),
+                width: isFinite(Number(strip.width)) ? Number(strip.width) : 0,
+                rgba: stripRgba.slice(0, stripCount * 4),
+                stroke_rgba: stripStrokeRgba.slice(0, stripCount * 4),
+                frame: stripFrame.slice(0, stripCount),
+                time: stripTime.slice(0, stripCount)
+              };
+            }).filter(function(strip) { return strip.rows >= 2; })
+          : [];
+        var ribbonRows = ribbonStrips.reduce(function(total, strip) { return total + strip.rows; }, 0);
+        var ribbonTriangleCount = ribbonStrips.reduce(function(total, strip) {
+          return total + Math.max(0, strip.rows - 1) * 2;
+        }, 0);
+
+        return {
+          type: "ribbons",
+          geom: source.geom ? String(source.geom) : null,
+          rows: ribbonRows,
+          strip_count: ribbonStrips.length,
+          triangle_count: ribbonTriangleCount,
+          strips: ribbonStrips
+        };
+      }
+
       if (type === "lines") {
         var paths = linePathList(source.paths).map(normalizeLinePath).filter(function(pathSpec) {
           return pathSpec.rows >= 2;
@@ -1306,6 +1358,15 @@ HTMLWidgets.widget({
       var rectCount = layers
         .filter(function(layerSpec) { return layerSpec.type === "rects"; })
         .reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0);
+      var ribbonCount = layers
+        .filter(function(layerSpec) { return layerSpec.type === "ribbons"; })
+        .reduce(function(total, layerSpec) { return total + layerSpec.strip_count; }, 0);
+      var ribbonVertexCount = layers
+        .filter(function(layerSpec) { return layerSpec.type === "ribbons"; })
+        .reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0);
+      var ribbonTriangleCount = layers
+        .filter(function(layerSpec) { return layerSpec.type === "ribbons"; })
+        .reduce(function(total, layerSpec) { return total + layerSpec.triangle_count; }, 0);
       var meshVertexCount = layers
         .filter(function(layerSpec) { return layerSpec.type === "mesh"; })
         .reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0);
@@ -1338,6 +1399,9 @@ HTMLWidgets.widget({
         raster_cell_count: rasterCellCount,
         vector_count: vectorCount,
         rect_count: rectCount,
+        ribbon_count: ribbonCount,
+        ribbon_vertex_count: ribbonVertexCount,
+        ribbon_triangle_count: ribbonTriangleCount,
         mesh_vertex_count: meshVertexCount,
         mesh_triangle_count: meshTriangleCount,
         surface_vertex_count: surfaceVertexCount,
@@ -1372,6 +1436,9 @@ HTMLWidgets.widget({
         raster_cell_count: layers.filter(function(layerSpec) { return layerSpec.type === "raster"; }).reduce(function(total, layerSpec) { return total + (layerSpec.width * layerSpec.height); }, 0),
         vector_count: layers.filter(function(layerSpec) { return layerSpec.type === "vectors"; }).reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0),
         rect_count: layers.filter(function(layerSpec) { return layerSpec.type === "rects"; }).reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0),
+        ribbon_count: layers.filter(function(layerSpec) { return layerSpec.type === "ribbons"; }).reduce(function(total, layerSpec) { return total + layerSpec.strip_count; }, 0),
+        ribbon_vertex_count: layers.filter(function(layerSpec) { return layerSpec.type === "ribbons"; }).reduce(function(total, layerSpec) { return total + layerSpec.rows; }, 0),
+        ribbon_triangle_count: layers.filter(function(layerSpec) { return layerSpec.type === "ribbons"; }).reduce(function(total, layerSpec) { return total + layerSpec.triangle_count; }, 0),
         mesh_vertex_count: layers.filter(function(layerSpec) { return layerSpec.type === "mesh"; }).reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0),
         mesh_triangle_count: layers.filter(function(layerSpec) { return layerSpec.type === "mesh"; }).reduce(function(total, layerSpec) { return total + layerSpec.triangle_count; }, 0),
         surface_vertex_count: layers.filter(function(layerSpec) { return layerSpec.type === "surface"; }).reduce(function(total, layerSpec) { return total + layerSpec.vertex_count; }, 0),
@@ -1414,6 +1481,9 @@ HTMLWidgets.widget({
       var rasterCellCount = panels.reduce(function(total, panel) { return total + panel.raster_cell_count; }, 0);
       var vectorCount = panels.reduce(function(total, panel) { return total + (panel.vector_count || 0); }, 0);
       var rectCount = panels.reduce(function(total, panel) { return total + (panel.rect_count || 0); }, 0);
+      var ribbonCount = panels.reduce(function(total, panel) { return total + (panel.ribbon_count || 0); }, 0);
+      var ribbonVertexCount = panels.reduce(function(total, panel) { return total + (panel.ribbon_vertex_count || 0); }, 0);
+      var ribbonTriangleCount = panels.reduce(function(total, panel) { return total + (panel.ribbon_triangle_count || 0); }, 0);
       var meshVertexCount = panels.reduce(function(total, panel) { return total + (panel.mesh_vertex_count || 0); }, 0);
       var meshTriangleCount = panels.reduce(function(total, panel) { return total + (panel.mesh_triangle_count || 0); }, 0);
       var surfaceVertexCount = panels.reduce(function(total, panel) { return total + (panel.surface_vertex_count || 0); }, 0);
@@ -1439,6 +1509,9 @@ HTMLWidgets.widget({
         raster_cell_count: rasterCellCount,
         vector_count: vectorCount,
         rect_count: rectCount,
+        ribbon_count: ribbonCount,
+        ribbon_vertex_count: ribbonVertexCount,
+        ribbon_triangle_count: ribbonTriangleCount,
         mesh_vertex_count: meshVertexCount,
         mesh_triangle_count: meshTriangleCount,
         surface_vertex_count: surfaceVertexCount,
@@ -5475,6 +5548,7 @@ HTMLWidgets.widget({
         "Line vertices: <strong>" + escapeHtml(render.line_vertex_count || 0) + "</strong>",
         "Vectors: <strong>" + escapeHtml(render.vector_count || 0) + "</strong>",
         "Rects: <strong>" + escapeHtml(render.rect_count || 0) + "</strong>",
+        "Ribbons: <strong>" + escapeHtml(render.ribbon_count || 0) + "</strong>",
         "Mesh triangles: <strong>" + escapeHtml(render.mesh_triangle_count || 0) + "</strong>",
         "Surface triangles: <strong>" + escapeHtml(render.surface_triangle_count || 0) + "</strong>",
         "Raster cells: <strong>" + escapeHtml(render.raster_cell_count || 0) + "</strong>"
@@ -6100,6 +6174,99 @@ HTMLWidgets.widget({
       gl.deleteBuffer(colorBuffer);
     }
 
+    function flattenRibbonLayer(layer, x) {
+      var strips = Array.isArray(layer.strips) ? layer.strips : [];
+      var positions = [];
+      var ages = [];
+      var colors = [];
+
+      function pushVertex(xValue, yValue, r, g, b, a) {
+        positions.push(xValue, yValue);
+        ages.push(1);
+        colors.push(r, g, b, a);
+      }
+
+      function pushStripVertex(strip, index) {
+        var rgba = strip.rgba || [];
+        return [
+          normalizeColorComponent(rgba[index * 4 + 0], 0.18),
+          normalizeColorComponent(rgba[index * 4 + 1], 0.34),
+          normalizeColorComponent(rgba[index * 4 + 2], 0.46),
+          normalizeColorComponent(rgba[index * 4 + 3], 0.7)
+        ];
+      }
+
+      strips.forEach(function(strip) {
+        var n = strip.rows || 0;
+        var xs = strip.x || [];
+        var ymins = strip.ymin || [];
+        var ymaxs = strip.ymax || [];
+
+        for (var i = 0; i < n - 1; i += 1) {
+          if (!pathSegmentVisible(strip, i, i + 1, x)) {
+            continue;
+          }
+
+          var x0 = Number(xs[i]);
+          var x1 = Number(xs[i + 1]);
+          var ymin0 = Number(ymins[i]);
+          var ymin1 = Number(ymins[i + 1]);
+          var ymax0 = Number(ymaxs[i]);
+          var ymax1 = Number(ymaxs[i + 1]);
+          if (!isFinite(x0) || !isFinite(x1) ||
+              !isFinite(ymin0) || !isFinite(ymin1) ||
+              !isFinite(ymax0) || !isFinite(ymax1) ||
+              x0 === x1 && ymin0 === ymin1 && ymax0 === ymax1) {
+            continue;
+          }
+
+          var c0 = pushStripVertex(strip, i);
+          var c1 = pushStripVertex(strip, i + 1);
+
+          // Ribbons are filled trapezoid strips, represented as two triangles
+          // per adjacent pair. Stroke metadata is preserved in the layer but
+          // outline drawing is deferred until a dedicated outline path exists.
+          pushVertex(x0, ymin0, c0[0], c0[1], c0[2], c0[3]);
+          pushVertex(x1, ymin1, c1[0], c1[1], c1[2], c1[3]);
+          pushVertex(x1, ymax1, c1[0], c1[1], c1[2], c1[3]);
+          pushVertex(x0, ymin0, c0[0], c0[1], c0[2], c0[3]);
+          pushVertex(x1, ymax1, c1[0], c1[1], c1[2], c1[3]);
+          pushVertex(x0, ymax0, c0[0], c0[1], c0[2], c0[3]);
+        }
+      });
+
+      return {
+        count: ages.length,
+        positions: new Float32Array(positions),
+        ages: new Float32Array(ages),
+        colors: new Float32Array(colors)
+      };
+    }
+
+    function drawRibbonLayer(gl, programs, layer, x, viewport) {
+      var payload = flattenRibbonLayer(layer, x);
+      var primitive = programs.primitive;
+
+      if (!payload || payload.count < 3) {
+        return;
+      }
+
+      configurePrimitiveLayerShader(gl, primitive, x, "ribbons", viewport, layer);
+      if (primitive.attributes.size >= 0) {
+        gl.disableVertexAttribArray(primitive.attributes.size);
+        gl.vertexAttrib1f(primitive.attributes.size, 1.0);
+      }
+
+      var positionBuffer = bindPositionAttribute(gl, primitive, payload.positions);
+      var ageBuffer = bindAgeAttribute(gl, primitive, payload.ages);
+      var colorBuffer = bindColorAttribute(gl, primitive, payload.colors);
+      bindConstantMetricAttribute(gl, primitive);
+      gl.drawArrays(gl.TRIANGLES, 0, payload.count);
+      gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(ageBuffer);
+      gl.deleteBuffer(colorBuffer);
+    }
+
     function meshLightDirection(layer) {
       var material = layer.material || {};
       var light = material.light_dir || [0.35, 0.45, 0.82];
@@ -6698,6 +6865,10 @@ HTMLWidgets.widget({
       drawRectLayer(gl, programs, layer, scene, viewport);
     }
 
+    function drawRibbonsLayer(gl, programs, layer, scene, panel, viewport, box) {
+      drawRibbonLayer(gl, programs, layer, scene, viewport);
+    }
+
     function drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box) {
       drawMeshLayer(gl, programs, layer, scene, viewport, box);
     }
@@ -6718,6 +6889,8 @@ HTMLWidgets.widget({
         drawVectorsLayer(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "rects") {
         drawRectsLayer(gl, programs, layer, scene, panel, viewport, box);
+      } else if (layer.type === "ribbons") {
+        drawRibbonsLayer(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "mesh") {
         drawMeshLayerTyped(gl, programs, layer, scene, panel, viewport, box);
       } else if (layer.type === "surface") {
@@ -6731,7 +6904,7 @@ HTMLWidgets.widget({
       var panels = panelList(x);
 
       if (!panels.length) {
-        setEmpty("No supported point, line, raster, vector, rectangle, mesh, or surface layers are available for rendering yet.");
+        setEmpty("No supported point, line, raster, vector, rectangle, ribbon, mesh, or surface layers are available for rendering yet.");
         return;
       }
 

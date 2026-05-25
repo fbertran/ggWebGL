@@ -22,6 +22,9 @@
 - [`coord_webgl_3d()`](https://fbertran.github.io/ggWebGL/reference/coord_webgl_3d.md)
   : Request a 3D WebGL Coordinate System
 
+- [`geom_area_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_area_webgl.md)
+  : WebGL Area Layer
+
 - [`geom_bar_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_bar_webgl.md)
   : WebGL Bar Layer
 
@@ -57,6 +60,9 @@
 
 - [`geom_rect_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_rect_webgl.md)
   : WebGL Rectangle Layer
+
+- [`geom_ribbon_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_ribbon_webgl.md)
+  : WebGL Ribbon Layer
 
 - [`geom_segment_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_segment_webgl.md)
   : WebGL Segment Layer
