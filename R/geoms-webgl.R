@@ -106,6 +106,12 @@ GeomCrossbarWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomCrossbar$optional_aes, "frame", "time"),
   extra_params = ggplot2::GeomCrossbar$extra_params
 )
+GeomBoxplotWebGL <- ggplot2::ggproto(
+  "GeomBoxplotWebGL",
+  ggplot2::GeomBoxplot,
+  optional_aes = c(ggplot2::GeomBoxplot$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomBoxplot$extra_params
+)
 GeomVectorWebGL <- ggplot2::ggproto(
   "GeomVectorWebGL",
   ggplot2::GeomSegment,
@@ -993,6 +999,116 @@ geom_crossbar_webgl <- function(mapping = NULL,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(
+      na.rm = na.rm,
+      orientation = orientation,
+      ...
+    )
+  )
+}
+
+#' WebGL Boxplot Layer
+#'
+#' Add a boxplot layer tagged for the `ggWebGL` renderer. Boxplot statistics are
+#' computed by `ggplot2`; the renderer serializes the built box body as
+#' rectangles, medians/whiskers as pure segments, and outliers as points.
+#'
+#' @inheritParams ggplot2::geom_boxplot
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' box_data <- data.frame(group = rep(c("a", "b"), each = 6), value = c(1:6, 2:7))
+#' ggplot2::ggplot(box_data, ggplot2::aes(group, value, fill = group)) +
+#'   geom_boxplot_webgl()
+#' @export
+geom_boxplot_webgl <- function(mapping = NULL,
+                               data = NULL,
+                               stat = "boxplot",
+                               position = "dodge2",
+                               ...,
+                               outliers = TRUE,
+                               outlier.colour = NULL,
+                               outlier.color = NULL,
+                               outlier.fill = NULL,
+                               outlier.shape = NULL,
+                               outlier.size = NULL,
+                               outlier.stroke = 0.5,
+                               outlier.alpha = NULL,
+                               whisker.colour = NULL,
+                               whisker.color = NULL,
+                               whisker.linetype = NULL,
+                               whisker.linewidth = NULL,
+                               staple.colour = NULL,
+                               staple.color = NULL,
+                               staple.linetype = NULL,
+                               staple.linewidth = NULL,
+                               median.colour = NULL,
+                               median.color = NULL,
+                               median.linetype = NULL,
+                               median.linewidth = NULL,
+                               box.colour = NULL,
+                               box.color = NULL,
+                               box.linetype = NULL,
+                               box.linewidth = NULL,
+                               notch = FALSE,
+                               notchwidth = 0.5,
+                               staplewidth = 0,
+                               varwidth = FALSE,
+                               na.rm = FALSE,
+                               orientation = NA,
+                               show.legend = NA,
+                               inherit.aes = TRUE) {
+  if (is.character(position) && isTRUE(varwidth)) {
+    position <- ggplot2::position_dodge2(preserve = "single")
+  }
+  outlier_gp <- list(
+    colour = outlier.color %||% outlier.colour,
+    fill = outlier.fill,
+    shape = outlier.shape,
+    size = outlier.size,
+    stroke = outlier.stroke,
+    alpha = outlier.alpha
+  )
+  whisker_gp <- list(
+    colour = whisker.color %||% whisker.colour,
+    linetype = whisker.linetype,
+    linewidth = whisker.linewidth
+  )
+  staple_gp <- list(
+    colour = staple.color %||% staple.colour,
+    linetype = staple.linetype,
+    linewidth = staple.linewidth
+  )
+  median_gp <- list(
+    colour = median.color %||% median.colour,
+    linetype = median.linetype,
+    linewidth = median.linewidth
+  )
+  box_gp <- list(
+    colour = box.color %||% box.colour,
+    linetype = box.linetype,
+    linewidth = box.linewidth
+  )
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomBoxplotWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      outliers = outliers,
+      outlier_gp = outlier_gp,
+      whisker_gp = whisker_gp,
+      staple_gp = staple_gp,
+      median_gp = median_gp,
+      box_gp = box_gp,
+      notch = notch,
+      notchwidth = notchwidth,
+      staplewidth = staplewidth,
+      varwidth = varwidth,
       na.rm = na.rm,
       orientation = orientation,
       ...

@@ -269,7 +269,8 @@ extract_vector_payloads <- function(layer, data) {
     "GeomLinerangeWebGL",
     "GeomErrorbarWebGL",
     "GeomPointrangeWebGL",
-    "GeomCrossbarWebGL"
+    "GeomCrossbarWebGL",
+    "GeomBoxplotWebGL"
   )
   default_head_size <- if (class(layer$geom)[1] %in% no_head_geoms) 0 else 9
   head_size <- layer$geom_params$head_size %||% rep(default_head_size, nrow(data))
@@ -401,6 +402,90 @@ extract_crossbar_payloads <- function(layer, data) {
     Filter(
       Negate(is.null),
       list(rect_payloads[[id]] %||% NULL, middle_payloads[[id]] %||% NULL)
+    )
+  })
+  names(payloads) <- panel_names
+  payloads
+}
+
+boxplot_body_data <- function(data) {
+  required <- c("xmin", "xmax", "lower", "upper")
+  if (!all(required %in% names(data))) {
+    return(data.frame())
+  }
+
+  out <- data
+  out$ymin <- data$lower
+  out$ymax <- data$upper
+  out
+}
+
+boxplot_segment_data <- function(data) {
+  required <- c("x", "xmin", "xmax", "ymin", "lower", "middle", "upper", "ymax")
+  if (!all(required %in% names(data))) {
+    return(data.frame())
+  }
+
+  lower_whisker <- data
+  lower_whisker$y <- data$ymin
+  lower_whisker$xend <- data$x
+  lower_whisker$yend <- data$lower
+
+  upper_whisker <- data
+  upper_whisker$y <- data$upper
+  upper_whisker$xend <- data$x
+  upper_whisker$yend <- data$ymax
+
+  median <- data
+  median$x <- data$xmin
+  median$y <- data$middle
+  median$xend <- data$xmax
+  median$yend <- data$middle
+
+  rbind(lower_whisker, upper_whisker, median)
+}
+
+boxplot_outlier_data <- function(data) {
+  if (!"outliers" %in% names(data) || !"x" %in% names(data)) {
+    return(data.frame())
+  }
+
+  rows <- lapply(seq_len(nrow(data)), function(i) {
+    values <- unlist(data$outliers[[i]], use.names = FALSE)
+    values <- as.numeric(values)
+    values <- values[is.finite(values)]
+    if (!length(values)) {
+      return(NULL)
+    }
+
+    out <- data[rep(i, length(values)), , drop = FALSE]
+    out$y <- values
+    out
+  })
+  rows <- Filter(Negate(is.null), rows)
+
+  if (!length(rows)) {
+    return(data.frame())
+  }
+
+  do.call(rbind, rows)
+}
+
+extract_boxplot_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+  rect_payloads <- extract_rect_payloads(layer, boxplot_body_data(data))
+  segment_payloads <- extract_vector_payloads(layer, boxplot_segment_data(data))
+  outlier_payloads <- extract_point_payloads(layer, boxplot_outlier_data(data))
+  panel_names <- Reduce(union, list(names(rect_payloads), names(segment_payloads), names(outlier_payloads)))
+
+  payloads <- lapply(panel_names, function(id) {
+    Filter(
+      Negate(is.null),
+      list(
+        rect_payloads[[id]] %||% NULL,
+        segment_payloads[[id]] %||% NULL,
+        outlier_payloads[[id]] %||% NULL
+      )
     )
   })
   names(payloads) <- panel_names

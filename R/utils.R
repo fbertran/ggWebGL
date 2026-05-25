@@ -947,6 +947,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_crossbar_payloads"
     ),
     list(
+      name = "boxplot",
+      primitive = "mixed",
+      classes = "GeomBoxplotWebGL",
+      inherits = character(),
+      extractor = "extract_boxplot_payloads"
+    ),
+    list(
       name = "rects",
       primitive = "rects",
       classes = "GeomRectWebGL",
