@@ -134,7 +134,7 @@ test_that("geom_vector_webgl keeps arrowhead behavior", {
 })
 
 test_that("vector renderer source honors zero-sized arrowheads for segments", {
-  js <- paste(readLines(testthat::test_path("..", "..", "inst", "htmlwidgets", "ggWebGL.js"), warn = FALSE), collapse = "\n")
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(js, "var hasHead = isFinite(rawHead) ? rawHead > 0 : true;", fixed = TRUE)
   expect_match(js, "if (hasHead) {", fixed = TRUE)

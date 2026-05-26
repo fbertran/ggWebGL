@@ -1,14 +1,5 @@
 shader_registry_path <- function(path) {
-  candidates <- c(
-    file.path(getwd(), path),
-    file.path(testthat::test_path(), "..", "..", path)
-  )
-  candidates <- normalizePath(candidates, winslash = "/", mustWork = FALSE)
-  found <- candidates[file.exists(candidates)]
-  if (!length(found)) {
-    skip(sprintf("%s is unavailable in this test context.", path))
-  }
-  found[[1L]]
+  ggwebgl_test_file_path(path)
 }
 
 shader_registry_text <- function(path) {

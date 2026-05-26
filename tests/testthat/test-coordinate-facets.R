@@ -146,7 +146,7 @@ test_that("free-scale facets remain an explicit metadata fallback", {
 })
 
 test_that("widget source prefers explicit panel viewports and keeps layer bounds as fallback", {
-  js <- paste(readLines(testthat::test_path("../../inst/htmlwidgets/ggWebGL.js"), warn = FALSE), collapse = "\n")
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(js, "viewport_explicit", fixed = TRUE)
   expect_match(js, "viewport_source", fixed = TRUE)

@@ -103,11 +103,10 @@ test_that("point LOD grid previews are deterministic and bounded", {
 })
 
 test_that("transport modules and progressive upload are wired in JavaScript", {
-  root <- normalizePath(file.path(testthat::test_path(), "..", ".."), winslash = "/", mustWork = FALSE)
-  yaml <- paste(readLines(file.path(root, "inst/htmlwidgets/ggWebGL.yaml"), warn = FALSE), collapse = "\n")
-  buffers <- paste(readLines(file.path(root, "inst/htmlwidgets/lib/buffers.js"), warn = FALSE), collapse = "\n")
-  lod <- paste(readLines(file.path(root, "inst/htmlwidgets/lib/lod.js"), warn = FALSE), collapse = "\n")
-  js <- paste(readLines(file.path(root, "inst/htmlwidgets/ggWebGL.js"), warn = FALSE), collapse = "\n")
+  yaml <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.yaml")
+  buffers <- ggwebgl_test_read_text("inst/htmlwidgets/lib/buffers.js")
+  lod <- ggwebgl_test_read_text("inst/htmlwidgets/lib/lod.js")
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(yaml, "lib/buffers.js", fixed = TRUE)
   expect_match(yaml, "lib/lod.js", fixed = TRUE)

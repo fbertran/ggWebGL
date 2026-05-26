@@ -81,8 +81,7 @@ test_that("surface shading modes serialize exactly and reject unknown values", {
 })
 
 test_that("widget source has a dedicated indexed surface draw path", {
-  js <- readLines(testthat::test_path("..", "..", "inst", "htmlwidgets", "ggWebGL.js"), warn = FALSE)
-  js <- paste(js, collapse = "\n")
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(js, "function drawSurfaceLayer", fixed = TRUE)
   expect_match(js, "function createSurfaceLayerGpuPayload", fixed = TRUE)

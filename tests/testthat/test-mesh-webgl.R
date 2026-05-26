@@ -1,14 +1,5 @@
 mesh_repo_text <- function(path) {
-  candidates <- c(
-    file.path(getwd(), path),
-    file.path(testthat::test_path(), "..", "..", path)
-  )
-  candidates <- normalizePath(candidates, winslash = "/", mustWork = FALSE)
-  found <- candidates[file.exists(candidates)]
-  if (!length(found)) {
-    skip(sprintf("%s is unavailable in this installed-package test context.", path))
-  }
-  paste(readLines(found[[1L]], warn = FALSE), collapse = "\n")
+  ggwebgl_test_read_text(path)
 }
 
 tetrahedron_mesh <- function() {

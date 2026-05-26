@@ -83,7 +83,9 @@ test_that("README support matrix tracks exported experimental APIs", {
 
 test_that("public documentation avoids private submission-specific wording", {
   files <- claim_gate_public_source_files()
-  expect_gt(length(files), 0L)
+  if (!length(files)) {
+    skip("Public source documentation is unavailable in this installed-package test context.")
+  }
   pattern <- paste(claim_gate_forbidden_terms(), collapse = "|")
 
   for (file in files) {

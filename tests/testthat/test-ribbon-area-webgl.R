@@ -126,7 +126,7 @@ test_that("ribbon and area layers split across fixed-scale facets", {
 })
 
 test_that("ribbon primitive has a dedicated JS normalization and draw path", {
-  js <- paste(readLines(test_path("../../inst/htmlwidgets/ggWebGL.js"), warn = FALSE), collapse = "\n")
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(js, "type === \"ribbons\"", fixed = TRUE)
   expect_match(js, "function flattenRibbonLayer", fixed = TRUE)

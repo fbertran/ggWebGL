@@ -102,10 +102,7 @@ test_that("internal rectangle specs aggregate panels and viewport bounds", {
 })
 
 test_that("widget source contains internal rectangle draw path", {
-  js <- paste(
-    readLines(testthat::test_path("..", "..", "inst", "htmlwidgets", "ggWebGL.js"), warn = FALSE),
-    collapse = "\n"
-  )
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
 
   expect_match(js, "function normalizeLayer", fixed = TRUE)
   expect_match(js, "type === \"rects\"", fixed = TRUE)
