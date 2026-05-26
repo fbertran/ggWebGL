@@ -38,6 +38,12 @@ single-panel compatibility fields under `render$layers`, `render$viewport`, and
 - `coordinate_system`: `"cartesian2d"` or `"cartesian3d"`.
 - `dimension`: compatibility field, `"2d"` or `"3d"`.
 - `grid`: panel grid with `rows` and `cols`.
+- `coord`: ggplot2 coordinate metadata such as cartesian, flipped cartesian,
+  clipping, and fixed-aspect metadata. This is renderer metadata, not a claim
+  that every ggplot2 coordinate system is implemented.
+- `scales`: facet scale metadata. Fixed-scale facets render through panel-local
+  layers; free-scale facets are retained as metadata unless explicitly
+  implemented and tested.
 - `panels`: ordered panel contracts.
 - aggregate counts: `point_count`, `line_vertex_count`, `path_count`,
   `raster_cell_count`, `vector_count`, `mesh_vertex_count`,
@@ -59,16 +65,19 @@ The compatibility rule is:
 
 Each `render$panels[[i]]` contains:
 
-- `panel_id`, `row`, `col`, and optional `label`.
+- `panel_id`, `row`, `col`, optional `label`, and ggplot2 `scale_x`/`scale_y`
+  ids.
 - `bounds`: normalized panel bounds inside the widget.
 - `viewport`: panel-local coordinate ranges.
+- `coord`: panel-local coordinate metadata, including optional fixed-aspect
+  values derived from ggplot2.
 - `primitives`: primitive kinds in the panel.
 - per-panel counts matching the aggregate fields.
 - ordered `layers`: renderer-ready primitive layers.
 
 Fixed-scale facets and multi-panel adapter specs use the same panel contract.
-Free-scale behavior is outside this schema freeze unless represented by explicit
-per-panel `viewport` ranges.
+Free-scale facets are retained as explicit metadata fallback unless panel-local
+scaling support is implemented and tested for the relevant primitive families.
 
 ## Primitive Layers
 

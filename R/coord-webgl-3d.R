@@ -3,7 +3,8 @@
 #' `coord_webgl_3d()` is a ggplot-addable helper that marks the WebGL payload as
 #' `cartesian3d` and installs a structured 3D view contract. It does not replace
 #' ggplot2's 2D coordinate system; the standard ggplot object remains valid, and
-#' the 3D interpretation is applied by [ggplot_webgl()].
+#' the 3D interpretation is applied by [ggplot_webgl()]. Panel ranges and
+#' fixed-scale facet metadata still come from ggplot2's built plot object.
 #'
 #' @param projection Projection mode, `"perspective"` or `"orthographic"`.
 #' @param camera 3D camera controller, `"orbit"` or `"trackball"`.

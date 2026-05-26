@@ -1435,12 +1435,17 @@ HTMLWidgets.widget({
         panel_id: source.panel_id !== undefined ? source.panel_id : (index + 1),
         row: Math.max(1, Number(source.row) || 1),
         col: Math.max(1, Number(source.col) || 1),
+        scale_x: Number(source.scale_x) || 1,
+        scale_y: Number(source.scale_y) || 1,
         label: source.label ? String(source.label) : null,
         bounds: source.bounds && typeof source.bounds === "object" ? source.bounds : null,
         viewport: {
           x: normaliseAxisRange(source.viewport && source.viewport.x, [0, 1]),
           y: normaliseAxisRange(source.viewport && source.viewport.y, [0, 1])
         },
+        viewport_explicit: !!(source.viewport && typeof source.viewport === "object"),
+        viewport_source: source.viewport_source ? String(source.viewport_source) : null,
+        coord: source.coord && typeof source.coord === "object" ? source.coord : null,
         primitives: layers.map(function(layerSpec) { return layerSpec.type; }).filter(function(value, idx, arr) {
           return arr.indexOf(value) === idx;
         }),
@@ -1473,12 +1478,17 @@ HTMLWidgets.widget({
         panel_id: render.panel !== undefined ? render.panel : 1,
         row: 1,
         col: 1,
+        scale_x: 1,
+        scale_y: 1,
         label: null,
         bounds: null,
         viewport: {
           x: normaliseAxisRange(render.viewport && render.viewport.x, [0, 1]),
           y: normaliseAxisRange(render.viewport && render.viewport.y, [0, 1])
         },
+        viewport_explicit: !!(render.viewport && typeof render.viewport === "object"),
+        viewport_source: render.viewport_source ? String(render.viewport_source) : null,
+        coord: render.coord && typeof render.coord === "object" ? render.coord : null,
         primitives: layers.map(function(layerSpec) { return layerSpec.type; }).filter(function(value, idx, arr) {
           return arr.indexOf(value) === idx;
         }),
@@ -1555,6 +1565,8 @@ HTMLWidgets.widget({
       return {
         mode: mode,
         grid: grid,
+        coord: source.coord && typeof source.coord === "object" ? source.coord : null,
+        scales: source.scales && typeof source.scales === "object" ? source.scales : null,
         panels: panels,
         primitives: primitives,
         point_count: pointCount,
@@ -2246,8 +2258,21 @@ HTMLWidgets.widget({
 	  if (state.baseDomains[id]) {
 		return cloneViewport(state.baseDomains[id]);
 	  }
-	  var bounds = supportedLayerBounds(panel);
 	  var viewport;
+
+	  var viewportSource = panel && panel.viewport_source ? String(panel.viewport_source) : "";
+	  var usePanelViewport = panel && panel.viewport && panel.viewport_explicit !== false &&
+		(panel.coord || viewportSource === "ggplot2" || viewportSource === "explicit");
+	  if (usePanelViewport) {
+		viewport = {
+		  x: normaliseAxisRange(panel.viewport.x, [0, 1]),
+		  y: normaliseAxisRange(panel.viewport.y, [0, 1])
+		};
+		state.baseDomains[id] = cloneViewport(viewport);
+		return cloneViewport(viewport);
+	  }
+
+	  var bounds = supportedLayerBounds(panel);
 	
 	  if (bounds) {
 		var xr = normaliseAxisRange(bounds.x, [0, 1]);

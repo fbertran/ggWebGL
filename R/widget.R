@@ -72,6 +72,73 @@ has_free_panel_scales <- function(layout) {
   length(unique(layout$SCALE_X %||% 1L)) > 1L || length(unique(layout$SCALE_Y %||% 1L)) > 1L
 }
 
+panel_scale_metadata <- function(layout) {
+  scale_x <- layout$SCALE_X %||% rep(1L, nrow(layout))
+  scale_y <- layout$SCALE_Y %||% rep(1L, nrow(layout))
+  free_x <- length(unique(scale_x)) > 1L
+  free_y <- length(unique(scale_y)) > 1L
+
+  list(
+    free_x = isTRUE(free_x),
+    free_y = isTRUE(free_y),
+    mode = if (isTRUE(free_x) || isTRUE(free_y)) "free" else "fixed"
+  )
+}
+
+extract_coord_contract <- function(built_plot) {
+  coord <- built_plot$layout$coord
+  classes <- class(coord)
+  flipped <- "CoordFlip" %in% classes
+  type <- if (isTRUE(flipped)) {
+    "cartesian_flip"
+  } else if ("CoordCartesian" %in% classes) {
+    "cartesian"
+  } else {
+    classes[[1L]] %||% "unknown"
+  }
+  clip <- coord$clip %||% "on"
+  ratio <- coord$ratio %||% NULL
+  ratio <- if (is.null(ratio)) NULL else suppressWarnings(as.numeric(ratio)[[1L]])
+
+  compact_list(list(
+    type = type,
+    classes = classes,
+    flipped = isTRUE(flipped),
+    clip = as.character(clip)[[1L]],
+    fixed = isTRUE(is.finite(ratio)),
+    ratio = if (isTRUE(is.finite(ratio))) ratio else NULL
+  ))
+}
+
+panel_aspect_metadata <- function(built_plot, panel_id) {
+  coord <- built_plot$layout$coord
+  if (is.null(coord$aspect) || !is.function(coord$aspect)) {
+    return(NULL)
+  }
+
+  aspect <- tryCatch(
+    coord$aspect(built_plot$layout$panel_params[[panel_id]]),
+    error = function(e) NULL
+  )
+  aspect <- suppressWarnings(as.numeric(aspect))
+  if (!length(aspect) || !is.finite(aspect[[1L]])) {
+    return(NULL)
+  }
+
+  aspect[[1L]]
+}
+
+panel_coord_metadata <- function(built_plot, panel_id, coord_contract) {
+  compact_list(list(
+    type = coord_contract$type,
+    flipped = isTRUE(coord_contract$flipped),
+    clip = coord_contract$clip,
+    fixed = isTRUE(coord_contract$fixed),
+    ratio = coord_contract$ratio,
+    aspect = panel_aspect_metadata(built_plot, panel_id)
+  ))
+}
+
 extract_panel_viewport <- function(built_plot, panel_id) {
   panel_params <- built_plot$layout$panel_params[[panel_id]]
 
@@ -84,20 +151,29 @@ extract_panel_viewport <- function(built_plot, panel_id) {
 extract_panel_contract <- function(built_plot) {
   layout <- panel_layout_dataframe(built_plot)
   grid <- panel_grid_dimensions(layout)
+  coord <- extract_coord_contract(built_plot)
+  scales <- panel_scale_metadata(layout)
 
   list(
     grid = grid,
+    coord = coord,
+    scales = scales,
     has_free_scales = has_free_panel_scales(layout),
     panels = lapply(seq_len(nrow(layout)), function(i) {
       layout_row <- layout[i, , drop = FALSE]
+      panel_id <- as.integer(layout_row$PANEL[[1]])
 
       compact_list(list(
-        panel_id = as.integer(layout_row$PANEL[[1]]),
+        panel_id = panel_id,
         row = as.integer(layout_row$ROW[[1]] %||% 1L),
         col = as.integer(layout_row$COL[[1]] %||% 1L),
+        scale_x = as.integer(layout_row$SCALE_X[[1]] %||% 1L),
+        scale_y = as.integer(layout_row$SCALE_Y[[1]] %||% 1L),
         label = panel_label_from_layout(layout_row),
         bounds = panel_bounds(layout_row$ROW[[1]] %||% 1L, layout_row$COL[[1]] %||% 1L, grid),
-        viewport = extract_panel_viewport(built_plot, as.integer(layout_row$PANEL[[1]]))
+        viewport = extract_panel_viewport(built_plot, panel_id),
+        viewport_source = "ggplot2",
+        coord = panel_coord_metadata(built_plot, panel_id, coord)
       ))
     })
   )
@@ -170,6 +246,138 @@ panel_contract_viewport <- function(panel_contract, panel_id) {
   }
 
   list(x = c(0, 1), y = c(0, 1))
+}
+
+swap_xy_pair <- function(x, x_name, y_name) {
+  if (!all(c(x_name, y_name) %in% names(x))) {
+    return(x)
+  }
+
+  old_x <- x[[x_name]]
+  x[[x_name]] <- x[[y_name]]
+  x[[y_name]] <- old_x
+  x
+}
+
+swap_rect_bounds <- function(x) {
+  if (!all(c("xmin", "xmax", "ymin", "ymax") %in% names(x))) {
+    return(x)
+  }
+
+  old_xmin <- x$xmin
+  old_xmax <- x$xmax
+  x$xmin <- x$ymin
+  x$xmax <- x$ymax
+  x$ymin <- old_xmin
+  x$ymax <- old_xmax
+  x
+}
+
+swap_bbox3d_xy <- function(x) {
+  if (is.null(x$bbox3d) || !is.list(x$bbox3d)) {
+    return(x)
+  }
+
+  bbox <- x$bbox3d
+  if (all(c("xmin", "xmax", "ymin", "ymax") %in% names(bbox))) {
+    old_xmin <- bbox$xmin
+    old_xmax <- bbox$xmax
+    bbox$xmin <- bbox$ymin
+    bbox$xmax <- bbox$ymax
+    bbox$ymin <- old_xmin
+    bbox$ymax <- old_xmax
+    x$bbox3d <- bbox
+  }
+  x
+}
+
+swap_positions_xy <- function(positions) {
+  values <- as.numeric(positions %||% numeric())
+  if (!length(values) || length(values) %% 3L != 0L) {
+    return(positions)
+  }
+
+  matrix_values <- matrix(values, ncol = 3L, byrow = TRUE)
+  old_x <- matrix_values[, 1L]
+  matrix_values[, 1L] <- matrix_values[, 2L]
+  matrix_values[, 2L] <- old_x
+  unname(as.numeric(t(matrix_values)))
+}
+
+transpose_raster_rgba <- function(rgba, width, height) {
+  rgba <- as.integer(round(as.numeric(rgba %||% integer())))
+  width <- as.integer(width)[[1L]]
+  height <- as.integer(height)[[1L]]
+  if (!is.finite(width) || !is.finite(height) || width <= 0L || height <= 0L ||
+      length(rgba) != width * height * 4L) {
+    return(rgba)
+  }
+
+  rgba_matrix <- matrix(rgba, ncol = 4L, byrow = TRUE)
+  old_index <- matrix(seq_len(width * height), nrow = height, ncol = width, byrow = TRUE)
+  unname(as.integer(t(rgba_matrix[as.vector(old_index), , drop = FALSE])))
+}
+
+coord_flip_payload <- function(payload) {
+  if (is.null(payload$type)) {
+    return(payload)
+  }
+
+  if (identical(payload$type, "points") || identical(payload$type, "text")) {
+    return(swap_xy_pair(payload, "x", "y"))
+  }
+
+  if (identical(payload$type, "lines")) {
+    payload$paths <- lapply(payload$paths %||% list(), swap_xy_pair, x_name = "x", y_name = "y")
+    return(payload)
+  }
+
+  if (identical(payload$type, "vectors")) {
+    payload <- swap_xy_pair(payload, "x", "y")
+    payload <- swap_xy_pair(payload, "xend", "yend")
+    return(payload)
+  }
+
+  if (identical(payload$type, "rects")) {
+    return(swap_rect_bounds(payload))
+  }
+
+  if (identical(payload$type, "raster")) {
+    old_width <- payload$width
+    old_height <- payload$height
+    payload$rgba <- transpose_raster_rgba(payload$rgba, old_width, old_height)
+    payload$width <- as.integer(old_height)
+    payload$height <- as.integer(old_width)
+    return(swap_rect_bounds(payload))
+  }
+
+  if (identical(payload$type, "mesh")) {
+    payload <- swap_xy_pair(payload, "x", "y")
+    payload <- swap_bbox3d_xy(payload)
+    return(payload)
+  }
+
+  if (identical(payload$type, "surface")) {
+    payload$positions <- swap_positions_xy(payload$positions)
+    payload <- swap_bbox3d_xy(payload)
+    return(payload)
+  }
+
+  payload
+}
+
+apply_coord_to_payloads <- function(payloads, panel_contract = NULL) {
+  coord <- panel_contract$coord %||% NULL
+  if (!isTRUE(coord$flipped)) {
+    return(payloads)
+  }
+
+  lapply(payloads, function(payload) {
+    if (is.null(payload$type) && is.list(payload)) {
+      return(lapply(payload, coord_flip_payload))
+    }
+    coord_flip_payload(payload)
+  })
 }
 
 extract_point_payloads <- function(layer, data) {
@@ -1284,6 +1492,7 @@ extract_supported_layer_source <- function(layer, data, index, panel_contract = 
     } else {
       extractor(layer, data)
     }
+    payloads <- apply_coord_to_payloads(payloads, panel_contract = panel_contract)
 
     return(compact_list(list(
       index = index,
@@ -1378,9 +1587,13 @@ build_panel_spec <- function(panel_contract, layer_sources) {
     panel_id = panel_contract$panel_id,
     row = panel_contract$row,
     col = panel_contract$col,
+    scale_x = panel_contract$scale_x,
+    scale_y = panel_contract$scale_y,
     label = panel_contract$label,
     bounds = panel_contract$bounds,
     viewport = panel_contract$viewport,
+    viewport_source = panel_contract$viewport_source,
+    coord = panel_contract$coord,
     primitives = unique(vapply(render_layers, `[[`, character(1), "type")),
     point_count = sum(vapply(point_layers, `[[`, integer(1), "rows")),
     line_vertex_count = sum(vapply(line_layers, `[[`, integer(1), "rows")),
@@ -1405,9 +1618,13 @@ empty_panel_render <- function(panel_contract) {
     panel_id = panel_contract$panel_id,
     row = panel_contract$row,
     col = panel_contract$col,
+    scale_x = panel_contract$scale_x,
+    scale_y = panel_contract$scale_y,
     label = panel_contract$label,
     bounds = panel_contract$bounds,
     viewport = panel_contract$viewport,
+    viewport_source = panel_contract$viewport_source,
+    coord = panel_contract$coord,
     primitives = character(),
     point_count = 0L,
     line_vertex_count = 0L,
@@ -1444,6 +1661,8 @@ build_render_plan <- function(scene_source) {
     return(add_single_panel_compatibility(compact_list(list(
       mode = "metadata",
       grid = panel_contract$grid,
+      coord = panel_contract$coord,
+      scales = panel_contract$scales,
       panels = lapply(panel_contract$panels, empty_panel_render),
       primitives = character(),
       point_count = 0L,
@@ -1496,6 +1715,8 @@ build_render_plan <- function(scene_source) {
   render <- compact_list(list(
     mode = if (has_renderable_content) "webgl" else "metadata",
     grid = panel_contract$grid,
+    coord = panel_contract$coord,
+    scales = panel_contract$scales,
     panels = panels,
     primitives = primitives,
     point_count = point_count,

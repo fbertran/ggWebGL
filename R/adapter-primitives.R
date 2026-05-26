@@ -716,6 +716,7 @@ ggwebgl_panel_meta <- function(panel_ids, panels = NULL, grid = NULL) {
       col = as.integer(panel$col %||% 1L),
       label = panel$label %||% NULL,
       viewport = panel$viewport %||% NULL,
+      viewport_source = if (is.null(panel$viewport)) NULL else "explicit",
       bounds = panel$bounds %||% NULL
     ))
   })
@@ -769,6 +770,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
     label = panel$label,
     bounds = panel$bounds,
     viewport = panel$viewport %||% ggwebgl_viewport_from_layers(layers),
+    viewport_source = panel$viewport_source %||% if (is.null(panel$viewport)) "layer_bounds" else "explicit",
     primitives = unique(vapply(layers, `[[`, character(1), "type")),
     point_count = sum(vapply(point_layers, `[[`, integer(1), "rows")),
     line_vertex_count = sum(vapply(line_layers, `[[`, integer(1), "rows")),

@@ -5,6 +5,8 @@ payload as `cartesian3d` and installs a structured 3D view contract. It
 does not replace ggplot2's 2D coordinate system; the standard ggplot
 object remains valid, and the 3D interpretation is applied by
 [`ggplot_webgl()`](https://fbertran.github.io/ggWebGL/reference/ggplot_webgl.md).
+Panel ranges and fixed-scale facet metadata still come from ggplot2's
+built plot object.
 
 ## Usage
 
