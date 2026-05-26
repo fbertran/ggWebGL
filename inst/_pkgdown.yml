@@ -37,6 +37,7 @@ articles:
     navbar: Articles
     contents:
       - getting-started
+      - ggplot-coverage
       - renderer-capabilities
       - temporal-trajectories
       - surface-mesh-showcase

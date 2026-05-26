@@ -14,5 +14,6 @@
 ^\.Rproj\.user$
 ^cran-comments\.md$
 ^vignettes/temporal-trajectories[.]R$
+^vignettes/ggplot-coverage[.]R$
 
 ^internal.*$

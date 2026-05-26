@@ -32,6 +32,7 @@ src/*.dll
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+vignettes/ggplot-coverage.R
 vignettes/temporal-trajectories.R
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
