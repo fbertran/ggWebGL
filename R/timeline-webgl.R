@@ -91,7 +91,9 @@ timeline_has_values <- function(timeline) {
 #' one canonical timeline contract while providing a concise name for animation
 #' examples and adapter code.
 #'
-#' @inheritParams ggwebgl_timeline
+#' @param ... Arguments passed to [ggwebgl_timeline()], such as `frames`,
+#'   `time`, `values`, `source`, `filter`, `autoplay`, `speed`, `loop`,
+#'   `controls`, and `fps`.
 #' @return A `ggwebgl_timeline` list.
 #'
 #' @examples

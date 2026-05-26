@@ -6,6 +6,11 @@
 \usage{
 animation_spec(...)
 }
+\arguments{
+\item{...}{Arguments passed to \code{\link[=ggwebgl_timeline]{ggwebgl_timeline()}}, such as \code{frames},
+\code{time}, \code{values}, \code{source}, \code{filter}, \code{autoplay}, \code{speed}, \code{loop},
+\code{controls}, and \code{fps}.}
+}
 \value{
 A \code{ggwebgl_timeline} list.
 }

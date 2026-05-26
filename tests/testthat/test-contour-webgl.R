@@ -16,6 +16,8 @@ contour_grid <- function(n = 7L) {
 }
 
 test_that("geom_density2d_webgl serializes stat_density_2d contours as paths", {
+  skip_if_not_installed("MASS")
+
   points <- expand.grid(
     x = seq(-1, 1, length.out = 8),
     y = seq(-1, 1, length.out = 8)

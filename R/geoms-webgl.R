@@ -366,6 +366,12 @@ geom_path3d_webgl <- function(mapping = NULL,
 #' coordinates.
 #'
 #' @inheritParams ggplot2::geom_freqpoly
+#' @param stat Statistical transformation to use. Defaults to `"bin"` so
+#'   `ggplot2` computes frequency polygon bins before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_bin()` parameters such as `bins`, `binwidth`,
+#'   `breaks`, `boundary`, `center`, `closed`, and `pad`, plus static
+#'   aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -403,6 +409,11 @@ geom_freqpoly_webgl <- function(mapping = NULL,
 #' layer.
 #'
 #' @inheritParams ggplot2::geom_density
+#' @param stat Statistical transformation to use. Defaults to `"density"` so
+#'   `ggplot2` computes density curves before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_density()` parameters such as `adjust`, `kernel`,
+#'   `n`, `trim`, `bounds`, and `bw`, plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -450,14 +461,23 @@ geom_density_webgl <- function(mapping = NULL,
 #' density contours are not rendered by this layer.
 #'
 #' @inheritParams ggplot2::geom_density2d
+#' @param stat Statistical transformation to use. Defaults to `"density_2d"`
+#'   so `ggplot2` computes two-dimensional density contours before WebGL
+#'   serialization. This `ggplot2` statistic uses `MASS`, which is listed in
+#'   `Suggests` and guarded in examples/tests.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_density_2d()` parameters such as `h`, `n`,
+#'   `bins`, `binwidth`, and `breaks`, plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
 #' @examples
 #' density_points <- expand.grid(x = seq(-1, 1, length.out = 6), y = seq(-1, 1, length.out = 6))
 #'
-#' ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
-#'   geom_density2d_webgl(bins = 3)
+#' if (requireNamespace("MASS", quietly = TRUE)) {
+#'   ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
+#'     geom_density2d_webgl(bins = 3)
+#' }
 #' @export
 geom_density2d_webgl <- function(mapping = NULL,
                                  data = NULL,
@@ -703,6 +723,11 @@ geom_tile_webgl <- function(mapping = NULL,
 #' boundaries are produced by `ggplot2` through the selected stat and position.
 #'
 #' @inheritParams ggplot2::geom_bar
+#' @param stat Statistical transformation to use. Defaults to `"count"` so
+#'   `ggplot2` computes bar heights before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_count()` parameters such as `width`, plus static
+#'   aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -747,6 +772,11 @@ geom_bar_webgl <- function(mapping = NULL,
 #' to `ggplot2::StatBin`; the WebGL layer consumes the built bar rectangles.
 #'
 #' @inheritParams ggplot2::geom_histogram
+#' @param stat Statistical transformation to use. Defaults to `"bin"` so
+#'   `ggplot2` computes histogram bins before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_bin()` parameters such as `breaks`, `boundary`,
+#'   `center`, `closed`, and `pad`, plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -796,6 +826,11 @@ geom_histogram_webgl <- function(mapping = NULL,
 #' boundaries and count/density metadata.
 #'
 #' @inheritParams ggplot2::geom_bin_2d
+#' @param stat Statistical transformation to use. Defaults to `"bin2d"` so
+#'   `ggplot2` computes two-dimensional bins before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_bin_2d()` parameters such as `bins`, `binwidth`,
+#'   `breaks`, and `drop`, plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -1139,6 +1174,11 @@ geom_rug_webgl <- function(mapping = NULL,
 #' exact stroke parity with `ggplot2::geom_violin()` are not implemented.
 #'
 #' @inheritParams ggplot2::geom_violin
+#' @param stat Statistical transformation to use. Defaults to `"ydensity"` so
+#'   `ggplot2` computes violin density and scaling before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_ydensity()` parameters such as `bw`, `adjust`,
+#'   `kernel`, `n`, and quantile-related arguments, plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'
@@ -1402,6 +1442,11 @@ geom_crossbar_webgl <- function(mapping = NULL,
 #' rectangles, medians/whiskers as pure segments, and outliers as points.
 #'
 #' @inheritParams ggplot2::geom_boxplot
+#' @param stat Statistical transformation to use. Defaults to `"boxplot"` so
+#'   `ggplot2` computes boxplot summary statistics before WebGL serialization.
+#' @param ... Additional arguments forwarded through `ggplot2::layer()`,
+#'   including `ggplot2::stat_boxplot()` parameters such as `coef` and `width`,
+#'   plus static aesthetics.
 #'
 #' @return A `Layer` ready for `ggplot2`.
 #'

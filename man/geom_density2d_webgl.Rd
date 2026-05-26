@@ -40,6 +40,11 @@ the plot data. The return value must be a \code{data.frame}, and
 will be used as the layer data. A \code{function} can be created
 from a \code{formula} (e.g. \code{~ head(.x, 10)}).}
 
+\item{stat}{Statistical transformation to use. Defaults to \code{"density_2d"}
+so \code{ggplot2} computes two-dimensional density contours before WebGL
+serialization. This \code{ggplot2} statistic uses \code{MASS}, which is listed in
+\code{Suggests} and guarded in examples/tests.}
+
 \item{position}{A position adjustment to use on the data for this layer. This
 can be used in various ways, including to prevent overplotting and
 improving the display. The \code{position} argument accepts the following:
@@ -53,22 +58,9 @@ to use \code{position_jitter()}, give the position as \code{"jitter"}.
 \link[ggplot2:layer_positions]{layer position} documentation.
 }}
 
-\item{...}{
-  Arguments passed on to \code{\link[ggplot2:geom_contour]{geom_contour}}
-  \describe{
-    \item{\code{binwidth}}{The width of the contour bins. Overridden by \code{bins}.}
-    \item{\code{bins}}{Number of contour bins. Overridden by \code{breaks}.}
-    \item{\code{breaks}}{One of:
-\itemize{
-\item Numeric vector to set the contour breaks
-\item A function that takes the range of the data and binwidth as input
-and returns breaks as output. A function can be created from a formula
-(e.g. ~ fullseq(.x, .y)).
-}
-
-Overrides \code{binwidth} and \code{bins}. By default, this is a vector of length
-ten with \code{\link[=pretty]{pretty()}} breaks.}
-  }}
+\item{...}{Additional arguments forwarded through \code{ggplot2::layer()},
+including \code{ggplot2::stat_density_2d()} parameters such as \code{h}, \code{n},
+\code{bins}, \code{binwidth}, and \code{breaks}, plus static aesthetics.}
 
 \item{contour_var}{Character string identifying the variable to contour
 by. Can be one of \code{"density"}, \code{"ndensity"}, or \code{"count"}. See the section
@@ -108,6 +100,8 @@ density contours are not rendered by this layer.
 \examples{
 density_points <- expand.grid(x = seq(-1, 1, length.out = 6), y = seq(-1, 1, length.out = 6))
 
-ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
-  geom_density2d_webgl(bins = 3)
+if (requireNamespace("MASS", quietly = TRUE)) {
+  ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
+    geom_density2d_webgl(bins = 3)
+}
 }
