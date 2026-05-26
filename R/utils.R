@@ -912,6 +912,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_vector_payloads"
     ),
     list(
+      name = "rug",
+      primitive = "vectors",
+      classes = "GeomRugWebGL",
+      inherits = character(),
+      extractor = "extract_rug_payloads"
+    ),
+    list(
       name = "segments",
       primitive = "vectors",
       classes = "GeomSegmentWebGL",
@@ -1001,6 +1008,20 @@ ggwebgl_geom_registry <- function() {
       classes = "GeomPolygonWebGL",
       inherits = character(),
       extractor = "extract_polygon_payloads"
+    ),
+    list(
+      name = "text",
+      primitive = "text",
+      classes = "GeomTextWebGL",
+      inherits = character(),
+      extractor = "extract_text_payloads"
+    ),
+    list(
+      name = "label",
+      primitive = "text",
+      classes = "GeomLabelWebGL",
+      inherits = character(),
+      extractor = "extract_text_payloads"
     ),
     list(
       name = "violin",

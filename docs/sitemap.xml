@@ -30,6 +30,7 @@
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_errorbar_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_freqpoly_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_histogram_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_label_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_linerange_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_mesh_webgl.html</loc></url>
@@ -41,8 +42,10 @@
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_raster_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_rect_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_ribbon_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_rug_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_segment_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/reference/geom_text_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_tile_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/reference/geom_violin_webgl.html</loc></url>

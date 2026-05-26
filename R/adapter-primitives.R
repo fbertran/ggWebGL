@@ -666,8 +666,8 @@ ggwebgl_scalar_number <- function(value, name) {
 
 ggwebgl_validate_layer <- function(layer) {
   if (!is.list(layer) || is.null(layer$type) ||
-      !layer$type %in% c("points", "lines", "raster", "vectors", "rects", "ribbons", "mesh", "surface")) {
-    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, rects, ribbons, mesh, or surface layer.")
+      !layer$type %in% c("points", "lines", "raster", "vectors", "rects", "ribbons", "text", "mesh", "surface")) {
+    rlang::abort("Each layer must be a renderer-ready points, lines, raster, vectors, rects, ribbons, text, mesh, or surface layer.")
   }
 
   layer
@@ -758,6 +758,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), layers)
   rect_layers <- Filter(function(x) identical(x$type, "rects"), layers)
   ribbon_layers <- Filter(function(x) identical(x$type, "ribbons"), layers)
+  text_layers <- Filter(function(x) identical(x$type, "text"), layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), layers)
 
@@ -778,6 +779,7 @@ ggwebgl_panel_from_layers <- function(panel, layers) {
     ribbon_count = sum(vapply(ribbon_layers, `[[`, integer(1), "strip_count")),
     ribbon_vertex_count = sum(vapply(ribbon_layers, `[[`, integer(1), "rows")),
     ribbon_triangle_count = sum(vapply(ribbon_layers, `[[`, integer(1), "triangle_count")),
+    text_count = sum(vapply(text_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -821,6 +823,8 @@ ggwebgl_viewport_from_layers <- function(layers) {
       for (strip in layer$strips %||% list()) {
         extend(c(strip$x, strip$x), c(strip$ymin, strip$ymax))
       }
+    } else if (identical(layer$type, "text")) {
+      extend(layer$x, layer$y)
     } else if (identical(layer$type, "mesh")) {
       extend(layer$x, layer$y)
     } else if (identical(layer$type, "surface")) {
@@ -848,6 +852,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
   ribbon_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_count"))
   ribbon_vertex_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_vertex_count"))
   ribbon_triangle_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_triangle_count"))
+  text_count <- sum(vapply(panels, `[[`, integer(1), "text_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -873,6 +878,7 @@ ggwebgl_build_render <- function(panels, messages = character()) {
     ribbon_count = ribbon_count,
     ribbon_vertex_count = ribbon_vertex_count,
     ribbon_triangle_count = ribbon_triangle_count,
+    text_count = text_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,

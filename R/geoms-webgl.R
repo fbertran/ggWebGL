@@ -92,6 +92,22 @@ GeomPolygonWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPolygon$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomPolygon$extra_params, "rule", "lineend", "linejoin", "linemitre")
 )
+GeomTextWebGL <- ggplot2::ggproto(
+  "GeomTextWebGL",
+  ggplot2::GeomText,
+  optional_aes = c(ggplot2::GeomText$optional_aes, "frame", "time")
+)
+GeomLabelWebGL <- ggplot2::ggproto(
+  "GeomLabelWebGL",
+  ggplot2::GeomLabel,
+  optional_aes = c(ggplot2::GeomLabel$optional_aes, "frame", "time")
+)
+GeomRugWebGL <- ggplot2::ggproto(
+  "GeomRugWebGL",
+  ggplot2::GeomRug,
+  optional_aes = c(ggplot2::GeomRug$optional_aes, "frame", "time"),
+  extra_params = c(ggplot2::GeomRug$extra_params, "sides", "outside", "length", "lineend")
+)
 GeomViolinWebGL <- ggplot2::ggproto(
   "GeomViolinWebGL",
   ggplot2::GeomViolin,
@@ -966,6 +982,149 @@ geom_polygon_webgl <- function(mapping = NULL,
       lineend = lineend,
       linejoin = linejoin,
       linemitre = linemitre,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Text Overlay Layer
+#'
+#' Add static text labels tagged for the `ggWebGL` renderer. Text is serialized
+#' as overlay metadata; it is not drawn as WebGL glyphs.
+#'
+#' @inheritParams ggplot2::geom_text
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' labels <- data.frame(x = c(1, 2), y = c(2, 1), label = c("left", "right"))
+#' ggplot2::ggplot(labels, ggplot2::aes(x, y, label = label)) +
+#'   geom_point_webgl() +
+#'   geom_text_webgl(vjust = -0.6)
+#' @export
+geom_text_webgl <- function(mapping = NULL,
+                            data = NULL,
+                            stat = "identity",
+                            position = "nudge",
+                            ...,
+                            parse = FALSE,
+                            check_overlap = FALSE,
+                            size.unit = "mm",
+                            na.rm = FALSE,
+                            show.legend = NA,
+                            inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomTextWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      parse = parse,
+      check_overlap = check_overlap,
+      size.unit = size.unit,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Label Overlay Layer
+#'
+#' Add label annotations tagged for the `ggWebGL` renderer. Labels are serialized
+#' as text overlay metadata with background-box styling metadata; they are not
+#' drawn as WebGL glyphs.
+#'
+#' @inheritParams ggplot2::geom_label
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' labels <- data.frame(x = c(1, 2), y = c(2, 1), label = c("A", "B"))
+#' ggplot2::ggplot(labels, ggplot2::aes(x, y, label = label)) +
+#'   geom_point_webgl() +
+#'   geom_label_webgl(fill = "#f8fafc", alpha = 0.9)
+#' @export
+geom_label_webgl <- function(mapping = NULL,
+                             data = NULL,
+                             stat = "identity",
+                             position = "nudge",
+                             ...,
+                             parse = FALSE,
+                             label.padding = grid::unit(0.25, "lines"),
+                             label.r = grid::unit(0.15, "lines"),
+                             border.colour = NULL,
+                             border.color = NULL,
+                             text.colour = NULL,
+                             text.color = NULL,
+                             size.unit = "mm",
+                             na.rm = FALSE,
+                             show.legend = NA,
+                             inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomLabelWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      parse = parse,
+      label.padding = label.padding,
+      label.r = label.r,
+      border.colour = border.color %||% border.colour,
+      text.colour = text.color %||% text.colour,
+      size.unit = size.unit,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Rug Layer
+#'
+#' Add rug marks tagged for the `ggWebGL` renderer. Rug marks are serialized as
+#' pure segment primitives with arrowheads disabled.
+#'
+#' @inheritParams ggplot2::geom_rug
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' rug_data <- data.frame(x = c(1, 2, 3), y = c(2, 1, 3))
+#' ggplot2::ggplot(rug_data, ggplot2::aes(x, y)) +
+#'   geom_point_webgl() +
+#'   geom_rug_webgl(sides = "bl")
+#' @export
+geom_rug_webgl <- function(mapping = NULL,
+                           data = NULL,
+                           stat = "identity",
+                           position = "identity",
+                           ...,
+                           lineend = "butt",
+                           sides = "bl",
+                           outside = FALSE,
+                           length = grid::unit(0.03, "npc"),
+                           na.rm = FALSE,
+                           show.legend = NA,
+                           inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomRugWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      lineend = lineend,
+      sides = sides,
+      outside = outside,
+      length = length,
       na.rm = na.rm,
       ...
     )

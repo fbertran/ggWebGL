@@ -145,6 +145,33 @@ point_selection_ids <- function(data) {
   ids
 }
 
+text_justification <- function(value, default = 0.5) {
+  if (is.null(value)) {
+    return(default)
+  }
+
+  value <- as.character(value)
+  out <- suppressWarnings(as.numeric(value))
+  out[is.na(out) & value %in% c("left", "bottom")] <- 0
+  out[is.na(out) & value %in% c("middle", "center", "centre")] <- 0.5
+  out[is.na(out) & value %in% c("right", "top")] <- 1
+  out[is.na(out)] <- default
+  out
+}
+
+panel_contract_viewport <- function(panel_contract, panel_id) {
+  panels <- panel_contract$panels %||% list()
+  id <- as.character(panel_id)
+
+  for (panel in panels) {
+    if (identical(as.character(panel$panel_id), id)) {
+      return(panel$viewport %||% list(x = c(0, 1), y = c(0, 1)))
+    }
+  }
+
+  list(x = c(0, 1), y = c(0, 1))
+}
+
 extract_point_payloads <- function(layer, data) {
   data <- as.data.frame(data)
 
@@ -313,6 +340,200 @@ extract_vector_payloads <- function(layer, data) {
   })
   names(payloads) <- names(split_index)
   payloads
+}
+
+extract_text_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data) || !"label" %in% names(data)) {
+    return(empty_payload_map())
+  }
+
+  finite <- is.finite(as.numeric(data$x)) & is.finite(as.numeric(data$y))
+  data <- data[finite, , drop = FALSE]
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  colour <- data$colour %||% data$color %||% rep("#2C3E50", nrow(data))
+  rgba <- colour_to_rgba(colour, data$alpha %||% NULL)
+  size <- as.numeric(data$size %||% rep(3.88, nrow(data)))
+  size[!is.finite(size) | size <= 0] <- 3.88
+  size <- mm_to_pixels(size)
+  angle <- as.numeric(data$angle %||% rep(0, nrow(data)))
+  angle[!is.finite(angle)] <- 0
+  hjust <- text_justification(data$hjust %||% rep(0.5, nrow(data)), default = 0.5)
+  vjust <- text_justification(data$vjust %||% rep(0.5, nrow(data)), default = 0.5)
+  frame <- if ("frame" %in% names(data)) as.integer(data$frame) else NULL
+  time <- if ("time" %in% names(data)) as.numeric(data$time) else NULL
+  family <- as.character(data$family %||% rep("", nrow(data)))
+  fontface <- as.character(data$fontface %||% rep("", nrow(data)))
+  lineheight <- as.numeric(data$lineheight %||% rep(1.2, nrow(data)))
+  lineheight[!is.finite(lineheight) | lineheight <= 0] <- 1.2
+  label_box <- identical(class(layer$geom)[1], "GeomLabelWebGL")
+  fill <- data$fill %||% rep(NA_character_, nrow(data))
+  fill_rgba <- if (label_box) colour_to_rgba(fill, data$alpha %||% NULL) else NULL
+  linewidth <- data$linewidth %||% data$size %||% rep(0, nrow(data))
+  linewidth <- mm_to_pixels(linewidth)
+  linewidth[!is.finite(linewidth) | linewidth < 0] <- 0
+
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    idx <- split_index[[id]]
+
+    compact_list(list(
+      panel_id = as.integer(id),
+      type = "text",
+      geom = class(layer$geom)[1],
+      rows = length(idx),
+      overlay = TRUE,
+      x = unname(as.numeric(data$x[idx])),
+      y = unname(as.numeric(data$y[idx])),
+      label = unname(as.character(data$label[idx])),
+      size = unname(as.numeric(size[idx])),
+      angle = unname(as.numeric(angle[idx])),
+      hjust = unname(as.numeric(hjust[idx])),
+      vjust = unname(as.numeric(vjust[idx])),
+      family = unname(family[idx]),
+      fontface = unname(fontface[idx]),
+      lineheight = unname(as.numeric(lineheight[idx])),
+      frame = if (length(frame)) unname(frame[idx]) else NULL,
+      time = if (length(time)) unname(time[idx]) else NULL,
+      rgba = unname(as.numeric(t(rgba[idx, , drop = FALSE]))),
+      label_box = if (label_box) compact_list(list(
+        fill_rgba = unname(as.numeric(t(fill_rgba[idx, , drop = FALSE]))),
+        linewidth = unname(as.numeric(linewidth[idx])),
+        metadata_only = TRUE
+      )) else NULL
+    ))
+  })
+  names(payloads) <- names(split_index)
+  payloads
+}
+
+rug_length_fraction <- function(length) {
+  value <- suppressWarnings(as.numeric(length)[[1L]])
+  if (!is.finite(value) || value < 0) {
+    return(0.03)
+  }
+  value
+}
+
+rug_panel_segments <- function(layer, panel_data, panel_id, panel_contract) {
+  viewport <- panel_contract_viewport(panel_contract, panel_id)
+  x_range <- normalise_range(viewport$x %||% c(0, 1))
+  y_range <- normalise_range(viewport$y %||% c(0, 1))
+  dx <- diff(x_range) * rug_length_fraction(layer$geom_params$length %||% 0.03)
+  dy <- diff(y_range) * rug_length_fraction(layer$geom_params$length %||% 0.03)
+  sides <- unique(strsplit(as.character(layer$geom_params$sides %||% "bl")[[1L]], "")[[1L]])
+  sides <- intersect(sides, c("b", "l", "t", "r"))
+  if (!length(sides)) {
+    return(NULL)
+  }
+
+  outside <- isTRUE(layer$geom_params$outside %||% FALSE)
+  colour <- coalesce_colour(panel_data)
+  alpha <- panel_data$alpha %||% rep(1, nrow(panel_data))
+  width <- panel_data$linewidth %||% panel_data$size %||% rep(0.5, nrow(panel_data))
+  width <- mm_to_pixels(width)
+  width[!is.finite(width) | width <= 0] <- 1
+  frame <- if ("frame" %in% names(panel_data)) panel_data$frame else NULL
+  time <- if ("time" %in% names(panel_data)) panel_data$time else NULL
+  segments <- list()
+
+  add_side <- function(side) {
+    if (side %in% c("b", "t")) {
+      ok <- is.finite(as.numeric(panel_data$x))
+      if (!any(ok)) {
+        return()
+      }
+      y0 <- if (identical(side, "b")) y_range[[1L]] else y_range[[2L]]
+      direction <- if (identical(side, "b")) 1 else -1
+      if (outside) {
+        direction <- -direction
+      }
+      segments[[length(segments) + 1L]] <<- data.frame(
+        x = as.numeric(panel_data$x[ok]),
+        y = rep(y0, sum(ok)),
+        xend = as.numeric(panel_data$x[ok]),
+        yend = rep(y0 + direction * dy, sum(ok)),
+        colour = colour[ok],
+        alpha = alpha[ok],
+        width = width[ok],
+        frame = if (length(frame)) frame[ok] else NA,
+        time = if (length(time)) time[ok] else NA,
+        stringsAsFactors = FALSE
+      )
+    } else {
+      ok <- is.finite(as.numeric(panel_data$y))
+      if (!any(ok)) {
+        return()
+      }
+      x0 <- if (identical(side, "l")) x_range[[1L]] else x_range[[2L]]
+      direction <- if (identical(side, "l")) 1 else -1
+      if (outside) {
+        direction <- -direction
+      }
+      segments[[length(segments) + 1L]] <<- data.frame(
+        x = rep(x0, sum(ok)),
+        y = as.numeric(panel_data$y[ok]),
+        xend = rep(x0 + direction * dx, sum(ok)),
+        yend = as.numeric(panel_data$y[ok]),
+        colour = colour[ok],
+        alpha = alpha[ok],
+        width = width[ok],
+        frame = if (length(frame)) frame[ok] else NA,
+        time = if (length(time)) time[ok] else NA,
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+
+  invisible(lapply(sides, add_side))
+  if (!length(segments)) {
+    return(NULL)
+  }
+
+  segments <- do.call(rbind, segments)
+  if (!length(frame)) {
+    segments$frame <- NULL
+  }
+  if (!length(time)) {
+    segments$time <- NULL
+  }
+
+  ggwebgl_layer_vectors(
+    segments,
+    x = "x",
+    y = "y",
+    xend = "xend",
+    yend = "yend",
+    colour = "colour",
+    alpha = "alpha",
+    width = "width",
+    head_size = 0,
+    frame = if ("frame" %in% names(segments)) "frame" else NULL,
+    time = if ("time" %in% names(segments)) "time" else NULL,
+    panel_id = as.integer(panel_id),
+    geom = class(layer$geom)[1]
+  )
+}
+
+extract_rug_payloads <- function(layer, data, panel_contract = NULL) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    rug_panel_segments(layer, data[split_index[[id]], , drop = FALSE], panel_id = as.integer(id), panel_contract = panel_contract)
+  })
+  names(payloads) <- names(split_index)
+  Filter(Negate(is.null), payloads)
 }
 
 range_segment_data <- function(data) {
@@ -1053,18 +1274,23 @@ extract_surface_payloads <- function(layer, data) {
   Filter(Negate(is.null), payloads)
 }
 
-extract_supported_layer_source <- function(layer, data, index) {
+extract_supported_layer_source <- function(layer, data, index, panel_contract = NULL) {
   registry_entry <- ggwebgl_geom_registry_match(layer)
 
   if (!is.null(registry_entry)) {
     extractor <- get(registry_entry$extractor, mode = "function", inherits = TRUE)
+    payloads <- if ("panel_contract" %in% names(formals(extractor))) {
+      extractor(layer, data, panel_contract = panel_contract)
+    } else {
+      extractor(layer, data)
+    }
 
     return(compact_list(list(
       index = index,
       type = registry_entry$primitive,
       geom = class(layer$geom)[1],
       subtype = registry_entry$subtype %||% NULL,
-      payloads = extractor(layer, data)
+      payloads = payloads
     )))
   }
 
@@ -1083,6 +1309,7 @@ extract_unsupported_layer_metadata <- function(layer, data, index) {
 extract_ggplot_scene_source <- function(plot) {
   built_plot <- ggplot2::ggplot_build(plot)
   layer_metadata <- build_layer_metadata(plot, built_plot$data)
+  panel_contract <- extract_panel_contract(built_plot)
   layer_sources <- list()
   unsupported_layers <- list()
 
@@ -1091,7 +1318,12 @@ extract_ggplot_scene_source <- function(plot) {
     data <- built_plot$data[[i]]
 
     if (is_supported_geom(layer)) {
-      layer_sources[[length(layer_sources) + 1L]] <- extract_supported_layer_source(layer, data, i)
+      layer_sources[[length(layer_sources) + 1L]] <- extract_supported_layer_source(
+        layer,
+        data,
+        i,
+        panel_contract = panel_contract
+      )
     } else {
       unsupported_layers[[length(unsupported_layers) + 1L]] <- extract_unsupported_layer_metadata(layer, data, i)
     }
@@ -1107,7 +1339,7 @@ extract_ggplot_scene_source <- function(plot) {
     webgl = ggwebgl_scene_webgl_options(plot$ggwebgl),
     layer_count = length(plot$layers),
     layer_metadata = layer_metadata,
-    panel_contract = extract_panel_contract(built_plot),
+    panel_contract = panel_contract,
     layer_sources = layer_sources,
     unsupported_layers = unsupported_layers
   ))
@@ -1138,6 +1370,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
   vector_layers <- Filter(function(x) identical(x$type, "vectors"), render_layers)
   rect_layers <- Filter(function(x) identical(x$type, "rects"), render_layers)
   ribbon_layers <- Filter(function(x) identical(x$type, "ribbons"), render_layers)
+  text_layers <- Filter(function(x) identical(x$type, "text"), render_layers)
   mesh_layers <- Filter(function(x) identical(x$type, "mesh"), render_layers)
   surface_layers <- Filter(function(x) identical(x$type, "surface"), render_layers)
 
@@ -1158,6 +1391,7 @@ build_panel_spec <- function(panel_contract, layer_sources) {
     ribbon_count = sum(vapply(ribbon_layers, `[[`, integer(1), "strip_count")),
     ribbon_vertex_count = sum(vapply(ribbon_layers, `[[`, integer(1), "rows")),
     ribbon_triangle_count = sum(vapply(ribbon_layers, `[[`, integer(1), "triangle_count")),
+    text_count = sum(vapply(text_layers, `[[`, integer(1), "rows")),
     mesh_vertex_count = sum(vapply(mesh_layers, `[[`, integer(1), "vertex_count")),
     mesh_triangle_count = sum(vapply(mesh_layers, `[[`, integer(1), "triangle_count")),
     surface_vertex_count = sum(vapply(surface_layers, `[[`, integer(1), "vertex_count")),
@@ -1184,6 +1418,7 @@ empty_panel_render <- function(panel_contract) {
     ribbon_count = 0L,
     ribbon_vertex_count = 0L,
     ribbon_triangle_count = 0L,
+    text_count = 0L,
     mesh_vertex_count = 0L,
     mesh_triangle_count = 0L,
     surface_vertex_count = 0L,
@@ -1220,6 +1455,7 @@ build_render_plan <- function(scene_source) {
       ribbon_count = 0L,
       ribbon_vertex_count = 0L,
       ribbon_triangle_count = 0L,
+      text_count = 0L,
       mesh_vertex_count = 0L,
       mesh_triangle_count = 0L,
       surface_vertex_count = 0L,
@@ -1242,6 +1478,7 @@ build_render_plan <- function(scene_source) {
   ribbon_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_count"))
   ribbon_vertex_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_vertex_count"))
   ribbon_triangle_count <- sum(vapply(panels, `[[`, integer(1), "ribbon_triangle_count"))
+  text_count <- sum(vapply(panels, `[[`, integer(1), "text_count"))
   mesh_vertex_count <- sum(vapply(panels, `[[`, integer(1), "mesh_vertex_count"))
   mesh_triangle_count <- sum(vapply(panels, `[[`, integer(1), "mesh_triangle_count"))
   surface_vertex_count <- sum(vapply(panels, `[[`, integer(1), "surface_vertex_count"))
@@ -1252,7 +1489,7 @@ build_render_plan <- function(scene_source) {
   if (!has_renderable_content) {
     messages <- c(
       messages,
-      "No supported point, line, raster, vector, rectangle, ribbon, mesh, or surface layers are currently available for the WebGL renderer."
+      "No supported point, line, raster, vector, rectangle, ribbon, text, mesh, or surface layers are currently available for the WebGL renderer."
     )
   }
 
@@ -1270,6 +1507,7 @@ build_render_plan <- function(scene_source) {
     ribbon_count = ribbon_count,
     ribbon_vertex_count = ribbon_vertex_count,
     ribbon_triangle_count = ribbon_triangle_count,
+    text_count = text_count,
     mesh_vertex_count = mesh_vertex_count,
     mesh_triangle_count = mesh_triangle_count,
     surface_vertex_count = surface_vertex_count,

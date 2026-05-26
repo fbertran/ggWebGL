@@ -11,14 +11,14 @@ test_that("internal geom registry declares current primitive extractors", {
   expect_equal(
     names,
     c(
-      "vectors", "segments", "linerange", "errorbar", "pointrange", "crossbar", "boxplot", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "polygon", "violin", "mesh", "surface",
+      "vectors", "rug", "segments", "linerange", "errorbar", "pointrange", "crossbar", "boxplot", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "polygon", "text", "label", "violin", "mesh", "surface",
       "path3d", "path", "freqpoly", "density", "density2d", "contour", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
-      "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "mesh", "mesh", "surface",
+      "vectors", "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "text", "text", "mesh", "mesh", "surface",
       "lines", "lines", "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
@@ -26,6 +26,7 @@ test_that("internal geom registry declares current primitive extractors", {
     extractors,
     c(
       "extract_vector_payloads",
+      "extract_rug_payloads",
       "extract_vector_payloads",
       "extract_linerange_payloads",
       "extract_errorbar_payloads",
@@ -39,6 +40,8 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_ribbon_payloads",
       "extract_ribbon_payloads",
       "extract_polygon_payloads",
+      "extract_text_payloads",
+      "extract_text_payloads",
       "extract_violin_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
@@ -83,6 +86,13 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
       ggplot2::aes(x, y, xend = xend, yend = yend)
     ) +
       geom_vector_webgl()
+  )
+  rug <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = c(0, 1), y = c(1, 2)),
+      ggplot2::aes(x, y)
+    ) +
+      geom_rug_webgl(sides = "b")
   )
   segment <- registry_layer_type(
     ggplot2::ggplot(
@@ -195,6 +205,13 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_violin_webgl()
   )
+  text <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(x = 1, y = 2, label = "note"),
+      ggplot2::aes(x, y, label = label)
+    ) +
+      geom_text_webgl()
+  )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(
@@ -224,6 +241,9 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(path3d$paths[[1L]]$subtype, "path3d")
   expect_equal(raster$type, "raster")
   expect_equal(vector$type, "vectors")
+  expect_equal(rug$type, "vectors")
+  expect_equal(rug$geom, "GeomRugWebGL")
+  expect_equal(rug$head_size, rep(0, rug$rows))
   expect_equal(segment$type, "vectors")
   expect_equal(segment$geom, "GeomSegmentWebGL")
   expect_equal(segment$head_size, 0)
@@ -255,6 +275,8 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(freqpoly$geom, "GeomFreqpolyWebGL")
   expect_equal(density$type, "lines")
   expect_equal(density$geom, "GeomDensityWebGL")
+  expect_equal(text$type, "text")
+  expect_equal(text$geom, "GeomTextWebGL")
   expect_equal(violin$type, "mesh")
   expect_equal(violin$geom, "GeomViolinWebGL")
   expect_equal(mesh$type, "mesh")

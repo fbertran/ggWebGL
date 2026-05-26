@@ -55,6 +55,9 @@
 - [`geom_histogram_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_histogram_webgl.md)
   : WebGL Histogram Layer
 
+- [`geom_label_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_label_webgl.md)
+  : WebGL Label Overlay Layer
+
 - [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
   : WebGL Line Layer
 
@@ -88,11 +91,17 @@
 - [`geom_ribbon_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_ribbon_webgl.md)
   : WebGL Ribbon Layer
 
+- [`geom_rug_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_rug_webgl.md)
+  : WebGL Rug Layer
+
 - [`geom_segment_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_segment_webgl.md)
   : WebGL Segment Layer
 
 - [`geom_surface_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_surface_webgl.md)
   : WebGL Structured Grid Surface Layer
+
+- [`geom_text_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_text_webgl.md)
+  : WebGL Text Overlay Layer
 
 - [`geom_tile_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_tile_webgl.md)
   : WebGL Tile Layer
