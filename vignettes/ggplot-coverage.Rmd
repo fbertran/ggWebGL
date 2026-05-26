@@ -95,7 +95,9 @@ The table below uses conservative status labels. `Stable` means the API is part
 of the core two-dimensional renderer workflow. `Experimental` means the API is
 exported and tested, but the rendering contract or interaction details may still
 evolve. `Metadata-only` means metadata can be serialized without implying full
-runtime parity with every `ggplot2` feature.
+runtime parity with every `ggplot2` feature. These labels reflect API maturity,
+test coverage, and rendering-contract stability; they are not simply an export
+list.
 
 | Family | Public APIs | Status | Notes |
 |---|---|---|---|
@@ -103,12 +105,13 @@ runtime parity with every `ggplot2` feature.
 | Lines and paths | `geom_line_webgl()`, `geom_path_webgl()`, `geom_path3d_webgl()` | Stable / Experimental | Two-dimensional line/path rendering is core; 3D paths are experimental. |
 | Segments and vectors | `geom_segment_webgl()`, `geom_vector_webgl()` | Stable / Experimental | Segments are plain line segments; vectors add arrow-oriented metadata. |
 | Rectangles and tiles | `geom_rect_webgl()`, `geom_tile_webgl()` | Stable | Uses `ggplot2`-built rectangle bounds. |
-| Count and bin geoms | `geom_bar_webgl()`, `geom_histogram_webgl()`, `geom_bin2d_webgl()` | Stable | Counts and bins are computed by `ggplot2`. |
-| Curves and contours | `geom_freqpoly_webgl()`, `geom_density_webgl()`, `geom_density2d_webgl()`, `geom_contour_webgl()` | Stable | Rendered as line/path primitives; filled contours are not claimed. |
-| Ranges and summaries | `geom_linerange_webgl()`, `geom_errorbar_webgl()`, `geom_pointrange_webgl()`, `geom_crossbar_webgl()`, `geom_boxplot_webgl()` | Stable | Uses built summary columns and point/segment/rectangle primitives. |
+| Count and bin geoms | `geom_bar_webgl()`, `geom_histogram_webgl()`, `geom_bin2d_webgl()` | Experimental | Counts and bins are computed by `ggplot2`; WebGL serialization is tested but newer than the core point/line/raster path. |
+| Curves and contours | `geom_freqpoly_webgl()`, `geom_density_webgl()`, `geom_density2d_webgl()`, `geom_contour_webgl()` | Experimental | Rendered as line/path primitives; filled contours are not claimed. |
+| Ranges and summaries | `geom_linerange_webgl()`, `geom_errorbar_webgl()`, `geom_pointrange_webgl()`, `geom_crossbar_webgl()`, `geom_boxplot_webgl()` | Experimental | Uses built summary columns and point/segment/rectangle primitives. |
 | Filled regions | `geom_ribbon_webgl()`, `geom_area_webgl()`, `geom_polygon_webgl()`, `geom_violin_webgl()` | Experimental | Filled regions use simple polygon/ribbon-style rendering; complex polygon topology is limited. |
 | Raster and grids | `geom_raster_webgl()` | Stable | Intended for regular raster-like cell displays. |
-| Text annotations | `geom_text_webgl()`, `geom_label_webgl()`, `geom_rug_webgl()` | Metadata-only / Stable | Text and label layers are overlay metadata, not WebGL glyph rendering; rugs use segment primitives. |
+| Text annotations | `geom_text_webgl()`, `geom_label_webgl()` | Metadata-only | Text and label layers are overlay metadata, not WebGL glyph rendering. |
+| Rug annotations | `geom_rug_webgl()` | Stable | Rugs use segment primitives. |
 | Meshes and surfaces | `geom_mesh_webgl()`, `geom_surface_webgl()` | Experimental | Browser-side WebGL mesh and structured-grid surface rendering. |
 
 # Core 2D Layers

@@ -92,6 +92,37 @@ test_that("geom_mesh_webgl creates a mesh primitive and defaults to a 3D scene",
   expect_equal(widget$x$render$panels[[1L]]$layers[[1L]]$type, "mesh")
 })
 
+test_that("geom_mesh_webgl splits mesh payloads across fixed-scale facets", {
+  mesh_data <- data.frame(
+    panel = rep(c("left", "right"), each = 3L),
+    x = c(0, 1, 0, 2, 3, 2),
+    y = c(0, 0, 1, 0, 0, 1),
+    z = c(0, 0.2, 0.4, 0.1, 0.3, 0.5),
+    i = rep(1L, 6L),
+    j = rep(2L, 6L),
+    k = rep(3L, 6L),
+    scalar = seq_len(6L)
+  )
+
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(mesh_data, ggplot2::aes(x, y, z = z, i = i, j = j, k = k, scalar = scalar)) +
+      geom_mesh_webgl() +
+      ggplot2::facet_wrap(~panel)
+  )
+  render <- widget$x$render
+  panels <- render$panels
+
+  expect_equal(render$mode, "webgl")
+  expect_equal(render$coordinate_system, "cartesian3d")
+  expect_equal(render$mesh_vertex_count, 6L)
+  expect_equal(render$mesh_triangle_count, 6L)
+  expect_length(panels, 2L)
+  expect_equal(vapply(panels, `[[`, integer(1), "mesh_vertex_count"), c(3L, 3L))
+  expect_equal(vapply(panels, `[[`, integer(1), "mesh_triangle_count"), c(3L, 3L))
+  expect_true(all(vapply(panels, function(panel) identical(panel$layers[[1L]]$type, "mesh"), logical(1))))
+  expect_equal(vapply(panels, `[[`, character(1), "label"), c("panel=left", "panel=right"))
+})
+
 test_that("mesh shader modes normalize and reject unknown values", {
   fixture <- tetrahedron_mesh()
 

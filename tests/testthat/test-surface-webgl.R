@@ -74,6 +74,33 @@ test_that("regular triples reject missing cells and serialize as surface primiti
   expect_equal(widget$x$render$panels[[1L]]$layers[[1L]]$type, "surface")
 })
 
+test_that("geom_surface_webgl splits structured surfaces across fixed-scale facets", {
+  grid <- expand.grid(
+    x = 1:3,
+    y = 1:3,
+    panel = c("left", "right")
+  )
+  grid$z <- with(grid, x + y + ifelse(panel == "right", 1, 0))
+
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(grid, ggplot2::aes(x, y, z = z, fill = z)) +
+      geom_surface_webgl() +
+      ggplot2::facet_wrap(~panel)
+  )
+  render <- widget$x$render
+  panels <- render$panels
+
+  expect_equal(render$mode, "webgl")
+  expect_equal(render$coordinate_system, "cartesian3d")
+  expect_equal(render$surface_vertex_count, 18L)
+  expect_equal(render$surface_triangle_count, 16L)
+  expect_length(panels, 2L)
+  expect_equal(vapply(panels, `[[`, integer(1), "surface_vertex_count"), c(9L, 9L))
+  expect_equal(vapply(panels, `[[`, integer(1), "surface_triangle_count"), c(8L, 8L))
+  expect_true(all(vapply(panels, function(panel) identical(panel$layers[[1L]]$type, "surface"), logical(1))))
+  expect_equal(vapply(panels, `[[`, character(1), "label"), c("panel=left", "panel=right"))
+})
+
 test_that("surface shading modes serialize exactly and reject unknown values", {
   expect_equal(ggwebgl_layer_surface(matrix(1:4, nrow = 2L), shading = "surface_flat")$surface_meta$shading, "surface_flat")
   expect_equal(ggwebgl_layer_surface(matrix(1:4, nrow = 2L), shading = "lambert")$surface_meta$shading, "surface_lambert")

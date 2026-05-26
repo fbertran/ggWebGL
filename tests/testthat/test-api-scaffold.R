@@ -164,6 +164,29 @@ test_that("ggplot_webgl creates a canonical single-panel point payload", {
   expect_equal(widget$x[["layers"]][[1]][["geom"]], "GeomPointWebGL")
 })
 
+test_that("point layers serialize missing coordinates without corrupting payload shape", {
+  df <- data.frame(
+    x = c(1, 2, NA, 4),
+    y = c(1, NA, 3, 4),
+    id = paste0("p", 1:4)
+  )
+
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(df, ggplot2::aes(x, y, label = id)) +
+      geom_point_webgl(colour = "#2563eb", alpha = 0.8) +
+      theme_webgl()
+  )
+  layer <- widget$x$render$layers[[1L]]
+
+  expect_equal(layer$type, "points")
+  expect_equal(layer$rows, nrow(df))
+  expect_equal(widget$x$render$point_count, nrow(df))
+  expect_true(any(is.na(layer$x)))
+  expect_true(any(is.na(layer$y)))
+  expect_equal(length(layer$rgba), nrow(df) * 4L)
+  expect_equal(layer$label, df$id)
+})
+
 test_that("line layers are serialised into a WebGL render plan", {
   df <- data.frame(
     x = c(1, 2, 3, 1, 2, 3),
@@ -186,6 +209,28 @@ test_that("line layers are serialised into a WebGL render plan", {
   expect_equal(layer[["type"]], "lines")
   expect_length(layer[["paths"]], 2L)
   expect_equal(range(layer[["paths"]][[1]][["age"]]), c(0, 1))
+})
+
+test_that("line layers omit missing coordinates while preserving group breaks", {
+  df <- data.frame(
+    x = c(1, 2, NA, 3, 4, 1, NA, 2, 3),
+    y = c(1, 2, 3, 3, 4, 1, 2, 2, 3),
+    g = c(rep("a", 5), rep("b", 4))
+  )
+
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(df, ggplot2::aes(x, y, group = g, colour = g)) +
+      geom_line_webgl() +
+      theme_webgl()
+  )
+  layer <- widget$x$render$layers[[1L]]
+  path_rows <- unname(vapply(layer$paths, `[[`, integer(1), "rows"))
+
+  expect_equal(layer$type, "lines")
+  expect_equal(layer$path_count, 2L)
+  expect_equal(layer$rows, sum(stats::complete.cases(df[c("x", "y")])))
+  expect_equal(path_rows, c(4L, 3L))
+  expect_true(all(vapply(layer$paths, function(path) all(is.finite(path$x) & is.finite(path$y)), logical(1))))
 })
 
 test_that("unsupported non-WebGL layers stay explicit in the render plan", {
@@ -225,6 +270,27 @@ test_that("raster-only plots render in WebGL mode", {
   expect_equal(layer[["height"]], 4L)
   expect_true(layer[["interpolate"]])
   expect_equal(length(layer[["rgba"]]), nrow(grid) * 4L)
+})
+
+test_that("raster layers tolerate missing fill values without changing the cell grid", {
+  grid <- expand.grid(x = 1:3, y = 1:2)
+  grid$z <- seq_len(nrow(grid))
+  grid$z[2L] <- NA_real_
+
+  widget <- ggplot_webgl(
+    ggplot2::ggplot(grid, ggplot2::aes(x, y, fill = z)) +
+      geom_raster_webgl(interpolate = FALSE) +
+      theme_webgl()
+  )
+  layer <- widget$x$render$layers[[1L]]
+
+  expect_equal(layer$type, "raster")
+  expect_equal(layer$rows, nrow(grid))
+  expect_equal(layer$width, 3L)
+  expect_equal(layer$height, 2L)
+  expect_equal(widget$x$render$raster_cell_count, nrow(grid))
+  expect_equal(length(layer$rgba), nrow(grid) * 4L)
+  expect_true(all(is.finite(layer$rgba)))
 })
 
 test_that("raster interpolate metadata is preserved", {
