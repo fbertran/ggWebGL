@@ -92,6 +92,12 @@ GeomPolygonWebGL <- ggplot2::ggproto(
   optional_aes = c(ggplot2::GeomPolygon$optional_aes, "frame", "time"),
   extra_params = c(ggplot2::GeomPolygon$extra_params, "rule", "lineend", "linejoin", "linemitre")
 )
+GeomViolinWebGL <- ggplot2::ggproto(
+  "GeomViolinWebGL",
+  ggplot2::GeomViolin,
+  optional_aes = c(ggplot2::GeomViolin$optional_aes, "frame", "time"),
+  extra_params = ggplot2::GeomViolin$extra_params
+)
 GeomSegmentWebGL <- ggplot2::ggproto(
   "GeomSegmentWebGL",
   ggplot2::GeomSegment,
@@ -961,6 +967,57 @@ geom_polygon_webgl <- function(mapping = NULL,
       linejoin = linejoin,
       linemitre = linemitre,
       na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+#' WebGL Violin Layer
+#'
+#' Add a violin layer tagged for the `ggWebGL` renderer. Density estimation and
+#' scaling are computed by `ggplot2::stat_ydensity`; the renderer converts each
+#' built violin group to a mesh-backed filled strip. Quantile guide lines and
+#' exact stroke parity with `ggplot2::geom_violin()` are not implemented.
+#'
+#' @inheritParams ggplot2::geom_violin
+#'
+#' @return A `Layer` ready for `ggplot2`.
+#'
+#' @examples
+#' violin_data <- data.frame(
+#'   group = rep(c("a", "b"), each = 24),
+#'   value = c(seq(-1, 1, length.out = 24), seq(-0.4, 1.6, length.out = 24))
+#' )
+#'
+#' ggplot2::ggplot(violin_data, ggplot2::aes(group, value, fill = group)) +
+#'   geom_violin_webgl(alpha = 0.65)
+#' @export
+geom_violin_webgl <- function(mapping = NULL,
+                              data = NULL,
+                              stat = "ydensity",
+                              position = "dodge",
+                              ...,
+                              trim = TRUE,
+                              bounds = c(-Inf, Inf),
+                              scale = "area",
+                              na.rm = FALSE,
+                              orientation = NA,
+                              show.legend = NA,
+                              inherit.aes = TRUE) {
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomViolinWebGL,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      trim = trim,
+      scale = scale,
+      na.rm = na.rm,
+      orientation = orientation,
+      bounds = bounds,
       ...
     )
   )

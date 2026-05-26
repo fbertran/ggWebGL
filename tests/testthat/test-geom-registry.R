@@ -11,14 +11,14 @@ test_that("internal geom registry declares current primitive extractors", {
   expect_equal(
     names,
     c(
-      "vectors", "segments", "linerange", "errorbar", "pointrange", "crossbar", "boxplot", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "polygon", "mesh", "surface",
+      "vectors", "segments", "linerange", "errorbar", "pointrange", "crossbar", "boxplot", "rects", "tiles", "bars", "bin2d", "ribbon", "area", "polygon", "violin", "mesh", "surface",
       "path3d", "path", "freqpoly", "density", "density2d", "contour", "points", "lines", "raster"
     )
   )
   expect_equal(
     primitives,
     c(
-      "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "mesh", "surface",
+      "vectors", "vectors", "vectors", "vectors", "mixed", "mixed", "mixed", "rects", "rects", "rects", "rects", "ribbons", "ribbons", "mesh", "mesh", "mesh", "surface",
       "lines", "lines", "lines", "lines", "lines", "lines", "points", "lines", "raster"
     )
   )
@@ -39,6 +39,7 @@ test_that("internal geom registry declares current primitive extractors", {
       "extract_ribbon_payloads",
       "extract_ribbon_payloads",
       "extract_polygon_payloads",
+      "extract_violin_payloads",
       "extract_mesh_payloads",
       "extract_surface_payloads",
       "extract_line_payloads",
@@ -187,6 +188,13 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
     ) +
       geom_density_webgl()
   )
+  violin <- registry_layer_type(
+    ggplot2::ggplot(
+      data.frame(group = rep(c("a", "b"), each = 24), y = c(seq(-1, 1, length.out = 24), seq(0, 2, length.out = 24))),
+      ggplot2::aes(group, y, fill = group)
+    ) +
+      geom_violin_webgl()
+  )
   mesh <- registry_layer_type(
     ggplot2::ggplot(
       data.frame(
@@ -247,6 +255,8 @@ test_that("geom registry preserves point, line, path3d, raster, vector, mesh, an
   expect_equal(freqpoly$geom, "GeomFreqpolyWebGL")
   expect_equal(density$type, "lines")
   expect_equal(density$geom, "GeomDensityWebGL")
+  expect_equal(violin$type, "mesh")
+  expect_equal(violin$geom, "GeomViolinWebGL")
   expect_equal(mesh$type, "mesh")
   expect_equal(surface$type, "surface")
 })

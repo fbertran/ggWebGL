@@ -1003,6 +1003,13 @@ ggwebgl_geom_registry <- function() {
       extractor = "extract_polygon_payloads"
     ),
     list(
+      name = "violin",
+      primitive = "mesh",
+      classes = "GeomViolinWebGL",
+      inherits = character(),
+      extractor = "extract_violin_payloads"
+    ),
+    list(
       name = "mesh",
       primitive = "mesh",
       classes = "GeomMeshWebGL",

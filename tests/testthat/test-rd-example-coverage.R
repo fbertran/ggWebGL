@@ -23,6 +23,7 @@ required_example_topics <- c(
   "geom_ribbon_webgl.Rd",
   "geom_segment_webgl.Rd",
   "geom_tile_webgl.Rd",
+  "geom_violin_webgl.Rd",
   "geom_area_webgl.Rd",
   "ggWebGL.Rd",
   "ggWebGLOutput.Rd",

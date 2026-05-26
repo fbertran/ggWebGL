@@ -100,6 +100,9 @@
 - [`geom_vector_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_vector_webgl.md)
   : WebGL Vector Arrow Layer
 
+- [`geom_violin_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_violin_webgl.md)
+  : WebGL Violin Layer
+
 - [`ggWebGL()`](https://fbertran.github.io/ggWebGL/reference/ggWebGL.md)
   : Create a ggWebGL htmlwidget
 

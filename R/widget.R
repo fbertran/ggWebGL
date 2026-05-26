@@ -806,6 +806,133 @@ extract_polygon_payloads <- function(layer, data) {
   Filter(Negate(is.null), payloads)
 }
 
+violin_panel_strip_payload <- function(layer, panel_data, panel_id) {
+  flipped <- isTRUE(unique(panel_data$flipped_aes %||% FALSE)[[1L]])
+  required <- if (flipped) {
+    c("x", "y", "violinwidth", "ymin", "ymax")
+  } else {
+    c("x", "y", "violinwidth", "xmin", "xmax")
+  }
+  if (!all(required %in% names(panel_data))) {
+    return(NULL)
+  }
+
+  group_chr <- as.character(panel_data$group %||% seq_len(nrow(panel_data)))
+  group_index <- split(seq_len(nrow(panel_data)), group_chr)
+  vertices <- list()
+  triangles <- list()
+  offset <- 0L
+
+  for (group_name in names(group_index)) {
+    group_data <- panel_data[group_index[[group_name]], , drop = FALSE]
+    finite <- Reduce(`&`, lapply(group_data[, required, drop = FALSE], function(column) {
+      is.finite(as.numeric(column))
+    }))
+    group_data <- group_data[finite, , drop = FALSE]
+    if (nrow(group_data) < 2L) {
+      next
+    }
+
+    order_axis <- if (flipped) group_data$x else group_data$y
+    order_index <- order(as.numeric(order_axis), seq_len(nrow(group_data)))
+    group_data <- group_data[order_index, , drop = FALSE]
+    x <- as.numeric(group_data$x)
+    y <- as.numeric(group_data$y)
+    violinwidth <- pmax(0, as.numeric(group_data$violinwidth))
+    if (flipped) {
+      ymin <- as.numeric(group_data$ymin)
+      ymax <- as.numeric(group_data$ymax)
+      side_a_x <- x
+      side_b_x <- x
+      side_a_y <- y - violinwidth * (y - ymin)
+      side_b_y <- y + violinwidth * (ymax - y)
+    } else {
+      xmin <- as.numeric(group_data$xmin)
+      xmax <- as.numeric(group_data$xmax)
+      side_a_x <- x - violinwidth * (x - xmin)
+      side_b_x <- x + violinwidth * (xmax - x)
+      side_a_y <- y
+      side_b_y <- y
+    }
+
+    fill <- polygon_fill_values(group_data)
+    alpha <- group_data$alpha %||% rep(1, nrow(group_data))
+    ids <- rep(group_name, nrow(group_data))
+    vertices[[length(vertices) + 1L]] <- data.frame(
+      x = c(side_a_x, side_b_x),
+      y = c(side_a_y, side_b_y),
+      z = 0,
+      fill = c(fill, fill),
+      alpha = c(alpha, alpha),
+      id = c(ids, ids),
+      stringsAsFactors = FALSE
+    )
+
+    n <- nrow(group_data)
+    lower <- seq_len(n - 1L)
+    tri <- data.frame(
+      i = c(lower, lower),
+      j = c(lower + 1L, n + lower + 1L),
+      k = c(n + lower + 1L, n + lower),
+      pick_id = rep(group_name, (n - 1L) * 2L),
+      stringsAsFactors = FALSE
+    )
+    tri[, c("i", "j", "k")] <- tri[, c("i", "j", "k"), drop = FALSE] + offset
+    triangles[[length(triangles) + 1L]] <- tri
+    offset <- offset + n * 2L
+  }
+
+  if (!length(vertices) || !length(triangles)) {
+    return(NULL)
+  }
+
+  vertices <- do.call(rbind, vertices)
+  triangles <- do.call(rbind, triangles)
+  payload <- ggwebgl_layer_mesh(
+    vertices = vertices,
+    x = "x",
+    y = "y",
+    z = "z",
+    triangles = triangles,
+    i = "i",
+    j = "j",
+    k = "k",
+    colour = "fill",
+    alpha = "alpha",
+    id = "id",
+    material = layer$geom_params$material %||% ggwebgl_material(shading = "mesh_flat", wireframe = FALSE),
+    shading = layer$geom_params$shading %||% "mesh_flat",
+    pick_id = "pick_id",
+    panel_id = as.integer(panel_id),
+    geom = class(layer$geom)[1],
+    wireframe = FALSE
+  )
+  payload$violin_meta <- compact_list(list(
+    built_stat = "ydensity",
+    triangulation = "strip",
+    flipped = flipped,
+    groups = names(group_index),
+    outline = "metadata-only"
+  ))
+  payload
+}
+
+extract_violin_payloads <- function(layer, data) {
+  data <- as.data.frame(data)
+
+  if (!nrow(data)) {
+    return(empty_payload_map())
+  }
+
+  panel_id <- as.integer(data$PANEL %||% rep(1L, nrow(data)))
+  split_index <- split(seq_len(nrow(data)), as.character(panel_id))
+  payloads <- lapply(names(split_index), function(id) {
+    violin_panel_strip_payload(layer, data[split_index[[id]], , drop = FALSE], panel_id = as.integer(id))
+  })
+  names(payloads) <- names(split_index)
+  Filter(Negate(is.null), payloads)
+}
+
 extract_mesh_payloads <- function(layer, data) {
   data <- as.data.frame(data)
 
