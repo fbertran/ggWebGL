@@ -4,18 +4,25 @@ This vignette summarizes the `ggplot2`-style layers currently exposed by
 `ggWebGL` and shows compact CRAN-safe usage patterns. The examples use
 in-memory data only and avoid file output.
 
+The code examples construct `ggplot2`-style WebGL layers and, when
+evaluated, convert them into browser-side WebGL htmlwidgets with
+[`ggplot_webgl()`](https://fbertran.github.io/ggWebGL/reference/ggplot_webgl.md).
+Evaluation is disabled during CRAN, package checks, and CI unless
+explicitly enabled with `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or
+`NOT_CRAN=true`.
+
 ## Two Workflows
 
 Most users start with a grammar-style plot:
 
 ``` r
-ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
   geom_point_webgl() +
   geom_line_webgl(aes(group = cyl), alpha = 0.35) +
   theme_webgl(shader = "density_splat")
-```
 
-![](ggplot-coverage_files/figure-html/grammar-workflow-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 The same renderer can also consume a renderer-ready specification. This
 is useful when data have already been transformed into primitive
@@ -76,7 +83,7 @@ arrows <- data.frame(
   yend = c(-0.25, 0.35, 0.2)
 )
 
-ggplot(trajectory, aes(x, y, group = group)) +
+p <- ggplot(trajectory, aes(x, y, group = group)) +
   geom_path_webgl(aes(frame = frame), colour = "#2563eb", linewidth = 1.2) +
   geom_point_webgl(aes(frame = frame), colour = "#0f766e", size = 1.8) +
   geom_segment_webgl(
@@ -85,9 +92,9 @@ ggplot(trajectory, aes(x, y, group = group)) +
     inherit.aes = FALSE,
     colour = "#334155"
   )
-```
 
-![](ggplot-coverage_files/figure-html/core-2d-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 [`geom_line_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_line_webgl.md)
 keeps the usual line semantics, while
@@ -101,12 +108,12 @@ ordered <- data.frame(
   group = "ordered"
 )
 
-ggplot(ordered, aes(x, y, group = group)) +
+p <- ggplot(ordered, aes(x, y, group = group)) +
   geom_line_webgl(colour = "#64748b") +
   geom_path_webgl(colour = "#dc2626", linewidth = 1.2)
-```
 
-![](ggplot-coverage_files/figure-html/line-vs-path-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 ## Rectangles, Tiles, and Bins
 
@@ -123,35 +130,28 @@ tile_grid <- expand.grid(
 )
 tile_grid$value <- with(tile_grid, sin(x / 2) + cos(y / 2))
 
-ggplot(tile_grid, aes(x, y, fill = value)) +
+p <- ggplot(tile_grid, aes(x, y, fill = value)) +
   geom_tile_webgl(alpha = 0.85)
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/rectangles-and-bins-1.png)
-
 ``` r
-
-ggplot(mtcars, aes(factor(cyl), fill = factor(am))) +
+p <- ggplot(mtcars, aes(factor(cyl), fill = factor(am))) +
   geom_bar_webgl(position = "stack")
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/rectangles-and-bins-2.png)
-
 ``` r
-
-ggplot(mtcars, aes(mpg)) +
+p <- ggplot(mtcars, aes(mpg)) +
   geom_histogram_webgl(binwidth = 4)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/rectangles-and-bins-3.png)
 
 ``` r
-
-ggplot(mtcars, aes(wt, mpg)) +
+p <- ggplot(mtcars, aes(wt, mpg)) +
   geom_bin2d_webgl(bins = 8)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/rectangles-and-bins-4.png)
 
 Explicit rectangle bounds are also supported:
 
@@ -164,14 +164,14 @@ rectangles <- data.frame(
   label = c("a", "b")
 )
 
-ggplot(rectangles) +
+p <- ggplot(rectangles) +
   geom_rect_webgl(
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = label),
     alpha = 0.75
   )
-```
 
-![](ggplot-coverage_files/figure-html/explicit-rectangles-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 ## Curves and Contours
 
@@ -180,19 +180,16 @@ and regular contour lines all serialize to line/path primitives. The
 statistical work remains with `ggplot2`.
 
 ``` r
-ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
+p <- ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
   geom_freqpoly_webgl(binwidth = 4, linewidth = 1.1)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/curves-1.png)
 
 ``` r
-
-ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
+p <- ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
   geom_density_webgl(linewidth = 1.1)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/curves-2.png)
 
 [`geom_density2d_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_density2d_webgl.md)
 uses `ggplot2`’s two-dimensional density statistic, which requires
@@ -200,11 +197,10 @@ uses `ggplot2`’s two-dimensional density statistic, which requires
 dependency is unavailable.
 
 ``` r
-ggplot(mtcars, aes(wt, mpg)) +
+p <- ggplot(mtcars, aes(wt, mpg)) +
   geom_density2d_webgl(linewidth = 0.8)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/density2d-contours-1.png)
 
 Regular contour lines use gridded `z` values:
 
@@ -214,11 +210,11 @@ names(volcano_df) <- c("x", "y", "z")
 volcano_df$x <- as.numeric(volcano_df$x)
 volcano_df$y <- as.numeric(volcano_df$y)
 
-ggplot(volcano_df, aes(x, y, z = z)) +
+p <- ggplot(volcano_df, aes(x, y, z = z)) +
   geom_contour_webgl(bins = 8)
-```
 
-![](ggplot-coverage_files/figure-html/contour-lines-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 ## Ranges and Summaries
 
@@ -233,38 +229,32 @@ summary_df <- data.frame(
   ymax = c(4.8, 6.1, 6.8)
 )
 
-ggplot(summary_df, aes(group, y, ymin = ymin, ymax = ymax)) +
+p <- ggplot(summary_df, aes(group, y, ymin = ymin, ymax = ymax)) +
   geom_linerange_webgl(linewidth = 1.2) +
   geom_pointrange_webgl(colour = "#2563eb")
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/ranges-and-summaries-1.png)
-
 ``` r
-
-ggplot(summary_df, aes(group, y, ymin = ymin, ymax = ymax)) +
+p <- ggplot(summary_df, aes(group, y, ymin = ymin, ymax = ymax)) +
   geom_errorbar_webgl(width = 0.25) +
   geom_crossbar_webgl(aes(fill = group), width = 0.45, alpha = 0.55)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/ranges-and-summaries-2.png)
 
 ``` r
-
-ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
+p <- ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
   geom_boxplot_webgl()
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/ranges-and-summaries-3.png)
 
 Violin rendering uses `ggplot2`’s built density output:
 
 ``` r
-ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
+p <- ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
   geom_violin_webgl(alpha = 0.7)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/violin-1.png)
 
 ## Filled Regions
 
@@ -281,34 +271,29 @@ band$y <- sin(band$x)
 band$ymin <- band$y - 0.15
 band$ymax <- band$y + 0.15
 
-ggplot(band, aes(x, ymin = ymin, ymax = ymax)) +
+p <- ggplot(band, aes(x, ymin = ymin, ymax = ymax)) +
   geom_ribbon_webgl(fill = "#93c5fd", alpha = 0.6) +
   geom_line_webgl(aes(y = y), colour = "#1d4ed8")
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/filled-regions-1.png)
-
 ``` r
-
-ggplot(band, aes(x, y)) +
+p <- ggplot(band, aes(x, y)) +
   geom_area_webgl(fill = "#a7f3d0", alpha = 0.7)
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/filled-regions-2.png)
-
 ``` r
-
 triangle <- data.frame(
   x = c(0, 1, 0.2),
   y = c(0, 0.2, 1),
   group = 1
 )
 
-ggplot(triangle, aes(x, y, group = group)) +
+p <- ggplot(triangle, aes(x, y, group = group)) +
   geom_polygon_webgl(fill = "#f97316", alpha = 0.7)
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/filled-regions-3.png)
 
 ## Raster and Annotation Layers
 
@@ -323,38 +308,34 @@ small_raster <- expand.grid(
 )
 small_raster$value <- with(small_raster, x * y)
 
-ggplot(small_raster, aes(x, y, fill = value)) +
+p <- ggplot(small_raster, aes(x, y, fill = value)) +
   geom_raster_webgl()
+ggplot_webgl(p, height = 420)
 ```
 
-![](ggplot-coverage_files/figure-html/raster-and-annotations-1.png)
-
 ``` r
-
 labels <- data.frame(
   x = c(2, 6),
   y = c(2, 5),
   label = c("low", "high")
 )
 
-ggplot(small_raster, aes(x, y, fill = value)) +
+p <- ggplot(small_raster, aes(x, y, fill = value)) +
   geom_tile_webgl(alpha = 0.55) +
   geom_text_webgl(data = labels, aes(x = x, y = y, label = label), inherit.aes = FALSE) +
   geom_rug_webgl(colour = "#334155")
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/raster-and-annotations-2.png)
 
 If label backgrounds are needed,
 [`geom_label_webgl()`](https://fbertran.github.io/ggWebGL/reference/geom_label_webgl.md)
 serializes label metadata for the overlay path:
 
 ``` r
-ggplot(labels, aes(x, y, label = label)) +
+p <- ggplot(labels, aes(x, y, label = label)) +
   geom_label_webgl(fill = "#ffffff", colour = "#0f172a")
+ggplot_webgl(p, height = 420)
 ```
-
-![](ggplot-coverage_files/figure-html/labels-1.png)
 
 ## Experimental 3D, Mesh, and Surface Layers
 
@@ -372,12 +353,12 @@ helix <- data.frame(
   group = "helix"
 )
 
-ggplot(helix, aes(x, y, z = z, group = group, time = time)) +
+p <- ggplot(helix, aes(x, y, z = z, group = group, time = time)) +
   geom_path3d_webgl(colour = "#2563eb") +
   coord_webgl_3d()
-```
 
-![](ggplot-coverage_files/figure-html/experimental-3d-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 Structured surfaces use a regular grid:
 
@@ -389,12 +370,12 @@ surface_grid <- expand.grid(
 )
 surface_grid$z <- with(surface_grid, exp(-(x^2 + y^2)))
 
-ggplot(surface_grid, aes(x, y, z = z, fill = z)) +
+p <- ggplot(surface_grid, aes(x, y, z = z, fill = z)) +
   geom_surface_webgl(shading = "surface_height_colormap") +
   coord_webgl_3d()
-```
 
-![](ggplot-coverage_files/figure-html/surface-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 Unstructured meshes can be supplied with explicit vertices and triangle
 indices:
@@ -410,12 +391,12 @@ mesh_vertices <- data.frame(
   k = c(3, 4, 4, 4)
 )
 
-ggplot(mesh_vertices, aes(x, y, z = z, i = i, j = j, k = k, scalar = scalar)) +
+p <- ggplot(mesh_vertices, aes(x, y, z = z, i = i, j = j, k = k, scalar = scalar)) +
   geom_mesh_webgl(shading = "mesh_scalar_colormap") +
   coord_webgl_3d()
-```
 
-![](ggplot-coverage_files/figure-html/mesh-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 ## Facets, Coordinates, and Fallbacks
 
@@ -425,12 +406,12 @@ panel-local scaling is available for the layer combination being
 rendered.
 
 ``` r
-ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
   geom_point_webgl() +
   facet_wrap(~am)
-```
 
-![](ggplot-coverage_files/figure-html/facets-1.png)
+ggplot_webgl(p, height = 420)
+```
 
 Unsupported geoms remain visible to the extraction layer as unsupported
 metadata rather than being silently claimed as WebGL primitives. When a
