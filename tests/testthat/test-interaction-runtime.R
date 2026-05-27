@@ -55,6 +55,14 @@ mouse_event <- function(session, type, x, y) {
   )
 }
 
+test_that("lasso point-in-polygon keeps descending edge orientation", {
+  js <- ggwebgl_test_read_text("inst/htmlwidgets/ggWebGL.js")
+
+  expect_match(js, "var dy = yj - yi;", fixed = TRUE)
+  expect_match(js, "(x < (xj - xi) * (y - yi) / dy + xi)", fixed = TRUE)
+  expect_false(grepl("Math.max(1e-9, yj - yi)", js, fixed = TRUE))
+})
+
 test_that("browser smoke visibly updates brush and lasso selection", {
   if (!chromote_available()) {
     skip("A browser session is unavailable for interaction runtime tests.")

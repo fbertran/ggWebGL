@@ -3330,8 +3330,10 @@ HTMLWidgets.widget({
       for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
         var xi = polygon[i].x, yi = polygon[i].y;
         var xj = polygon[j].x, yj = polygon[j].y;
+        var dy = yj - yi;
         var intersect = ((yi > y) !== (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / Math.max(1e-9, yj - yi) + xi);
+          Math.abs(dy) > 1e-9 &&
+          (x < (xj - xi) * (y - yi) / dy + xi);
         if (intersect) {
           inside = !inside;
         }
