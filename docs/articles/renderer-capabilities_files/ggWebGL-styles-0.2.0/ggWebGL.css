@@ -178,6 +178,26 @@
   letter-spacing: 0.02em;
 }
 
+.ggwebgl__text-overlay {
+  position: absolute;
+  z-index: 3;
+  max-width: 18rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transform-origin: center center;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.72);
+}
+
+.ggwebgl__text-overlay--label {
+  padding: 0.18rem 0.34rem;
+  border: 1px solid rgba(72, 101, 129, 0.25);
+  border-radius: 0.32rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  text-shadow: none;
+}
+
 .ggwebgl__empty {
   position: absolute;
   inset: 0;

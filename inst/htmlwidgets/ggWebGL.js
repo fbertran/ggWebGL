@@ -4681,6 +4681,52 @@ HTMLWidgets.widget({
       ];
     }
 
+    function vectorLayerZRange(layer) {
+      var zMin = Infinity;
+      var zMax = -Infinity;
+
+      function scan(values) {
+        values = isArrayLike(values) ? values : [];
+        for (var i = 0; i < values.length; i += 1) {
+          var value = Number(values[i]);
+          if (isFinite(value)) {
+            zMin = Math.min(zMin, value);
+            zMax = Math.max(zMax, value);
+          }
+        }
+      }
+
+      scan(layer && layer.z);
+      scan(layer && layer.zend);
+
+      if (!isFinite(zMin) || !isFinite(zMax)) {
+        zMin = -1;
+        zMax = 1;
+      }
+      if (zMin === zMax) {
+        zMin -= 0.5;
+        zMax += 0.5;
+      }
+      return [zMin, zMax];
+    }
+
+    function projectVectorEndpoint3d(xValue, yValue, zValue, viewport, zRange, viewProjection) {
+      var point = normalizePosition3(xValue, yValue, zValue, viewport, zRange);
+      var mat4 = window.ggWebGLMat4;
+      var clip = mat4 && typeof mat4.transformPoint === "function"
+        ? mat4.transformPoint(viewProjection, [point[0], point[1], point[2], 1])
+        : [point[0], point[1], point[2], 1];
+      var w = Number(clip[3]);
+      if (!isFinite(w) || Math.abs(w) <= 1e-8) {
+        return { x: NaN, y: NaN, z: NaN };
+      }
+      return {
+        x: Number(clip[0]) / w,
+        y: Number(clip[1]) / w,
+        z: Number(clip[2]) / w
+      };
+    }
+
     function cameraViewProjectionMatrix(x, box) {
       var cameraModule = window.ggWebGLCamera;
       if (!cameraModule || typeof cameraModule.cameraMatrices !== "function") {
@@ -6154,9 +6200,11 @@ HTMLWidgets.widget({
       var heads = layer.head_size || [];
       var rgba = layer.rgba || [];
       var use3d = x && sceneDimension(x) === "3d";
-      var geometryViewport = use3d ? { x: [-1.2, 1.2], y: [-1.2, 1.2] } : viewport;
+      var geometryViewport = use3d ? { x: [-1, 1], y: [-1, 1] } : viewport;
       var xSpan = Math.max(1e-6, geometryViewport.x[1] - geometryViewport.x[0]);
       var ySpan = Math.max(1e-6, geometryViewport.y[1] - geometryViewport.y[0]);
+      var zRange = use3d ? vectorLayerZRange(layer) : null;
+      var viewProjection = use3d ? cameraViewProjectionMatrix(x, box) : null;
       var positions = [];
       var ages = [];
       var colors = [];
@@ -6171,8 +6219,14 @@ HTMLWidgets.widget({
         if (!layerIndexVisible(layer, i, x)) {
           continue;
         }
-        var start = use3d ? project3dPoint(xs[i], ys[i], zs[i] || 0, viewport, layer) : { x: Number(xs[i]), y: Number(ys[i]) };
-        var end = use3d ? project3dPoint(xends[i], yends[i], zends[i] || zs[i] || 0, viewport, layer) : { x: Number(xends[i]), y: Number(yends[i]) };
+        var startZ = isFinite(Number(zs[i])) ? Number(zs[i]) : 0;
+        var endZ = isFinite(Number(zends[i])) ? Number(zends[i]) : startZ;
+        var start = use3d
+          ? projectVectorEndpoint3d(xs[i], ys[i], startZ, viewport, zRange, viewProjection)
+          : { x: Number(xs[i]), y: Number(ys[i]) };
+        var end = use3d
+          ? projectVectorEndpoint3d(xends[i], yends[i], endZ, viewport, zRange, viewProjection)
+          : { x: Number(xends[i]), y: Number(yends[i]) };
         var x0 = Number(start.x), y0 = Number(start.y);
         var x1 = Number(end.x), y1 = Number(end.y);
         if (!isFinite(x0) || !isFinite(y0) || !isFinite(x1) || !isFinite(y1)) {
@@ -6184,6 +6238,8 @@ HTMLWidgets.widget({
         if (!(lenPx > 1e-6)) {
           continue;
         }
+        // Arrowhead direction is derived after projection so rotated 3D vectors
+        // stay registered with points and paths using the same camera matrix.
         var tx = dxPx / lenPx;
         var ty = dyPx / lenPx;
         var nx = -ty;
@@ -6230,7 +6286,7 @@ HTMLWidgets.widget({
     function drawVectorLayer(gl, programs, layer, x, viewport, box) {
       var payload = flattenVectorLayer(layer, x, viewport, box);
       var primitive = programs.primitive;
-      var drawViewport = sceneDimension(x) === "3d" ? { x: [-1.2, 1.2], y: [-1.2, 1.2] } : viewport;
+      var drawViewport = sceneDimension(x) === "3d" ? { x: [-1, 1], y: [-1, 1] } : viewport;
 
       if (!payload || payload.count < 3) {
         return;

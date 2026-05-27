@@ -11,6 +11,15 @@ for animation examples and adapter code.
 animation_spec(...)
 ```
 
+## Arguments
+
+- ...:
+
+  Arguments passed to
+  [`ggwebgl_timeline()`](https://fbertran.github.io/ggWebGL/reference/ggwebgl_timeline.md),
+  such as `frames`, `time`, `values`, `source`, `filter`, `autoplay`,
+  `speed`, `loop`, `controls`, and `fps`.
+
 ## Value
 
 A `ggwebgl_timeline` list.

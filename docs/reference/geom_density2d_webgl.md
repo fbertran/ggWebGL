@@ -52,6 +52,13 @@ geom_density2d_webgl(
   data. A `function` can be created from a `formula` (e.g.
   `~ head(.x, 10)`).
 
+- stat:
+
+  Statistical transformation to use. Defaults to `"density_2d"` so
+  `ggplot2` computes two-dimensional density contours before WebGL
+  serialization. This `ggplot2` statistic uses `MASS`, which is listed
+  in `Suggests` and guarded in examples/tests.
+
 - position:
 
   A position adjustment to use on the data for this layer. This can be
@@ -75,30 +82,12 @@ geom_density2d_webgl(
 
 - ...:
 
-  Arguments passed on to
-  [`geom_contour`](https://ggplot2.tidyverse.org/reference/geom_contour.html)
-
-  `binwidth`
-
-  :   The width of the contour bins. Overridden by `bins`.
-
-  `bins`
-
-  :   Number of contour bins. Overridden by `breaks`.
-
-  `breaks`
-
-  :   One of:
-
-      - Numeric vector to set the contour breaks
-
-      - A function that takes the range of the data and binwidth as
-        input and returns breaks as output. A function can be created
-        from a formula (e.g. ~ fullseq(.x, .y)).
-
-      Overrides `binwidth` and `bins`. By default, this is a vector of
-      length ten with [`pretty()`](https://rdrr.io/r/base/pretty.html)
-      breaks.
+  Additional arguments forwarded through
+  [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
+  including
+  [`ggplot2::stat_density_2d()`](https://ggplot2.tidyverse.org/reference/geom_density_2d.html)
+  parameters such as `h`, `n`, `bins`, `binwidth`, and `breaks`, plus
+  static aesthetics.
 
 - contour_var:
 
@@ -149,6 +138,8 @@ A `Layer` ready for `ggplot2`.
 ``` r
 density_points <- expand.grid(x = seq(-1, 1, length.out = 6), y = seq(-1, 1, length.out = 6))
 
-ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
-  geom_density2d_webgl(bins = 3)
+if (requireNamespace("MASS", quietly = TRUE)) {
+  ggplot2::ggplot(density_points, ggplot2::aes(x, y)) +
+    geom_density2d_webgl(bins = 3)
+}
 ```

@@ -435,6 +435,9 @@ ggwebgl_magnify_region(
 #> [1] 0 3
 #> 
 #> 
+#> $render$panels[[1]]$viewport_source
+#> [1] "explicit"
+#> 
 #> $render$panels[[1]]$primitives
 #> [1] "points" "lines" 
 #> 
@@ -454,6 +457,18 @@ ggwebgl_magnify_region(
 #> [1] 0
 #> 
 #> $render$panels[[1]]$rect_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_vertex_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_triangle_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$text_count
 #> [1] 0
 #> 
 #> $render$panels[[1]]$mesh_vertex_count
@@ -581,6 +596,9 @@ ggwebgl_magnify_region(
 #> [1] 0.75 2.25
 #> 
 #> 
+#> $render$panels[[2]]$viewport_source
+#> [1] "explicit"
+#> 
 #> $render$panels[[2]]$primitives
 #> [1] "points"
 #> 
@@ -600,6 +618,18 @@ ggwebgl_magnify_region(
 #> [1] 0
 #> 
 #> $render$panels[[2]]$rect_count
+#> [1] 0
+#> 
+#> $render$panels[[2]]$ribbon_count
+#> [1] 0
+#> 
+#> $render$panels[[2]]$ribbon_vertex_count
+#> [1] 0
+#> 
+#> $render$panels[[2]]$ribbon_triangle_count
+#> [1] 0
+#> 
+#> $render$panels[[2]]$text_count
 #> [1] 0
 #> 
 #> $render$panels[[2]]$mesh_vertex_count
@@ -668,6 +698,18 @@ ggwebgl_magnify_region(
 #> [1] 0
 #> 
 #> $render$rect_count
+#> [1] 0
+#> 
+#> $render$ribbon_count
+#> [1] 0
+#> 
+#> $render$ribbon_vertex_count
+#> [1] 0
+#> 
+#> $render$ribbon_triangle_count
+#> [1] 0
+#> 
+#> $render$text_count
 #> [1] 0
 #> 
 #> $render$mesh_vertex_count

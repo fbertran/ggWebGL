@@ -297,6 +297,9 @@ as_ggwebgl_spec(spec)
 #> [1] 0 1
 #> 
 #> 
+#> $render$panels[[1]]$viewport_source
+#> [1] "layer_bounds"
+#> 
 #> $render$panels[[1]]$primitives
 #> [1] "points"
 #> 
@@ -316,6 +319,18 @@ as_ggwebgl_spec(spec)
 #> [1] 0
 #> 
 #> $render$panels[[1]]$rect_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_vertex_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$ribbon_triangle_count
+#> [1] 0
+#> 
+#> $render$panels[[1]]$text_count
 #> [1] 0
 #> 
 #> $render$panels[[1]]$mesh_vertex_count
@@ -383,6 +398,18 @@ as_ggwebgl_spec(spec)
 #> [1] 0
 #> 
 #> $render$rect_count
+#> [1] 0
+#> 
+#> $render$ribbon_count
+#> [1] 0
+#> 
+#> $render$ribbon_vertex_count
+#> [1] 0
+#> 
+#> $render$ribbon_triangle_count
+#> [1] 0
+#> 
+#> $render$text_count
 #> [1] 0
 #> 
 #> $render$mesh_vertex_count

@@ -133,8 +133,9 @@ means the API is part of the core two-dimensional renderer workflow.
 <code>Experimental</code> means the API is exported and tested, but the
 rendering contract or interaction details may still evolve.
 <code>Metadata-only</code> means metadata can be serialized without
-implying full runtime parity with every <code>ggplot2</code>
-feature.</p>
+implying full runtime parity with every <code>ggplot2</code> feature.
+These labels reflect API maturity, test coverage, and rendering-contract
+stability; they are not simply an export list.</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -189,8 +190,10 @@ metadata.</td>
 <code><a href="../reference/geom_bar_webgl.html">geom_bar_webgl()</a></code>, <code><a href="../reference/geom_histogram_webgl.html">geom_histogram_webgl()</a></code>,
 <code><a href="../reference/geom_bin2d_webgl.html">geom_bin2d_webgl()</a></code>
 </td>
-<td>Stable</td>
-<td>Counts and bins are computed by <code>ggplot2</code>.</td>
+<td>Experimental</td>
+<td>Counts and bins are computed by <code>ggplot2</code>; WebGL
+serialization is tested but newer than the core point/line/raster
+path.</td>
 </tr>
 <tr class="even">
 <td>Curves and contours</td>
@@ -199,7 +202,7 @@ metadata.</td>
 <code><a href="../reference/geom_density_webgl.html">geom_density_webgl()</a></code>, <code><a href="../reference/geom_density2d_webgl.html">geom_density2d_webgl()</a></code>,
 <code><a href="../reference/geom_contour_webgl.html">geom_contour_webgl()</a></code>
 </td>
-<td>Stable</td>
+<td>Experimental</td>
 <td>Rendered as line/path primitives; filled contours are not
 claimed.</td>
 </tr>
@@ -212,7 +215,7 @@ claimed.</td>
 <code><a href="../reference/geom_crossbar_webgl.html">geom_crossbar_webgl()</a></code>,
 <code><a href="../reference/geom_boxplot_webgl.html">geom_boxplot_webgl()</a></code>
 </td>
-<td>Stable</td>
+<td>Experimental</td>
 <td>Uses built summary columns and point/segment/rectangle
 primitives.</td>
 </tr>
@@ -235,14 +238,19 @@ polygon topology is limited.</td>
 <tr class="even">
 <td>Text annotations</td>
 <td>
-<code><a href="../reference/geom_text_webgl.html">geom_text_webgl()</a></code>, <code><a href="../reference/geom_label_webgl.html">geom_label_webgl()</a></code>,
-<code><a href="../reference/geom_rug_webgl.html">geom_rug_webgl()</a></code>
+<code><a href="../reference/geom_text_webgl.html">geom_text_webgl()</a></code>, <code><a href="../reference/geom_label_webgl.html">geom_label_webgl()</a></code>
 </td>
-<td>Metadata-only / Stable</td>
+<td>Metadata-only</td>
 <td>Text and label layers are overlay metadata, not WebGL glyph
-rendering; rugs use segment primitives.</td>
+rendering.</td>
 </tr>
 <tr class="odd">
+<td>Rug annotations</td>
+<td><code><a href="../reference/geom_rug_webgl.html">geom_rug_webgl()</a></code></td>
+<td>Stable</td>
+<td>Rugs use segment primitives.</td>
+</tr>
+<tr class="even">
 <td>Meshes and surfaces</td>
 <td>
 <code><a href="../reference/geom_mesh_webgl.html">geom_mesh_webgl()</a></code>,
