@@ -33,6 +33,9 @@ src/*.dll
 vignettes/*.html
 vignettes/*.pdf
 vignettes/ggplot-coverage.R
+vignettes/ggplot-coverage-core.R
+vignettes/ggplot-coverage-summaries.R
+vignettes/ggplot-coverage-3d.R
 vignettes/temporal-trajectories.R
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3

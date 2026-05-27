@@ -38,6 +38,9 @@ articles:
     contents:
       - getting-started
       - ggplot-coverage
+      - ggplot-coverage-core
+      - ggplot-coverage-summaries
+      - ggplot-coverage-3d
       - renderer-capabilities
       - temporal-trajectories
       - surface-mesh-showcase

@@ -365,6 +365,12 @@ For static capture and publication workflows, `ggWebGL` exposes:
   ggWebGL](https://fbertran.github.io/ggWebGL/articles/getting-started.md):
 - [ggplot-like geom coverage in
   ggWebGL](https://fbertran.github.io/ggWebGL/articles/ggplot-coverage.md):
+- [Core ggplot-like WebGL
+  layers](https://fbertran.github.io/ggWebGL/articles/ggplot-coverage-core.md):
+- [Statistical and annotation WebGL
+  layers](https://fbertran.github.io/ggWebGL/articles/ggplot-coverage-summaries.md):
+- [Experimental 3D, mesh, and surface WebGL
+  layers](https://fbertran.github.io/ggWebGL/articles/ggplot-coverage-3d.md):
 - [Experiment with Renderer
   Capabilities](https://fbertran.github.io/ggWebGL/articles/renderer-capabilities.md):
 - [Temporal and 3D trajectories with
