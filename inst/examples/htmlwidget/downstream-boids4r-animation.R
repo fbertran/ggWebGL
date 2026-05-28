@@ -35,30 +35,58 @@ build_downstream_boids4r_simulations <- function() {
   )
 }
 
-downstream_boids4r_specs <- function() {
+downstream_boids4r_specs <- function(boid_size = 3.6,
+                                     boid_alpha = 0.88,
+                                     vector_mode = c("current", "sampled", "all", "none"),
+                                     vector_every = 1L,
+                                     vector_scale = NULL,
+                                     obstacle_mode = c("ring", "disc", "none"),
+                                     obstacle_segments = 48L,
+                                     trail = c("recent", "none", "all"),
+                                     trail_length = 20L,
+                                     shader = "default") {
   sims <- build_downstream_boids4r_simulations()
   if (is.null(sims)) {
     return(NULL)
   }
+  vector_mode <- match.arg(vector_mode)
+  obstacle_mode <- match.arg(obstacle_mode)
+  trail <- match.arg(trail)
+  vector_scale_2d <- if (is.null(vector_scale)) 0.15 else vector_scale
+  vector_scale_3d <- if (is.null(vector_scale)) 0.12 else vector_scale
 
   list(
-    schooling_2d = boids4R::as_ggwebgl_spec(
+    schooling_2d = ggWebGL:::ggwebgl_boids_display_spec(
       sims$schooling_2d,
-      vector_every = 12L,
-      vector_scale = 0.13,
-      shader = "density_splat"
+      boid_size = boid_size,
+      boid_alpha = boid_alpha,
+      vector_mode = vector_mode,
+      vector_every = vector_every,
+      vector_scale = vector_scale_2d,
+      obstacle_mode = obstacle_mode,
+      obstacle_segments = obstacle_segments,
+      trail = trail,
+      trail_length = trail_length,
+      shader = shader
     ),
-    murmuration_3d = boids4R::as_ggwebgl_spec(
+    murmuration_3d = ggWebGL:::ggwebgl_boids_display_spec(
       sims$murmuration_3d,
-      vector_every = 14L,
-      vector_scale = 0.12,
-      shader = "default"
+      boid_size = max(3, boid_size - 0.2),
+      boid_alpha = boid_alpha,
+      vector_mode = vector_mode,
+      vector_every = vector_every,
+      vector_scale = vector_scale_3d,
+      obstacle_mode = obstacle_mode,
+      obstacle_segments = obstacle_segments,
+      trail = trail,
+      trail_length = trail_length,
+      shader = shader
     )
   )
 }
 
-downstream_boids4r_widgets <- function() {
-  specs <- downstream_boids4r_specs()
+downstream_boids4r_widgets <- function(...) {
+  specs <- downstream_boids4r_specs(...)
   if (is.null(specs)) {
     return(NULL)
   }
@@ -87,10 +115,12 @@ export_downstream_boids4r_gallery <- function(output_dir = tempfile("ggwebgl-boi
   invisible(files)
 }
 
-widgets <- downstream_boids4r_widgets()
-if (is.null(widgets)) {
-  cat("boids4R is unavailable; skipping downstream boids4R animation demo.\n")
-} else {
-  print(widgets$schooling_2d)
-  print(widgets$murmuration_3d)
+if (identical(environment(), globalenv())) {
+  widgets <- downstream_boids4r_widgets()
+  if (is.null(widgets)) {
+    cat("boids4R is unavailable; skipping downstream boids4R animation demo.\n")
+  } else {
+    print(widgets$schooling_2d)
+    print(widgets$murmuration_3d)
+  }
 }

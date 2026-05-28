@@ -59,16 +59,21 @@ if (!boids4r_available) {
 
   scenario_widgets <- lapply(names(scenario_gallery), function(name) {
     sim <- scenario_gallery[[name]]
-    spec <- boids4R::as_ggwebgl_spec(
+    spec <- ggWebGL:::ggwebgl_boids_display_spec(
       sim,
-      vector_every = if (identical(sim$dimension, "3d")) 16L else 12L,
+      boid_size = if (identical(sim$dimension, "3d")) 3.4 else 3.6,
+      boid_alpha = 0.88,
+      vector_mode = "current",
+      vector_every = 1L,
       vector_scale = if (identical(sim$dimension, "3d")) 0.11 else 0.13,
-      shader = "density_splat"
+      obstacle_mode = "ring",
+      obstacle_segments = 48L,
+      trail = "recent",
+      trail_length = 20L,
+      shader = "default",
+      speed = 1.4
     )
     spec$labels$title <- paste("boids4R", name)
-    spec$render$timeline$autoplay <- TRUE
-    spec$render$timeline$loop <- TRUE
-    spec$render$timeline$speed <- 1.4
     ggWebGL::ggWebGL(spec, height = if (identical(sim$dimension, "3d")) 540 else 500)
   })
   names(scenario_widgets) <- names(scenario_gallery)
@@ -211,16 +216,21 @@ if (!boids4r_available) {
   )
 
   custom_widgets <- lapply(names(custom_runs), function(name) {
-    spec <- boids4R::as_ggwebgl_spec(
+    spec <- ggWebGL:::ggwebgl_boids_display_spec(
       custom_runs[[name]],
-      vector_every = 10L,
+      boid_size = 3.8,
+      boid_alpha = 0.9,
+      vector_mode = "current",
+      vector_every = 1L,
       vector_scale = 0.14,
-      shader = "density_splat"
+      obstacle_mode = "ring",
+      obstacle_segments = 48L,
+      trail = "recent",
+      trail_length = 20L,
+      shader = "default",
+      speed = 1.5
     )
     spec$labels$title <- paste("boids4R custom corridor:", name)
-    spec$render$timeline$autoplay <- TRUE
-    spec$render$timeline$loop <- TRUE
-    spec$render$timeline$speed <- 1.5
     ggWebGL::ggWebGL(spec, height = 500)
   })
   names(custom_widgets) <- names(custom_runs)
@@ -242,7 +252,12 @@ if (!boids4r_available) {
 
 ## ----eval = FALSE-------------------------------------------------------------
 # sim <- boids4R::boids_scenario("mixed_species_3d", n = 210, steps = 90, seed = 115)
-# spec <- boids4R::as_ggwebgl_spec(sim, vector_every = 16, shader = "density_splat")
-# spec$render$timeline$autoplay <- TRUE
+# spec <- ggWebGL:::ggwebgl_boids_display_spec(
+#   sim,
+#   vector_mode = "current",
+#   obstacle_mode = "ring",
+#   trail = "recent",
+#   shader = "default"
+# )
 # ggWebGL::ggWebGL(spec, height = 540)
 
