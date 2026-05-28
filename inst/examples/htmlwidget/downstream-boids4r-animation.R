@@ -12,40 +12,47 @@ load_renderer_and_boids4r_packages <- function() {
   FALSE
 }
 
-build_downstream_boids4r_simulations <- function() {
+build_downstream_boids4r_simulations <- function(demo_steps = 240L) {
   if (identical(load_renderer_and_boids4r_packages(), FALSE)) {
     return(NULL)
   }
+  demo_steps <- as.integer(demo_steps)
 
   list(
     schooling_2d = boids4R::boids_scenario(
       "schooling_2d",
       n = 260L,
-      steps = 80L,
-      record_every = 2L,
+      steps = demo_steps,
+      record_every = 3L,
       seed = 2601L
     ),
     murmuration_3d = boids4R::boids_scenario(
       "murmuration_3d",
       n = 360L,
-      steps = 90L,
-      record_every = 3L,
+      steps = demo_steps,
+      record_every = 4L,
       seed = 2602L
     )
   )
 }
 
 downstream_boids4r_specs <- function(boid_size = 3.6,
+                                     prey_size = 4.8,
+                                     predator_size = 7.5,
                                      boid_alpha = 0.88,
+                                     trail_alpha = 0.18,
                                      vector_mode = c("current", "sampled", "all", "none"),
                                      vector_every = 1L,
                                      vector_scale = NULL,
                                      obstacle_mode = c("ring", "disc", "none"),
                                      obstacle_segments = 48L,
                                      trail = c("recent", "none", "all"),
-                                     trail_length = 20L,
-                                     shader = "default") {
-  sims <- build_downstream_boids4r_simulations()
+                                     trail_length = 32L,
+                                     shader = "default",
+                                     demo_steps = 240L,
+                                     fps = 24L,
+                                     playback_speed = 1.4) {
+  sims <- build_downstream_boids4r_simulations(demo_steps = demo_steps)
   if (is.null(sims)) {
     return(NULL)
   }
@@ -59,7 +66,10 @@ downstream_boids4r_specs <- function(boid_size = 3.6,
     schooling_2d = ggWebGL:::ggwebgl_boids_display_spec(
       sims$schooling_2d,
       boid_size = boid_size,
-      boid_alpha = boid_alpha,
+      prey_size = prey_size,
+      predator_size = predator_size,
+      current_alpha = boid_alpha,
+      trail_alpha = trail_alpha,
       vector_mode = vector_mode,
       vector_every = vector_every,
       vector_scale = vector_scale_2d,
@@ -67,12 +77,17 @@ downstream_boids4r_specs <- function(boid_size = 3.6,
       obstacle_segments = obstacle_segments,
       trail = trail,
       trail_length = trail_length,
-      shader = shader
+      shader = shader,
+      fps = fps,
+      playback_speed = playback_speed
     ),
     murmuration_3d = ggWebGL:::ggwebgl_boids_display_spec(
       sims$murmuration_3d,
       boid_size = max(3, boid_size - 0.2),
-      boid_alpha = boid_alpha,
+      prey_size = prey_size,
+      predator_size = predator_size,
+      current_alpha = boid_alpha,
+      trail_alpha = trail_alpha,
       vector_mode = vector_mode,
       vector_every = vector_every,
       vector_scale = vector_scale_3d,
@@ -80,7 +95,9 @@ downstream_boids4r_specs <- function(boid_size = 3.6,
       obstacle_segments = obstacle_segments,
       trail = trail,
       trail_length = trail_length,
-      shader = shader
+      shader = shader,
+      fps = fps,
+      playback_speed = playback_speed
     )
   )
 }

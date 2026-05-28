@@ -1,17 +1,24 @@
 ggwebgl_boids_display_spec <- function(sim,
-                                       boid_size = 3.5,
-                                       boid_alpha = 0.85,
+                                       boid_size = 4.2,
+                                       prey_size = 4.8,
+                                       predator_size = 7.5,
+                                       current_alpha = 0.95,
+                                       trail_alpha = 0.18,
+                                       boid_alpha = NULL,
                                        vector_mode = c("current", "sampled", "all", "none"),
                                        vector_every = 1L,
                                        vector_scale = 0.14,
                                        obstacle_mode = c("ring", "disc", "none"),
                                        obstacle_segments = 48L,
                                        trail = c("recent", "none", "all"),
-                                       trail_length = 20L,
+                                       trail_length = 32L,
                                        shader = "default",
+                                       palette = NULL,
                                        autoplay = TRUE,
                                        loop = TRUE,
                                        speed = 1.4,
+                                       playback_speed = NULL,
+                                       fps = 24L,
                                        selected_frame = NULL,
                                        ...) {
   if (!requireNamespace("boids4R", quietly = TRUE)) {
@@ -37,7 +44,10 @@ ggwebgl_boids_display_spec <- function(sim,
     spec,
     sim = sim,
     boid_size = boid_size,
-    boid_alpha = boid_alpha,
+    prey_size = prey_size,
+    predator_size = predator_size,
+    current_alpha = boid_alpha %||% current_alpha,
+    trail_alpha = trail_alpha,
     vector_mode = vector_mode,
     vector_every = vector_every,
     obstacle_mode = obstacle_mode,
@@ -45,30 +55,38 @@ ggwebgl_boids_display_spec <- function(sim,
     trail = trail,
     trail_length = trail_length,
     shader = shader,
+    palette = palette,
     selected_frame = selected_frame
   )
   out$webgl$timeline$autoplay <- isTRUE(autoplay)
   out$webgl$timeline$loop <- isTRUE(loop)
-  out$webgl$timeline$speed <- ggwebgl_boids_positive_scalar(speed, "speed")
+  out$webgl$timeline$speed <- ggwebgl_boids_positive_scalar(playback_speed %||% speed, "speed")
+  out$webgl$timeline$fps <- ggwebgl_boids_positive_integer(fps, "fps")
   out$render$timeline$autoplay <- out$webgl$timeline$autoplay
   out$render$timeline$loop <- out$webgl$timeline$loop
   out$render$timeline$speed <- out$webgl$timeline$speed
+  out$render$timeline$fps <- out$webgl$timeline$fps
   out
 }
 
 ggwebgl_boids_apply_display_spec <- function(spec,
                                              sim = NULL,
                                              obstacles = NULL,
-                                             boid_size = 3.5,
-                                             boid_alpha = 0.85,
+                                             boid_size = 4.2,
+                                             prey_size = 4.8,
+                                             predator_size = 7.5,
+                                             current_alpha = 0.95,
+                                             trail_alpha = 0.18,
+                                             boid_alpha = NULL,
                                              vector_mode = c("current", "sampled", "all", "none"),
                                              vector_every = 1L,
                                              vector_scale = NULL,
                                              obstacle_mode = c("ring", "disc", "none"),
                                              obstacle_segments = 48L,
                                              trail = c("recent", "none", "all"),
-                                             trail_length = 20L,
+                                             trail_length = 32L,
                                              shader = "default",
+                                             palette = NULL,
                                              selected_frame = NULL) {
   if (!is.list(spec) || is.null(spec$render) || is.null(spec$render$layers)) {
     rlang::abort("`spec` must be a ggWebGL specification with `render$layers`.")
@@ -77,8 +95,12 @@ ggwebgl_boids_apply_display_spec <- function(spec,
   vector_mode <- match.arg(vector_mode)
   obstacle_mode <- match.arg(obstacle_mode)
   trail <- match.arg(trail)
+  palette <- ggwebgl_boids_palette(palette)
   boid_size <- ggwebgl_boids_positive_scalar(boid_size, "boid_size")
-  boid_alpha <- ggwebgl_boids_alpha_scalar(boid_alpha, "boid_alpha")
+  prey_size <- ggwebgl_boids_positive_scalar(prey_size, "prey_size")
+  predator_size <- ggwebgl_boids_positive_scalar(predator_size, "predator_size")
+  current_alpha <- ggwebgl_boids_alpha_scalar(boid_alpha %||% current_alpha, "current_alpha")
+  trail_alpha <- ggwebgl_boids_alpha_scalar(trail_alpha, "trail_alpha")
   vector_every <- ggwebgl_boids_positive_integer(vector_every, "vector_every")
   obstacle_segments <- ggwebgl_boids_positive_integer(obstacle_segments, "obstacle_segments")
   trail_length <- ggwebgl_boids_positive_integer(trail_length, "trail_length")
@@ -92,33 +114,53 @@ ggwebgl_boids_apply_display_spec <- function(spec,
     selected_frame
   }
 
-  processed <- list()
-  for (layer in layers) {
-    if (identical(layer$type, "points")) {
-      layer <- ggwebgl_boids_style_points(layer, boid_size, boid_alpha)
-      keep <- ggwebgl_boids_keep_frame_rows(layer, visible_frames)
-      layer <- ggwebgl_boids_filter_point_layer(layer, keep)
-      if ((layer$rows %||% 0L) > 0L) {
+  if (ggwebgl_boids_has_frame_data(sim)) {
+    processed <- ggwebgl_boids_layers_from_sim(
+      sim = sim,
+      frame_values = frame_values,
+      trail_frames = visible_frames,
+      current_frame = current_frame,
+      trail = trail,
+      boid_size = boid_size,
+      prey_size = prey_size,
+      predator_size = predator_size,
+      current_alpha = current_alpha,
+      trail_alpha = trail_alpha,
+      vector_mode = vector_mode,
+      vector_every = vector_every,
+      vector_scale = vector_scale %||% 0.14,
+      palette = palette,
+      dimension = spec$render$dimension %||% spec$webgl$dimension %||% sim$dimension %||% "2d"
+    )
+  } else {
+    processed <- list()
+    for (layer in layers) {
+      if (identical(layer$type, "points")) {
+        layer <- ggwebgl_boids_style_points(layer, boid_size, current_alpha)
+        keep <- ggwebgl_boids_keep_frame_rows(layer, visible_frames)
+        layer <- ggwebgl_boids_filter_point_layer(layer, keep)
+        if ((layer$rows %||% 0L) > 0L) {
+          processed[[length(processed) + 1L]] <- layer
+        }
+      } else if (identical(layer$type, "vectors")) {
+        if (identical(vector_mode, "none")) {
+          next
+        }
+        keep <- ggwebgl_boids_keep_frame_rows(layer, visible_frames)
+        if (identical(vector_mode, "sampled")) {
+          sampled <- seq_along(keep) %% vector_every == 1L
+          keep <- keep & sampled
+        }
+        layer <- ggwebgl_boids_filter_vector_layer(layer, keep)
+        if (!is.null(vector_scale)) {
+          layer <- ggwebgl_boids_scale_vectors(layer, vector_scale)
+        }
+        if ((layer$rows %||% 0L) > 0L) {
+          processed[[length(processed) + 1L]] <- layer
+        }
+      } else {
         processed[[length(processed) + 1L]] <- layer
       }
-    } else if (identical(layer$type, "vectors")) {
-      if (identical(vector_mode, "none")) {
-        next
-      }
-      keep <- ggwebgl_boids_keep_frame_rows(layer, visible_frames)
-      if (identical(vector_mode, "sampled")) {
-        sampled <- seq_along(keep) %% vector_every == 1L
-        keep <- keep & sampled
-      }
-      layer <- ggwebgl_boids_filter_vector_layer(layer, keep)
-      if (!is.null(vector_scale)) {
-        layer <- ggwebgl_boids_scale_vectors(layer, vector_scale)
-      }
-      if ((layer$rows %||% 0L) > 0L) {
-        processed[[length(processed) + 1L]] <- layer
-      }
-    } else {
-      processed[[length(processed) + 1L]] <- layer
     }
   }
 
@@ -127,13 +169,14 @@ ggwebgl_boids_apply_display_spec <- function(spec,
     obstacles = obstacles,
     mode = obstacle_mode,
     segments = obstacle_segments,
-    dimension = spec$render$dimension %||% spec$webgl$dimension %||% "2d"
+    dimension = spec$render$dimension %||% spec$webgl$dimension %||% "2d",
+    colour = palette[["obstacle"]]
   )
   processed <- c(processed, obstacle_layers)
 
   webgl <- spec$webgl %||% list()
   webgl$shader <- shader
-  webgl$timeline <- ggwebgl_boids_update_timeline(webgl$timeline %||% spec$render$timeline, processed, visible_frames)
+  webgl$timeline <- ggwebgl_boids_update_timeline(webgl$timeline %||% spec$render$timeline, processed, frame_values)
 
   out <- ggwebgl_spec(
     layers = processed,
@@ -154,6 +197,198 @@ ggwebgl_boids_apply_display_spec <- function(spec,
     )
   ))
   out
+}
+
+ggwebgl_boids_palette <- function(palette = NULL) {
+  defaults <- c(
+    species_1 = "#2563EB",
+    species_2 = "#16A34A",
+    species_3 = "#9333EA",
+    prey = "#F59E0B",
+    predator = "#DC2626",
+    obstacle = "#111827",
+    vector = "#334155",
+    attractor = "#0891B2",
+    trail = "#64748B"
+  )
+  if (is.null(palette)) {
+    return(defaults)
+  }
+  palette <- as.character(palette)
+  if (is.null(names(palette)) || any(!nzchar(names(palette)))) {
+    rlang::abort("`palette` must be a named character vector.")
+  }
+  out <- defaults
+  out[names(palette)] <- palette
+  out
+}
+
+ggwebgl_boids_has_frame_data <- function(sim) {
+  is.list(sim) &&
+    is.data.frame(sim$frames) &&
+    all(c("frame", "time", "id", "species", "x", "y", "vx", "vy") %in% names(sim$frames))
+}
+
+ggwebgl_boids_layers_from_sim <- function(sim,
+                                          frame_values,
+                                          trail_frames,
+                                          current_frame,
+                                          trail,
+                                          boid_size,
+                                          prey_size,
+                                          predator_size,
+                                          current_alpha,
+                                          trail_alpha,
+                                          vector_mode,
+                                          vector_every,
+                                          vector_scale,
+                                          palette,
+                                          dimension) {
+  frames <- as.data.frame(sim$frames, stringsAsFactors = FALSE)
+  frames$z <- frames$z %||% 0
+  frames$vz <- frames$vz %||% 0
+  frames$role_colour <- ggwebgl_boids_frame_colours(frames, palette, has_predators = NROW(sim$world$predators %||% data.frame()) > 0L)
+  frames$current_size <- ifelse(
+    ggwebgl_boids_is_prey(frames, has_predators = NROW(sim$world$predators %||% data.frame()) > 0L),
+    prey_size,
+    boid_size
+  )
+  layers <- list()
+
+  if (!identical(trail, "none") && length(trail_frames)) {
+    trail_data <- frames[frames$frame %in% trail_frames & frames$frame != current_frame, , drop = FALSE]
+    if (nrow(trail_data)) {
+      trail_data$trail_size <- pmax(1.4, boid_size * 0.45)
+      layers[[length(layers) + 1L]] <- ggwebgl_layer_points(
+        trail_data,
+        x = "x",
+        y = "y",
+        z = if (identical(dimension, "3d")) "z" else NULL,
+        colour = "role_colour",
+        alpha = trail_alpha,
+        size = "trail_size",
+        label = "species",
+        id = "id",
+        geom = "boids_recent_trail"
+      )
+    }
+  }
+
+  current_data <- frames[frames$frame %in% frame_values, , drop = FALSE]
+  if (nrow(current_data)) {
+    layers[[length(layers) + 1L]] <- ggwebgl_layer_points(
+      current_data,
+      x = "x",
+      y = "y",
+      z = if (identical(dimension, "3d")) "z" else NULL,
+      colour = "role_colour",
+      alpha = current_alpha,
+      size = "current_size",
+      label = "species",
+      id = "id",
+      frame = "frame",
+      time = "time",
+      geom = "boids_current"
+    )
+  }
+
+  if (!identical(vector_mode, "none") && nrow(current_data)) {
+    vector_data <- current_data
+    if (identical(vector_mode, "sampled")) {
+      vector_data <- vector_data[seq_len(nrow(vector_data)) %% vector_every == 1L, , drop = FALSE]
+    }
+    if (nrow(vector_data)) {
+      vector_data$xend <- vector_data$x + vector_data$vx * vector_scale
+      vector_data$yend <- vector_data$y + vector_data$vy * vector_scale
+      vector_data$zend <- vector_data$z + vector_data$vz * vector_scale
+      layers[[length(layers) + 1L]] <- ggwebgl_layer_vectors(
+        vector_data,
+        x = "x",
+        y = "y",
+        z = if (identical(dimension, "3d")) "z" else NULL,
+        xend = "xend",
+        yend = "yend",
+        zend = if (identical(dimension, "3d")) "zend" else NULL,
+        colour = palette[["vector"]],
+        alpha = 0.82,
+        width = 1.35,
+        head_size = 7,
+        id = "id",
+        frame = "frame",
+        time = "time",
+        geom = if (identical(vector_mode, "sampled")) "boids_velocity_sampled" else "boids_velocity_current"
+      )
+    }
+  }
+
+  role_layers <- ggwebgl_boids_static_role_layers(sim, palette, predator_size, dimension)
+  c(layers, role_layers)
+}
+
+ggwebgl_boids_frame_colours <- function(frames, palette, has_predators = FALSE) {
+  species <- as.character(frames$species %||% "boid")
+  if (has_predators && length(unique(species)) == 1L && identical(unique(species), "boid")) {
+    return(rep(palette[["prey"]], length(species)))
+  }
+  species_values <- unique(species)
+  species_keys <- paste0("species_", ((seq_along(species_values) - 1L) %% 3L) + 1L)
+  lookup <- stats::setNames(unname(palette[species_keys]), species_values)
+  unname(lookup[species])
+}
+
+ggwebgl_boids_is_prey <- function(frames, has_predators = FALSE) {
+  species <- as.character(frames$species %||% "boid")
+  has_predators & identical(unique(species), "boid")
+}
+
+ggwebgl_boids_static_role_layers <- function(sim, palette, predator_size, dimension) {
+  layers <- list()
+  predators <- ggwebgl_boids_static_role_table(sim$world$predators %||% NULL, "predator")
+  if (NROW(predators)) {
+    layers[[length(layers) + 1L]] <- ggwebgl_layer_points(
+      predators,
+      x = "x",
+      y = "y",
+      z = if (identical(dimension, "3d")) "z" else NULL,
+      colour = palette[["predator"]],
+      alpha = 0.95,
+      size = predator_size,
+      label = "label",
+      id = "id",
+      geom = "boids_predator"
+    )
+  }
+
+  attractors <- ggwebgl_boids_static_role_table(sim$world$attractors %||% NULL, "attractor")
+  if (NROW(attractors)) {
+    layers[[length(layers) + 1L]] <- ggwebgl_layer_points(
+      attractors,
+      x = "x",
+      y = "y",
+      z = if (identical(dimension, "3d")) "z" else NULL,
+      colour = palette[["attractor"]],
+      alpha = 0.9,
+      size = pmax(5, predator_size * 0.75),
+      label = "label",
+      id = "id",
+      geom = "boids_attractor"
+    )
+  }
+  layers
+}
+
+ggwebgl_boids_static_role_table <- function(data, role) {
+  if (is.null(data)) {
+    return(data.frame())
+  }
+  data <- as.data.frame(data, stringsAsFactors = FALSE)
+  if (!NROW(data) || !all(c("x", "y") %in% names(data))) {
+    return(data.frame())
+  }
+  data$z <- data$z %||% 0
+  data$id <- data$id %||% paste0(role, "-", seq_len(NROW(data)))
+  data$label <- paste(role, seq_len(NROW(data)))
+  data
 }
 
 ggwebgl_boids_positive_scalar <- function(value, name) {
@@ -287,7 +522,12 @@ ggwebgl_boids_scale_vectors <- function(layer, vector_scale) {
   layer
 }
 
-ggwebgl_boids_obstacle_layers <- function(sim, obstacles = NULL, mode = "ring", segments = 48L, dimension = "2d") {
+ggwebgl_boids_obstacle_layers <- function(sim,
+                                          obstacles = NULL,
+                                          mode = "ring",
+                                          segments = 48L,
+                                          dimension = "2d",
+                                          colour = "#111827") {
   if (identical(mode, "none")) {
     return(list())
   }
@@ -296,9 +536,9 @@ ggwebgl_boids_obstacle_layers <- function(sim, obstacles = NULL, mode = "ring", 
     return(list())
   }
   if (identical(mode, "disc")) {
-    return(list(ggwebgl_boids_obstacle_disc_layer(obstacles, segments, dimension)))
+    return(list(ggwebgl_boids_obstacle_disc_layer(obstacles, segments, dimension, colour)))
   }
-  list(ggwebgl_boids_obstacle_ring_layer(obstacles, segments, dimension))
+  list(ggwebgl_boids_obstacle_ring_layer(obstacles, segments, dimension, colour))
 }
 
 ggwebgl_boids_obstacle_table <- function(sim, obstacles = NULL) {
@@ -328,7 +568,7 @@ ggwebgl_boids_obstacle_table <- function(sim, obstacles = NULL) {
   )
 }
 
-ggwebgl_boids_obstacle_ring_layer <- function(obstacles, segments, dimension) {
+ggwebgl_boids_obstacle_ring_layer <- function(obstacles, segments, dimension, colour) {
   theta <- seq(0, 2 * pi, length.out = segments + 1L)
   ring <- do.call(rbind, lapply(seq_len(NROW(obstacles)), function(i) {
     data.frame(
@@ -346,7 +586,7 @@ ggwebgl_boids_obstacle_ring_layer <- function(obstacles, segments, dimension) {
       y = "y",
       z = "z",
       group = "group",
-      colour = "#ef4444",
+      colour = colour,
       alpha = 0.9,
       width = 2.4,
       geom = "boids_obstacle_ring"
@@ -357,7 +597,7 @@ ggwebgl_boids_obstacle_ring_layer <- function(obstacles, segments, dimension) {
       x = "x",
       y = "y",
       group = "group",
-      colour = "#ef4444",
+      colour = colour,
       alpha = 0.9,
       width = 2.4,
       geom = "boids_obstacle_ring"
@@ -365,7 +605,7 @@ ggwebgl_boids_obstacle_ring_layer <- function(obstacles, segments, dimension) {
   }
 }
 
-ggwebgl_boids_obstacle_disc_layer <- function(obstacles, segments, dimension) {
+ggwebgl_boids_obstacle_disc_layer <- function(obstacles, segments, dimension, colour) {
   theta <- seq(0, 2 * pi, length.out = segments + 1L)
   vertices <- list()
   triangles <- list()
@@ -400,7 +640,7 @@ ggwebgl_boids_obstacle_disc_layer <- function(obstacles, segments, dimension) {
     i = "i",
     j = "j",
     k = "k",
-    colour = "#ef4444",
+    colour = colour,
     alpha = 0.28,
     id = "id",
     pick_id = "pick_id",

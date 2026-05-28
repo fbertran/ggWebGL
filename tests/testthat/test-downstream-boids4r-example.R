@@ -160,6 +160,59 @@ boids_fixture_spec <- function(n_boids = 4L, frames = c(0L, 2L, 4L, 6L)) {
   )
 }
 
+boids_fixture_sim <- function(n_boids = 4L, frames = c(0L, 2L, 4L, 6L)) {
+  grid <- expand.grid(
+    id = seq_len(n_boids),
+    frame = frames,
+    KEEP.OUT.ATTRS = FALSE
+  )
+  grid$time <- grid$frame / 10
+  grid$id <- paste0("boid-", sprintf("%03d", grid$id))
+  grid$species <- rep(c("school", "scout"), length.out = nrow(grid))
+  grid$x <- seq_len(nrow(grid)) / 100
+  grid$y <- rep(seq_len(n_boids), times = length(frames)) / 10
+  grid$z <- 0
+  grid$vx <- 0.4
+  grid$vy <- 0.1
+  grid$vz <- 0
+  grid$speed <- sqrt(grid$vx^2 + grid$vy^2)
+
+  list(
+    frames = grid,
+    world = list(
+      obstacles = data.frame(x = 0.2, y = 0.4, radius = 0.1, z = 0),
+      predators = data.frame(x = -0.3, y = 0.5, radius = 0.2, strength = 1, z = 0),
+      attractors = data.frame(x = 0.8, y = -0.2, strength = 0.8, z = 0)
+    ),
+    dimension = "2d"
+  )
+}
+
+test_that("boids display palette separates species, prey, predators, obstacles, and vectors", {
+  palette <- ggWebGL:::ggwebgl_boids_palette()
+  keys <- c("species_1", "species_2", "species_3", "prey", "predator", "obstacle", "vector")
+  expect_true(all(keys %in% names(palette)))
+  expect_equal(length(unique(unname(palette[keys]))), length(keys))
+})
+
+test_that("downstream boids4R demo defaults use a longer behavioural timeline", {
+  example_path <- locate_boids4r_renderer_example()
+  if (is.na(example_path)) {
+    skip("downstream boids4R example is unavailable in this installed-package test context.")
+  }
+
+  env <- new.env(parent = globalenv())
+  expect_no_error(sys.source(example_path, envir = env))
+
+  if (!requireNamespace("boids4R", quietly = TRUE)) {
+    skip("boids4R is unavailable in this test context.")
+  }
+
+  sims <- env$build_downstream_boids4r_simulations(demo_steps = 240L)
+  expect_gte(max(sims$schooling_2d$frames$frame), 240L)
+  expect_gte(length(unique(sims$schooling_2d$frames$frame)), 60L)
+})
+
 test_that("boids display current vectors include one velocity per current boid", {
   spec <- boids_fixture_spec(n_boids = 4L)
   out <- ggWebGL:::ggwebgl_boids_apply_display_spec(
@@ -176,7 +229,69 @@ test_that("boids display current vectors include one velocity per current boid",
   current_frame <- max(out$render$timeline$frames)
   expect_equal(sum(vectors$frame == current_frame), 4L)
   expect_equal(out$render$vector_count, 8L)
-  expect_equal(out$render$timeline$frames, c(4L, 6L))
+  expect_equal(out$render$timeline$frames, c(0L, 2L, 4L, 6L))
+})
+
+test_that("boids display splits current boids from faint recent trails", {
+  spec <- boids_fixture_spec(n_boids = 4L)
+  sim <- boids_fixture_sim(n_boids = 4L)
+  out <- ggWebGL:::ggwebgl_boids_apply_display_spec(
+    spec,
+    sim = sim,
+    vector_mode = "current",
+    trail = "recent",
+    trail_length = 2L,
+    boid_size = 4.4,
+    current_alpha = 0.96,
+    trail_alpha = 0.16
+  )
+
+  geoms <- vapply(out$render$layers, function(layer) layer$geom %||% "", character(1))
+  current <- out$render$layers[[which(geoms == "boids_current")]]
+  trail <- out$render$layers[[which(geoms == "boids_recent_trail")]]
+  current_rgba <- matrix(current$rgba, ncol = 4L, byrow = TRUE)
+  trail_rgba <- matrix(trail$rgba, ncol = 4L, byrow = TRUE)
+
+  expect_equal(unique(current$size), 4.4)
+  expect_equal(unique(current_rgba[, 4L]), 0.96)
+  expect_equal(unique(trail_rgba[, 4L]), 0.16)
+  expect_lt(max(trail$size), min(current$size))
+})
+
+test_that("boids display current vector layer has one vector per boid in active frames", {
+  spec <- boids_fixture_spec(n_boids = 4L)
+  sim <- boids_fixture_sim(n_boids = 4L)
+  out <- ggWebGL:::ggwebgl_boids_apply_display_spec(
+    spec,
+    sim = sim,
+    vector_mode = "current",
+    obstacle_mode = "none",
+    trail = "none"
+  )
+
+  geoms <- vapply(out$render$layers, function(layer) layer$geom %||% "", character(1))
+  vectors <- out$render$layers[[which(geoms == "boids_velocity_current")]]
+  frame_counts <- table(vectors$frame)
+  expect_true(all(frame_counts == 4L))
+})
+
+test_that("boids display renders predators and attractors as distinct role points", {
+  spec <- boids_fixture_spec(n_boids = 4L)
+  sim <- boids_fixture_sim(n_boids = 4L)
+  out <- ggWebGL:::ggwebgl_boids_apply_display_spec(
+    spec,
+    sim = sim,
+    predator_size = 7.5,
+    obstacle_mode = "none",
+    trail = "none"
+  )
+
+  geoms <- vapply(out$render$layers, function(layer) layer$geom %||% "", character(1))
+  predator <- out$render$layers[[which(geoms == "boids_predator")]]
+  attractor <- out$render$layers[[which(geoms == "boids_attractor")]]
+  expect_equal(predator$size, 7.5)
+  expect_equal(predator$rows, 1L)
+  expect_equal(attractor$rows, 1L)
 })
 
 test_that("boids display sampled vectors respect vector_every", {

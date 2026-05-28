@@ -58,9 +58,9 @@ if (!boids4r_available) {
 These examples mirror the `boids4R` scenario gallery: compact schools, obstacle
 corridors, predator avoidance, murmurations, and mixed-species 3D flocks. Each
 widget is built from a renderer-neutral `boids_simulation` object and animated
-by the `ggWebGL` timeline. Points show boids, arrows show current velocity, and
-obstacles are drawn as rings. Optional trails are a recent history window, not
-the current boid count.
+by the `ggWebGL` timeline. Colours encode species or roles, current boids are
+emphasized, arrows show current velocity, and obstacles are drawn as rings.
+Optional trails are a faint recent history window, not the current boid count.
 
 ```{r}
 if (!boids4r_available) {
@@ -70,36 +70,36 @@ if (!boids4r_available) {
     schooling_2d = boids4R::boids_scenario(
       "schooling_2d",
       n = 180L,
-      steps = 80L,
-      record_every = 2L,
+      steps = 240L,
+      record_every = 3L,
       seed = 111L
     ),
     obstacle_corridor_2d = boids4R::boids_scenario(
       "obstacle_corridor_2d",
       n = 160L,
-      steps = 90L,
-      record_every = 2L,
+      steps = 240L,
+      record_every = 3L,
       seed = 112L
     ),
     predator_avoidance_2d = boids4R::boids_scenario(
       "predator_avoidance_2d",
       n = 170L,
-      steps = 90L,
-      record_every = 2L,
+      steps = 240L,
+      record_every = 3L,
       seed = 113L
     ),
     murmuration_3d = boids4R::boids_scenario(
       "murmuration_3d",
       n = 240L,
-      steps = 90L,
-      record_every = 3L,
+      steps = 240L,
+      record_every = 4L,
       seed = 114L
     ),
     mixed_species_3d = boids4R::boids_scenario(
       "mixed_species_3d",
       n = 210L,
-      steps = 90L,
-      record_every = 3L,
+      steps = 240L,
+      record_every = 4L,
       seed = 115L
     )
   )
@@ -108,17 +108,21 @@ if (!boids4r_available) {
     sim <- scenario_gallery[[name]]
     spec <- ggWebGL:::ggwebgl_boids_display_spec(
       sim,
-      boid_size = if (identical(sim$dimension, "3d")) 3.4 else 3.6,
-      boid_alpha = 0.88,
+      boid_size = if (identical(sim$dimension, "3d")) 4.0 else 4.2,
+      prey_size = 4.8,
+      predator_size = 7.5,
+      current_alpha = 0.95,
+      trail_alpha = 0.18,
       vector_mode = "current",
       vector_every = 1L,
       vector_scale = if (identical(sim$dimension, "3d")) 0.11 else 0.13,
       obstacle_mode = "ring",
       obstacle_segments = 48L,
       trail = "recent",
-      trail_length = 20L,
+      trail_length = 32L,
       shader = "default",
-      speed = 1.4
+      speed = 1.4,
+      fps = 24L
     )
     spec$labels$title <- paste("boids4R", name)
     ggWebGL::ggWebGL(spec, height = if (identical(sim$dimension, "3d")) 540 else 500)
@@ -269,16 +273,16 @@ if (!boids4r_available) {
       custom_state,
       custom_world,
       baseline_params,
-      steps = 95L,
-      record_every = 2L,
+      steps = 240L,
+      record_every = 3L,
       seed = 221L
     ),
     stronger_avoidance = boids4R::simulate_boids(
       custom_state,
       custom_world,
       avoidance_params,
-      steps = 95L,
-      record_every = 2L,
+      steps = 240L,
+      record_every = 3L,
       seed = 222L
     )
   )
@@ -286,17 +290,21 @@ if (!boids4r_available) {
   custom_widgets <- lapply(names(custom_runs), function(name) {
     spec <- ggWebGL:::ggwebgl_boids_display_spec(
       custom_runs[[name]],
-      boid_size = 3.8,
-      boid_alpha = 0.9,
+      boid_size = 4.4,
+      prey_size = 5.0,
+      predator_size = 8.0,
+      current_alpha = 0.96,
+      trail_alpha = 0.18,
       vector_mode = "current",
       vector_every = 1L,
       vector_scale = 0.14,
       obstacle_mode = "ring",
       obstacle_segments = 48L,
       trail = "recent",
-      trail_length = 20L,
+      trail_length = 32L,
       shader = "default",
-      speed = 1.5
+      speed = 1.5,
+      fps = 24L
     )
     spec$labels$title <- paste("boids4R custom corridor:", name)
     ggWebGL::ggWebGL(spec, height = 500)
@@ -330,12 +338,13 @@ if (!boids4r_available) {
 The same pattern can be used from an installed package:
 
 ```{r eval = FALSE}
-sim <- boids4R::boids_scenario("mixed_species_3d", n = 210, steps = 90, seed = 115)
+sim <- boids4R::boids_scenario("mixed_species_3d", n = 210, steps = 240, seed = 115)
 spec <- ggWebGL:::ggwebgl_boids_display_spec(
   sim,
   vector_mode = "current",
   obstacle_mode = "ring",
   trail = "recent",
+  trail_length = 32,
   shader = "default"
 )
 ggWebGL::ggWebGL(spec, height = 540)
