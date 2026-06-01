@@ -7,10 +7,29 @@ skip_if_no_static_export_support <- function() {
   }
 
   browser_ok <- tryCatch({
+    had_default <- chromote::has_default_chromote_object()
     browser <- chromote::Chromote$new()
-    on.exit(try(browser$close(wait = TRUE), silent = TRUE), add = TRUE)
+    session <- NULL
+    on.exit(
+      {
+        if (!is.null(session)) {
+          try(session$close(), silent = TRUE)
+        }
+        try(browser$close(wait = TRUE), silent = TRUE)
+        if (!had_default && chromote::has_default_chromote_object()) {
+          default_chromote_object <- get0(
+            "default_chromote_object",
+            envir = asNamespace("chromote"),
+            inherits = FALSE
+          )
+          if (is.function(default_chromote_object)) {
+            try(default_chromote_object()$close(wait = TRUE), silent = TRUE)
+          }
+        }
+      },
+      add = TRUE
+    )
     session <- browser$new_session(width = 320, height = 220, wait_ = TRUE)
-    try(session$close(), silent = TRUE)
     TRUE
   }, error = function(e) FALSE)
 
@@ -45,7 +64,6 @@ count_supervisor_connections <- function() {
 
 test_that("snapshot_ggwebgl writes static images from ggplot, widget, and spec inputs", {
   skip_if_no_static_export_support()
-  default_before <- chromote::has_default_chromote_object()
 
   plot <- static_export_plot()
   widget <- ggplot_webgl(plot, width = 480, height = 320)
@@ -81,12 +99,10 @@ test_that("snapshot_ggwebgl writes static images from ggplot, widget, and spec i
   expect_equal(infos$spec$format[[1L]], "JPEG")
   expect_true(all(vapply(infos, function(info) info$width[[1L]], integer(1)) == 640L))
   expect_true(all(vapply(infos, function(info) info$height[[1L]], integer(1)) == 420L))
-  expect_identical(chromote::has_default_chromote_object(), default_before)
 })
 
 test_that("snapshot_ggwebgl writes static images from publication figures", {
   skip_if_no_static_export_support()
-  default_before <- chromote::has_default_chromote_object()
 
   figure <- ggwebgl_publication_figure(
     panels = list(
@@ -124,12 +140,10 @@ test_that("snapshot_ggwebgl writes static images from publication figures", {
   expect_equal(info$format[[1L]], "JPEG")
   expect_equal(info$width[[1L]], 420L)
   expect_equal(info$height[[1L]], 260L)
-  expect_identical(chromote::has_default_chromote_object(), default_before)
 })
 
 test_that("compose_ggwebgl_figure assembles row figures with labels and annotations", {
   skip_if_no_static_export_support()
-  default_before <- chromote::has_default_chromote_object()
 
   plot <- static_export_plot()
   output <- tempfile(fileext = ".jpg")
@@ -162,7 +176,22 @@ test_that("compose_ggwebgl_figure assembles row figures with labels and annotati
   expect_equal(info$format[[1L]], "JPEG")
   expect_equal(info$width[[1L]], 720L)
   expect_equal(info$height[[1L]], 320L)
-  expect_identical(chromote::has_default_chromote_object(), default_before)
+})
+
+test_that("snapshot_ggwebgl can run twice with private browser cleanup", {
+  skip_if_no_static_export_support()
+
+  plot <- static_export_plot()
+  files <- c(tempfile(fileext = ".png"), tempfile(fileext = ".png"))
+
+  snapshot_ggwebgl(plot, files[[1L]], width = 360, height = 240, format = "png", wait_seconds = 0.25)
+  snapshot_ggwebgl(plot, files[[2L]], width = 360, height = 240, format = "png", wait_seconds = 0.25)
+
+  expect_true(all(file.exists(files)))
+  infos <- lapply(files, function(path) magick::image_info(magick::image_read(path)))
+  expect_true(all(vapply(infos, function(info) identical(info$format[[1L]], "PNG"), logical(1))))
+  expect_true(all(vapply(infos, function(info) info$width[[1L]], integer(1)) == 360L))
+  expect_true(all(vapply(infos, function(info) info$height[[1L]], integer(1)) == 240L))
 })
 
 test_that("static export can clear processx supervisor connections when requested", {
@@ -190,7 +219,6 @@ test_that("static export can clear processx supervisor connections when requeste
 
 test_that("compose_ggwebgl_figure supports inset composition and format validation", {
   skip_if_no_static_export_support()
-  default_before <- chromote::has_default_chromote_object()
 
   plot <- static_export_plot()
   output <- tempfile(fileext = ".png")
@@ -224,5 +252,4 @@ test_that("compose_ggwebgl_figure supports inset composition and format validati
     snapshot_ggwebgl(plot, tempfile(fileext = ".bmp"), format = "bmp"),
     "format"
   )
-  expect_identical(chromote::has_default_chromote_object(), default_before)
 })

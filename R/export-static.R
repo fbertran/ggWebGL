@@ -747,7 +747,7 @@ ggwebgl_with_chromote_browser <- function(code) {
   on.exit(
     {
       if (!is.null(browser)) {
-        try(browser$close(wait = TRUE), silent = TRUE)
+        ggwebgl_close_chromote_browser(browser)
       }
       if (ggwebgl_should_reset_processx_supervisor()) {
         ggwebgl_reset_processx_supervisor()
@@ -764,6 +764,25 @@ ggwebgl_with_chromote_browser <- function(code) {
   )
 
   code(browser)
+}
+
+ggwebgl_close_chromote_browser <- function(browser) {
+  if (is.null(browser)) {
+    return(invisible(FALSE))
+  }
+
+  ok <- tryCatch(
+    {
+      browser$close(wait = TRUE)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  if (!ok) {
+    try(browser$close(), silent = TRUE)
+  }
+
+  invisible(ok)
 }
 
 ggwebgl_should_reset_processx_supervisor <- function() {
@@ -811,7 +830,7 @@ ggwebgl_with_chromote_session <- function(browser, width, height, code) {
   on.exit(
     {
       if (!is.null(session)) {
-        try(session$close(), silent = TRUE)
+        ggwebgl_close_chromote_session(session)
       }
     },
     add = TRUE
@@ -832,6 +851,22 @@ ggwebgl_with_chromote_session <- function(browser, width, height, code) {
   )
 
   code(session)
+}
+
+ggwebgl_close_chromote_session <- function(session) {
+  if (is.null(session)) {
+    return(invisible(FALSE))
+  }
+
+  ok <- tryCatch(
+    {
+      session$close()
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+
+  invisible(ok)
 }
 
 ggwebgl_write_image <- function(image,

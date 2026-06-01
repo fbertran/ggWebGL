@@ -12,6 +12,10 @@ Evaluation is disabled during CRAN, package checks, and CI unless
 explicitly enabled with `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or
 `NOT_CRAN=true`.
 
+> Example chunks are shown but not evaluated in this build. Set
+> `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true` to evaluate
+> them during a local non-CI render.
+
 ## Two Workflows
 
 ### Applet: Grammar-style points and lines
