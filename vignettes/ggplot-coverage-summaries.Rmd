@@ -26,17 +26,19 @@ ggwebgl_ci_vars <- c(
 )
 ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
 ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
-ggwebgl_eval_examples <- !ggwebgl_is_ci &&
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
   !ggwebgl_is_check &&
   (
     ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
       ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
   )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
 
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = ggwebgl_eval_examples
+  eval = ggwebgl_eval_code
 )
 
 library(ggplot2)
@@ -46,14 +48,24 @@ library(ggWebGL)
 This vignette covers statistical summaries, curve/contour layers, filled
 regions, raster grids, annotations, and fixed-scale facets. Evaluation is
 disabled during CRAN, package checks, and CI unless explicitly enabled with
-`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true`.
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true`. Live WebGL widgets
+are additionally disabled unless `GGWEBGL_EVAL_LIVE_WIDGETS=true` is set; rich
+local or pkgdown builds should set both `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true`
+and `GGWEBGL_EVAL_LIVE_WIDGETS=true`.
 
 ```{r coverage-eval-note, echo = FALSE, results = "asis", eval = TRUE}
-if (!ggwebgl_eval_examples) {
+if (!ggwebgl_eval_code) {
   cat(
     "> Example chunks are shown but not evaluated in this build. ",
     "Set `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true` ",
     "to evaluate them during a local non-CI render.\n",
+    sep = ""
+  )
+} else if (!ggwebgl_eval_widgets) {
+  cat(
+    "> Non-widget code chunks may evaluate in this build, but live WebGL ",
+    "widgets are skipped. Set `GGWEBGL_EVAL_LIVE_WIDGETS=true` as well ",
+    "to render browser-side widgets locally.\n",
     sep = ""
   )
 }
@@ -67,7 +79,7 @@ work remains with `ggplot2`.
 
 ## Applet: Frequency polygons
 
-```{r frequency-polygons}
+```{r frequency-polygons, eval = ggwebgl_eval_widgets}
 p <- ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
   geom_freqpoly_webgl(binwidth = 4, linewidth = 1.1) +
   labs(title = "Frequency polygons")
@@ -76,7 +88,7 @@ ggplot_webgl(p, height = 420)
 
 ## Applet: Density curves
 
-```{r density-curves}
+```{r density-curves, eval = ggwebgl_eval_widgets}
 p <- ggplot(mtcars, aes(mpg, colour = factor(cyl))) +
   geom_density_webgl(linewidth = 1.1) +
   labs(title = "Density curves")
@@ -89,7 +101,7 @@ ggplot_webgl(p, height = 420)
 which requires `MASS` at render time. The chunk is skipped when that optional
 runtime dependency is unavailable.
 
-```{r density2d-contours, eval = FALSE}
+```{r density2d-contours, eval = ggwebgl_eval_widgets && requireNamespace("MASS", quietly = TRUE)}
 p <- ggplot(mtcars, aes(wt, mpg)) +
   geom_density2d_webgl(linewidth = 0.8) +
   labs(title = "Two-dimensional density contours")
@@ -98,7 +110,7 @@ ggplot_webgl(p, height = 420)
 
 ## Code-only: Gridded contour lines
 
-```{r gridded-contour-lines, eval = FALSE}
+```{r gridded-contour-lines, eval = ggwebgl_eval_widgets}
 volcano_df <- as.data.frame(as.table(volcano))
 names(volcano_df) <- c("x", "y", "z")
 volcano_df$x <- as.numeric(volcano_df$x)
@@ -117,7 +129,7 @@ Range and summary geoms combine segment, point, and rectangle primitives.
 
 ## Applet: Linerange and pointrange
 
-```{r linerange-pointrange}
+```{r linerange-pointrange, eval = ggwebgl_eval_widgets}
 summary_df <- data.frame(
   group = factor(c("a", "b", "c")),
   y = c(4.1, 5.3, 6.0),
@@ -134,7 +146,7 @@ ggplot_webgl(p, height = 420)
 
 ## Applet: Error bars and crossbars
 
-```{r error-bars-crossbars}
+```{r error-bars-crossbars, eval = ggwebgl_eval_widgets}
 p <- ggplot(summary_df, aes(group, y, ymin = ymin, ymax = ymax)) +
   geom_errorbar_webgl(width = 0.25) +
   geom_crossbar_webgl(aes(fill = group), width = 0.45, alpha = 0.55) +
@@ -144,7 +156,7 @@ ggplot_webgl(p, height = 420)
 
 ## Applet: Boxplot summary
 
-```{r boxplot-summary}
+```{r boxplot-summary, eval = ggwebgl_eval_widgets}
 p <- ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
   geom_boxplot_webgl() +
   labs(title = "Boxplot summary")
@@ -155,7 +167,7 @@ ggplot_webgl(p, height = 420)
 
 Violin rendering uses `ggplot2`'s built density output.
 
-```{r violin-density-summary}
+```{r violin-density-summary, eval = ggwebgl_eval_widgets}
 p <- ggplot(mtcars, aes(factor(cyl), mpg, fill = factor(cyl))) +
   geom_violin_webgl(alpha = 0.7) +
   labs(title = "Violin density summary")
@@ -170,7 +182,7 @@ self-intersections should be treated as outside the current core contract.
 
 ## Applet: Ribbon band
 
-```{r ribbon-band}
+```{r ribbon-band, eval = ggwebgl_eval_widgets}
 band <- data.frame(
   x = seq(0, 2 * pi, length.out = 80)
 )
@@ -187,7 +199,7 @@ ggplot_webgl(p, height = 420)
 
 ## Code-only: Area band
 
-```{r area-band, eval = FALSE}
+```{r area-band, eval = ggwebgl_eval_widgets}
 p <- ggplot(band, aes(x, y)) +
   geom_area_webgl(fill = "#a7f3d0", alpha = 0.7) +
   labs(title = "Area band")
@@ -196,7 +208,7 @@ ggplot_webgl(p, height = 420)
 
 ## Applet: Simple polygon
 
-```{r simple-polygon}
+```{r simple-polygon, eval = ggwebgl_eval_widgets}
 triangle <- data.frame(
   x = c(0, 1, 0.2),
   y = c(0, 0.2, 1),
@@ -216,7 +228,7 @@ overlay metadata, not full WebGL glyph rendering.
 
 ## Applet: Raster grid
 
-```{r raster-grid}
+```{r raster-grid, eval = ggwebgl_eval_widgets}
 small_raster <- expand.grid(
   x = seq_len(8),
   y = seq_len(6),
@@ -232,7 +244,7 @@ ggplot_webgl(p, height = 420)
 
 ## Applet: Text and rug overlays
 
-```{r text-and-rug-overlays}
+```{r text-and-rug-overlays, eval = ggwebgl_eval_widgets}
 labels <- data.frame(
   x = c(2, 6),
   y = c(2, 5),
@@ -249,7 +261,7 @@ ggplot_webgl(p, height = 420)
 
 ## Code-only: Label overlay metadata
 
-```{r label-overlay-metadata, eval = FALSE}
+```{r label-overlay-metadata, eval = ggwebgl_eval_widgets}
 p <- ggplot(labels, aes(x, y, label = label)) +
   geom_label_webgl(fill = "#ffffff", colour = "#0f172a") +
   labs(title = "Label overlay metadata")
@@ -264,7 +276,7 @@ available for the layer combination being rendered.
 
 ## Code-only: Fixed-scale facets
 
-```{r fixed-scale-facets, eval = FALSE}
+```{r fixed-scale-facets, eval = ggwebgl_eval_widgets}
 p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
   geom_point_webgl() +
   facet_wrap(~am) +

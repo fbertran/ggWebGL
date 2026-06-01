@@ -15,6 +15,11 @@ primitives with shader and camera controls. The same handoff can be used
 for gallery pieces, teaching demonstrations, or stress tests of timeline
 rendering.
 
+Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 ## Boundary
 
 The ownership split is deliberately narrow:
@@ -34,6 +39,8 @@ were skipped.
 ``` r
 if (!boids4r_available) {
   cat("boids4R is unavailable, so live boids animations are skipped in this vignette.\n")
+} else if (!ggwebgl_eval_widgets) {
+  cat("boids4R is available, but live boids animations are skipped because live widget evaluation is disabled.\n")
 } else {
   cat("boids4R is available; live boids animations will be rendered below.\n")
 }

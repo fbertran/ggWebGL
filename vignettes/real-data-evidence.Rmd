@@ -8,11 +8,36 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
 library(ggWebGL)
 helper_path <- system.file("examples", "real", "real-data-helpers.R", package = "ggWebGL")
 source(helper_path, local = knitr::knit_global())
-real_examples <- real_data_plots()
+real_examples <- if (ggwebgl_eval_code) real_data_plots() else NULL
 real_info <- real_data_metadata()
 ```
 
@@ -28,6 +53,11 @@ exercise the renderer on:
 
 The goal is evidence rather than maximal detail. Every example is built from
 packaged data that is available without network access.
+
+Code examples are shown by default. Live WebGL widgets are disabled during
+CRAN, package checks, and CI. Rich local or pkgdown rendering requires
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
 
 For network-enabled environments, `inst/scripts/download_mnist_embedding.R`
 provides an optional path to a larger MNIST-style embedding export. The
@@ -48,11 +78,11 @@ example.
 real_examples$volcano_dem
 ```
 
-```{r volcano-demgl, out.width='100%'}
+```{r volcano-demgl, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$volcano_dem+theme_webgl(shader = "default"), height = 620)
 ```
 
-```{r volcano-demgl2, out.width='100%'}
+```{r volcano-demgl2, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$volcano_dem, height = 620)
 ```
 
@@ -69,11 +99,11 @@ final position legible across multiple storms.
 real_examples$storm_tracks
 ```
 
-```{r storm-tracksgl, out.width='100%'}
+```{r storm-tracksgl, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$storm_tracks+theme_webgl(shader = "default"), height = 620)
 ```
 
-```{r storm-tracksgl2, out.width='100%'}
+```{r storm-tracksgl2, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$storm_tracks, height = 620)
 ```
 
@@ -90,11 +120,11 @@ undifferentiated cloud.
 real_examples$dense_embedding
 ```
 
-```{r dense-embeddinggl, out.width='100%'}
+```{r dense-embeddinggl, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$dense_embedding+theme_webgl(shader = "default"), height = 620)
 ```
 
-```{r dense-embeddinggl2, out.width='100%'}
+```{r dense-embeddinggl2, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$dense_embedding, height = 620)
 ```
 
@@ -111,11 +141,11 @@ panels.
 real_examples$faceted_embedding
 ```
 
-```{r faceted-embeddinggl, out.width='100%'}
+```{r faceted-embeddinggl, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$faceted_embedding+theme_webgl(shader = "default"), height = 720)
 ```
 
-```{r faceted-embeddinggl2, out.width='100%'}
+```{r faceted-embeddinggl2, out.width='100%', eval = ggwebgl_eval_widgets}
 ggplot_webgl(real_examples$faceted_embedding, height = 720)
 ```
 

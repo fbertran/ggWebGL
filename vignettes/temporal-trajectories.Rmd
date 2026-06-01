@@ -8,7 +8,32 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
 
 if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
   pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
@@ -39,6 +64,11 @@ The widgets autoplay by default and can be paused, scrubbed, or reset with the
 timeline controls. If a browser throttles a background tab, pressing **Play**
 resumes the timeline.
 
+Code examples are shown by default. Live WebGL widgets are disabled during
+CRAN, package checks, and CI. Rich local or pkgdown rendering requires
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 **Status.** Trajectory paths, trajectory shader encodings, exact/cumulative
 timeline controls, and Shiny timeline messages are `Experimental` public APIs.
 They are suitable for renderer evaluation and small examples, but should not be
@@ -61,7 +91,7 @@ This spiral is rendered as an ordered path with `frame` metadata and cumulative
 timeline filtering. The `trajectory_age` shader makes the time prefix visible
 as the timeline is scrubbed.
 
-```{r spiral-trajectory, out.width='100%'}
+```{r spiral-trajectory, out.width='100%', eval = ggwebgl_eval_widgets}
 temporal_spiral_widget(height = 460)
 ```
 
@@ -70,7 +100,7 @@ temporal_spiral_widget(height = 460)
 The helix uses the same path contract, but supplies `z` and `time` values. The
 view is opt-in 3D with an orbit camera.
 
-```{r helix-trajectory, out.width='100%'}
+```{r helix-trajectory, out.width='100%', eval = ggwebgl_eval_widgets}
 temporal_helix_widget(height = 460)
 ```
 
@@ -80,11 +110,11 @@ Trajectory velocity and direction are renderer-side visual encodings computed
 from the serialized path coordinates and timeline values. They do not add
 application semantics to the data.
 
-```{r velocity-trajectory, out.width='100%'}
+```{r velocity-trajectory, out.width='100%', eval = ggwebgl_eval_widgets}
 temporal_velocity_widget(height = 460)
 ```
 
-```{r direction-trajectory, out.width='100%'}
+```{r direction-trajectory, out.width='100%', eval = ggwebgl_eval_widgets}
 temporal_direction_widget(height = 460)
 ```
 
@@ -93,7 +123,7 @@ temporal_direction_widget(height = 460)
 Exact filtering is useful for point-like animated samples. This example shows
 only the samples whose `frame` equals the selected timeline value.
 
-```{r exact-particles, out.width='100%'}
+```{r exact-particles, out.width='100%', eval = ggwebgl_eval_widgets}
 temporal_exact_particles_widget(height = 460)
 ```
 

@@ -8,7 +8,32 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
 if (file.exists("../DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
   pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
 } else {
@@ -31,6 +56,11 @@ frames, and `ggWebGL` turns those frames into animated primitives with shader
 and camera controls. The same handoff can be used for gallery pieces, teaching
 demonstrations, or stress tests of timeline rendering.
 
+Code examples are shown by default. Live WebGL widgets are disabled during
+CRAN, package checks, and CI. Rich local or pkgdown rendering requires
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 # Boundary
 
 The ownership split is deliberately narrow:
@@ -45,9 +75,11 @@ The ownership split is deliberately narrow:
 `boids4R` is a suggested package for `ggWebGL`. When it is unavailable, this
 vignette still builds and reports that the live animation widgets were skipped.
 
-```{r}
+```{r, eval = ggwebgl_eval_code}
 if (!boids4r_available) {
   cat("boids4R is unavailable, so live boids animations are skipped in this vignette.\n")
+} else if (!ggwebgl_eval_widgets) {
+  cat("boids4R is available, but live boids animations are skipped because live widget evaluation is disabled.\n")
 } else {
   cat("boids4R is available; live boids animations will be rendered below.\n")
 }
@@ -62,7 +94,7 @@ by the `ggWebGL` timeline. Colours encode species or roles, current boids are
 emphasized, arrows show current velocity, and obstacles are drawn as rings.
 Optional trails are a faint recent history window, not the current boid count.
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Scenario gallery widgets skipped.\n")
 } else {
@@ -133,7 +165,7 @@ if (!boids4r_available) {
 
 ## Schooling 2D
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Schooling widget skipped.\n")
 } else {
@@ -143,7 +175,7 @@ if (!boids4r_available) {
 
 ## Obstacle Corridor 2D
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Obstacle corridor widget skipped.\n")
 } else {
@@ -153,7 +185,7 @@ if (!boids4r_available) {
 
 ## Predator Avoidance 2D
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Predator avoidance widget skipped.\n")
 } else {
@@ -163,7 +195,7 @@ if (!boids4r_available) {
 
 ## Murmuration 3D
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Murmuration widget skipped.\n")
 } else {
@@ -173,7 +205,7 @@ if (!boids4r_available) {
 
 ## Mixed Species 3D
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Mixed-species widget skipped.\n")
 } else {
@@ -186,7 +218,7 @@ if (!boids4r_available) {
 The custom workflow builds a corridor from low-level `boids4R` constructors,
 then compares a baseline run with a stronger obstacle/predator avoidance run.
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Custom workflow widgets skipped.\n")
 } else {
@@ -315,7 +347,7 @@ if (!boids4r_available) {
 
 ## Baseline Corridor
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Baseline corridor widget skipped.\n")
 } else {
@@ -325,7 +357,7 @@ if (!boids4r_available) {
 
 ## Stronger Avoidance Corridor
 
-```{r}
+```{r, eval = ggwebgl_eval_widgets}
 if (!boids4r_available) {
   cat("Stronger avoidance corridor widget skipped.\n")
 } else {

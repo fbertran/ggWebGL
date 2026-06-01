@@ -8,13 +8,12 @@ browser-side WebGL htmlwidgets with
 or
 [`ggWebGL()`](https://fbertran.github.io/ggWebGL/reference/ggWebGL.md).
 
-Evaluation is disabled during CRAN, package checks, and CI unless
+Code evaluation is disabled during CRAN, package checks, and CI unless
 explicitly enabled with `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or
-`NOT_CRAN=true`.
-
-> Example chunks are shown but not evaluated in this build. Set
-> `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true` to evaluate
-> them during a local non-CI render.
+`NOT_CRAN=true`. Live WebGL widget rendering is additionally disabled
+unless `GGWEBGL_EVAL_LIVE_WIDGETS=true` is set. Rich local or pkgdown
+builds should set both `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
 
 ## Two Workflows
 

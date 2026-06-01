@@ -20,6 +20,11 @@ The vignette uses the `standard` preset to keep article build time and
 page weight reasonable. The standalone gallery exporter uses
 `detail = "high_detail"` by default.
 
+Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 The examples also use the current shader surface deliberately:
 
 - `density_splat` for dense point fields

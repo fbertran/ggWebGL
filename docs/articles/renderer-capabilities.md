@@ -26,6 +26,11 @@ This article is intended for visual inspection and API orientation, not
 for performance claims. Fixed-rate interaction numbers must come from
 the benchmark scripts before they are used in package material.
 
+Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 **Status.** The capabilities in this vignette are exported and tested,
 but they are documented as `Experimental`: vectors, brush/lasso
 selection, linked magnifier metadata, timeline controls, 3D camera

@@ -8,7 +8,32 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
 
 if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
   pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
@@ -29,7 +54,11 @@ if (!length(example_candidates)) {
 }
 sys.source(example_candidates[[1L]], envir = knitr::knit_global())
 
-renderer_capability_widgets <- future_work_demo_widgets()
+renderer_capability_widgets <- if (ggwebgl_eval_widgets) {
+  future_work_demo_widgets()
+} else {
+  NULL
+}
 ```
 
 # Boundary
@@ -57,6 +86,11 @@ This article is intended for visual inspection
 and API orientation, not for performance claims. Fixed-rate interaction numbers
 must come from the benchmark scripts before they are used in package material.
 
+Code examples are shown by default. Live WebGL widgets are disabled during
+CRAN, package checks, and CI. Rich local or pkgdown rendering requires
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 **Status.** The capabilities in this vignette are exported and tested, but they
 are documented as `Experimental`: vectors, brush/lasso selection, linked
 magnifier metadata, timeline controls, 3D camera state, mesh/surface rendering,
@@ -72,7 +106,7 @@ and compact transport may still evolve with the renderer contract.
 region during pan and zoom. The arrows are a renderer primitive, not a line-layer
 approximation.
 
-```{r vector-arrows, out.width='100%'}
+```{r vector-arrows, out.width='100%', eval = ggwebgl_eval_widgets}
 renderer_capability_widgets$vectors
 ```
 
@@ -86,7 +120,7 @@ outline, highlight selected samples, update the selected-count status, and
 report selected point ids through Shiny-style events or an optional JavaScript
 callback when the widget is embedded in an application.
 
-```{r selection-ids, out.width='100%'}
+```{r selection-ids, out.width='100%', eval = ggwebgl_eval_widgets}
 renderer_capability_widgets$selection
 ```
 
@@ -138,7 +172,7 @@ drawn in global coordinates, selected points are highlighted, and the right
 panel updates live to the brushed data-coordinate region. This is a renderer
 link, not a backend semantic selection.
 
-```{r linked-zoom-widget, out.width='100%'}
+```{r linked-zoom-widget, out.width='100%', eval = ggwebgl_eval_widgets}
 ggWebGL(linked_zoom_spec, height = 430)
 ```
 
@@ -150,7 +184,7 @@ and passes a `ggwebgl_timeline()` specification through `ggwebgl_spec()`.
 **What to inspect.** The play, scrub, speed, and reset controls should change
 which exact frame is visible without changing the underlying scene contract.
 
-```{r timeline-controls, out.width='100%'}
+```{r timeline-controls, out.width='100%', eval = ggwebgl_eval_widgets}
 renderer_capability_widgets$timeline
 ```
 
@@ -165,7 +199,7 @@ while ordinary two-dimensional plots continue to use the existing pan and zoom
 behavior. Trackball examples use distinct rotation state rather than the orbit
 controller alias.
 
-```{r camera-3d, out.width='100%'}
+```{r camera-3d, out.width='100%', eval = ggwebgl_eval_widgets}
 renderer_capability_widgets$camera_3d
 ```
 
@@ -182,7 +216,7 @@ Unstructured meshes use the separate indexed mesh path with scalar colouring,
 wireframe edges, and renderer-owned face/vertex picking ids. Raster fields
 remain raster fields; they are not silently treated as surfaces.
 
-```{r mesh-surface, out.width='100%'}
+```{r mesh-surface, out.width='100%', eval = ggwebgl_eval_widgets}
 renderer_capability_widgets$mesh_surface
 ```
 

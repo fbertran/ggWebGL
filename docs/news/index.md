@@ -1,5 +1,9 @@
 # Changelog
 
+## ggWebGL 0.8.0
+
+- Guarded widgets for CRAN and CI
+
 ## ggWebGL 0.7.0
 
 - Added

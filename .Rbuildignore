@@ -18,5 +18,4 @@
 ^vignettes/ggplot-coverage-core[.]R$
 ^vignettes/ggplot-coverage-summaries[.]R$
 ^vignettes/ggplot-coverage-3d[.]R$
-
 ^internal.*$

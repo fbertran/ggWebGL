@@ -13,6 +13,11 @@ datasets that exercise the renderer on:
 The goal is evidence rather than maximal detail. Every example is built
 from packaged data that is available without network access.
 
+Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 For network-enabled environments,
 `inst/scripts/download_mnist_embedding.R` provides an optional path to a
 larger MNIST-style embedding export. The packaged vignette keeps the

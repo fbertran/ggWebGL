@@ -8,7 +8,32 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
 
 if (file.exists("DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
   pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
@@ -40,6 +65,11 @@ with scalar coloring, wireframe edges, and renderer-owned face or vertex ids.
 Both examples below use small deterministic in-memory data. They are intended to
 show the renderer contracts, not to report performance numbers.
 
+Code examples are shown by default. Live WebGL widgets are disabled during
+CRAN, package checks, and CI. Rich local or pkgdown rendering requires
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 **Status.** Structured surfaces and unstructured meshes are `Experimental`
 public APIs. They cover browser-side indexed geometry examples, while terrain
 preprocessing, mesh simplification, and high-scale mesh optimization remain
@@ -51,7 +81,7 @@ The `volcano` matrix is converted with `surface_matrix()` and rendered as a
 first-class surface primitive. The widget uses a perspective orbit view and the
 `surface_height_colormap` shader.
 
-```{r volcano-surface, out.width='100%'}
+```{r volcano-surface, out.width='100%', eval = ggwebgl_eval_widgets}
 surface_gallery_volcano_widget(height = 460)
 ```
 
@@ -61,7 +91,7 @@ The mesh example uses explicit vertices and triangle indices. Scalar values are
 stored on vertices and displayed with `mesh_scalar_colormap`; face ids remain
 available to the renderer for hover or selection payloads.
 
-```{r scalar-mesh, out.width='100%'}
+```{r scalar-mesh, out.width='100%', eval = ggwebgl_eval_widgets}
 surface_gallery_mesh_widget(height = 460)
 ```
 

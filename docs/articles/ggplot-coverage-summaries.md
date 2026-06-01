@@ -4,10 +4,10 @@ This vignette covers statistical summaries, curve/contour layers, filled
 regions, raster grids, annotations, and fixed-scale facets. Evaluation
 is disabled during CRAN, package checks, and CI unless explicitly
 enabled with `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true`.
-
-> Example chunks are shown but not evaluated in this build. Set
-> `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true` to evaluate
-> them during a local non-CI render.
+Live WebGL widgets are additionally disabled unless
+`GGWEBGL_EVAL_LIVE_WIDGETS=true` is set; rich local or pkgdown builds
+should set both `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
 
 ## Curves and Contours
 

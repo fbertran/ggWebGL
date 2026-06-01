@@ -99,6 +99,10 @@ download data or report performance numbers. The widgets autoplay by
 default and can be paused, scrubbed, or reset with the timeline
 controls. If a browser throttles a background tab, pressing
 <strong>Play</strong> resumes the timeline.</p>
+<p>Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires <code>GGWEBGL_EVAL_COVERAGE_VIGNETTE=true</code> and
+<code>GGWEBGL_EVAL_LIVE_WIDGETS=true</code>.</p>
 <p><strong>Status.</strong> Trajectory paths, trajectory shader
 encodings, exact/cumulative timeline controls, and Shiny timeline
 messages are <code>Experimental</code> public APIs. They are suitable

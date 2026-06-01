@@ -4,11 +4,11 @@ The 3D and indexed-geometry APIs are exported for browser-side WebGL
 rendering, but they remain experimental because camera, picking, and
 material behavior may still evolve. Evaluation is disabled during CRAN,
 package checks, and CI unless explicitly enabled with
-`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true`.
-
-> Example chunks are shown but not evaluated in this build. Set
-> `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true` to evaluate
-> them during a local non-CI render.
+`GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` or `NOT_CRAN=true`. Live WebGL
+widgets are additionally disabled unless
+`GGWEBGL_EVAL_LIVE_WIDGETS=true` is set. Rich local or pkgdown builds
+should set both `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
 
 ## Experimental 3D, Mesh, and Surface Layers
 

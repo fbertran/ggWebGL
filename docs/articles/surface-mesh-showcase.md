@@ -12,6 +12,11 @@ Both examples below use small deterministic in-memory data. They are
 intended to show the renderer contracts, not to report performance
 numbers.
 
+Code examples are shown by default. Live WebGL widgets are disabled
+during CRAN, package checks, and CI. Rich local or pkgdown rendering
+requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 **Status.** Structured surfaces and unstructured meshes are
 `Experimental` public APIs. They cover browser-side indexed geometry
 examples, while terrain preprocessing, mesh simplification, and

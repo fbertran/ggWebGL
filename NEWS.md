@@ -1,3 +1,13 @@
+# ggWebGL 0.8.0
+
+- Added a separate vignette gate for live WebGL widgets across coverage,
+  renderer capability/showcase, real-data, boids, surface/mesh, and temporal
+  trajectory articles so CRAN source builds, CRAN checks, and CI can show
+  examples without executing browser-side widget chunks.
+- Kept rich local and pkgdown vignette rendering opt-in through
+  `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` plus
+  `GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
 # ggWebGL 0.7.0
 
 - Added `ggwebgl_interactions()` as the structured interaction contract for
