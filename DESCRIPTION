@@ -1,6 +1,6 @@
 Package: ggWebGL
 Title: Browser-Native 'WebGL' Rendering for R Graphics
-Date: 2026-05-24
+Date: 2026-06-02
 Version: 0.8.0
 Authors@R: c(
 	person(given = "Frederic", family= "Bertrand", role = c("cre", "aut"), 

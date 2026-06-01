@@ -26,6 +26,15 @@ locate_boids4r_vignette <- function() {
   found[[1L]]
 }
 
+skip_if_no_boids4r_display_adapter <- function() {
+  if (!requireNamespace("boids4R", quietly = TRUE)) {
+    skip("boids4R is unavailable in this test context.")
+  }
+  if (!ggWebGL:::ggwebgl_boids_adapter_supports_display_args()) {
+    skip("Installed boids4R does not expose the display-aware ggWebGL adapter.")
+  }
+}
+
 test_that("downstream boids4R renderer example is guarded and renderer-focused", {
   example_path <- locate_boids4r_renderer_example()
 
@@ -38,6 +47,7 @@ test_that("downstream boids4R renderer example is guarded and renderer-focused",
   expect_true(grepl("ggwebgl_boids_display_spec", text, fixed = TRUE))
   expect_true(grepl("ggWebGL::ggWebGL", text, fixed = TRUE))
   expect_true(grepl("vector_mode = c(\"current\"", text, fixed = TRUE))
+  expect_true(grepl("vector_colour_mode = c(\"species\"", text, fixed = TRUE))
   expect_true(grepl("obstacle_mode = c(\"ring\"", text, fixed = TRUE))
   expect_true(grepl("shader = \"default\"", text, fixed = TRUE))
   expect_false(grepl("library\\(boids4R", text))
@@ -211,6 +221,78 @@ test_that("downstream boids4R demo defaults use a longer behavioural timeline", 
   sims <- env$build_downstream_boids4r_simulations(demo_steps = 240L)
   expect_gte(max(sims$schooling_2d$frames$frame), 240L)
   expect_gte(length(unique(sims$schooling_2d$frames$frame)), 60L)
+})
+
+test_that("boids display wrapper preserves species-aware vector colours from boids4R", {
+  skip_if_no_boids4r_display_adapter()
+
+  sim <- boids4R::boids_scenario(
+    "mixed_species_3d",
+    n = 36L,
+    steps = 12L,
+    record_every = 3L,
+    seed = 314L
+  )
+  spec <- ggWebGL:::ggwebgl_boids_display_spec(
+    sim,
+    trail = "recent",
+    trail_length = 8L,
+    vector_mode = "current",
+    vector_colour_mode = "species",
+    vector_alpha = 0.68,
+    vector_width = 1.25,
+    obstacle_mode = "ring",
+    shader = "default",
+    autoplay = FALSE,
+    loop = FALSE,
+    speed = 1.7,
+    fps = 12L
+  )
+
+  vector_layer <- spec$render$layers[[which(vapply(spec$render$layers, function(layer) identical(layer$type, "vectors"), logical(1)))[[1L]]]]
+  vector_rgba <- matrix(vector_layer$rgba, ncol = 4L, byrow = TRUE)
+  point_layers <- spec$render$layers[vapply(spec$render$layers, function(layer) identical(layer$type, "points"), logical(1))]
+  point_alphas <- unlist(lapply(point_layers, function(layer) matrix(layer$rgba, ncol = 4L, byrow = TRUE)[, 4L]), use.names = FALSE)
+
+  expect_gt(nrow(unique(round(vector_rgba[, 1:3, drop = FALSE], 3))), 1L)
+  expect_equal(unique(round(vector_rgba[, 4L], 2)), 0.68)
+  expect_true(any(vapply(spec$render$layers, function(layer) identical(layer$type, "lines"), logical(1))))
+  expect_true(any(point_alphas < 0.3))
+  expect_true(any(point_alphas > 0.85))
+  expect_equal(spec$render$timeline$speed, 1.7)
+  expect_equal(spec$render$timeline$fps, 12L)
+  expect_false(spec$render$timeline$autoplay)
+  expect_false(spec$render$timeline$loop)
+})
+
+test_that("boids display wrapper still supports fixed neutral vector colours", {
+  skip_if_no_boids4r_display_adapter()
+
+  sim <- boids4R::boids_scenario(
+    "mixed_species_3d",
+    n = 24L,
+    steps = 9L,
+    record_every = 3L,
+    seed = 315L
+  )
+  spec <- ggWebGL:::ggwebgl_boids_display_spec(
+    sim,
+    trail = "none",
+    vector_mode = "current",
+    vector_colour_mode = "fixed",
+    vector_colour = "#334155",
+    vector_alpha = 0.44,
+    obstacle_mode = "none",
+    shader = "default"
+  )
+
+  vector_layer <- spec$render$layers[[which(vapply(spec$render$layers, function(layer) identical(layer$type, "vectors"), logical(1)))[[1L]]]]
+  vector_rgba <- unique(round(matrix(vector_layer$rgba, ncol = 4L, byrow = TRUE), 3))
+  expected_rgb <- round(grDevices::col2rgb("#334155")[, 1L] / 255, 3)
+
+  expect_equal(nrow(vector_rgba), 1L)
+  expect_equal(unname(vector_rgba[1L, 1:3]), unname(expected_rgb))
+  expect_equal(vector_rgba[1L, 4L], 0.44)
 })
 
 test_that("boids display current vectors include one velocity per current boid", {

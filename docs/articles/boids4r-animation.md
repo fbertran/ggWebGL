@@ -10,10 +10,13 @@ animated point/vector timelines that can be panned, zoomed, scrubbed,
 and inspected in WebGL.
 
 The examples are deliberately browser-native. `boids4R` computes the
-flocking frames, and `ggWebGL` turns those frames into animated
-primitives with shader and camera controls. The same handoff can be used
-for gallery pieces, teaching demonstrations, or stress tests of timeline
-rendering.
+flocking frames and owns the display policy in
+[`boids4R::as_ggwebgl_spec()`](https://fbertran.github.io/boids4R/reference/as_ggwebgl_spec.html):
+species and role colours, emphasized current boids, faint recent trails,
+species-aware velocity arrows, and visible obstacle or predator context
+rings. `ggWebGL` then renders those primitives with shader, timeline,
+and camera controls. The same handoff can be used for gallery pieces,
+teaching demonstrations, or stress tests of timeline rendering.
 
 Code examples are shown by default. Live WebGL widgets are disabled
 during CRAN, package checks, and CI. Rich local or pkgdown rendering
@@ -27,7 +30,8 @@ The ownership split is deliberately narrow:
 - `boids4R` owns simulation semantics: flocking state, rules, scenarios,
   and frame export
 - [`boids4R::as_ggwebgl_spec()`](https://fbertran.github.io/boids4R/reference/as_ggwebgl_spec.html)
-  translates simulation frames into renderer primitives
+  translates simulation frames into renderer primitives and owns boid
+  display defaults
 - `ggWebGL` owns WebGL rendering: the htmlwidget, point and vector
   primitives, shader choice, timeline controls, hover, pan, zoom, and 3D
   orbit interaction
@@ -53,9 +57,10 @@ These examples mirror the `boids4R` scenario gallery: compact schools,
 obstacle corridors, predator avoidance, murmurations, and mixed-species
 3D flocks. Each widget is built from a renderer-neutral
 `boids_simulation` object and animated by the `ggWebGL` timeline.
-Colours encode species or roles, current boids are emphasized, arrows
-show current velocity, and obstacles are drawn as rings. Optional trails
-are a faint recent history window, not the current boid count.
+Colours encode species or roles, current boids are emphasized, velocity
+arrows follow species by default, and obstacles are drawn as rings.
+Optional trails are a faint recent history window, not the current boid
+count.
 
 ``` r
 if (!boids4r_available) {
@@ -109,10 +114,14 @@ if (!boids4r_available) {
       current_alpha = 0.95,
       trail_alpha = 0.18,
       vector_mode = "current",
+      vector_colour_mode = "species",
       vector_every = 1L,
+      vector_alpha = 0.68,
+      vector_width = 1.25,
       vector_scale = if (identical(sim$dimension, "3d")) 0.11 else 0.13,
       obstacle_mode = "ring",
       obstacle_segments = 48L,
+      obstacle_alpha = 0.9,
       trail = "recent",
       trail_length = 32L,
       shader = "default",
@@ -292,10 +301,14 @@ if (!boids4r_available) {
       current_alpha = 0.96,
       trail_alpha = 0.18,
       vector_mode = "current",
+      vector_colour_mode = "species",
       vector_every = 1L,
+      vector_alpha = 0.68,
+      vector_width = 1.25,
       vector_scale = 0.14,
       obstacle_mode = "ring",
       obstacle_segments = 48L,
+      obstacle_alpha = 0.9,
       trail = "recent",
       trail_length = 32L,
       shader = "default",
@@ -338,6 +351,7 @@ sim <- boids4R::boids_scenario("mixed_species_3d", n = 210, steps = 240, seed = 
 spec <- ggWebGL:::ggwebgl_boids_display_spec(
   sim,
   vector_mode = "current",
+  vector_colour_mode = "species",
   obstacle_mode = "ring",
   trail = "recent",
   trail_length = 32,

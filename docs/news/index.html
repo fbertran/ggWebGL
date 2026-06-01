@@ -58,7 +58,10 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="ggwebgl-080">ggWebGL 0.8.0<a class="anchor" aria-label="anchor" href="#ggwebgl-080"></a></h2>
-<ul><li>Guarded widgets for CRAN and CI</li>
+<ul><li>Added a separate vignette gate for live WebGL widgets across coverage, renderer capability/showcase, real-data, boids, surface/mesh, and temporal trajectory articles so CRAN source builds, CRAN checks, and CI can show examples without executing browser-side widget chunks.</li>
+<li>Kept rich local and pkgdown vignette rendering opt-in through <code>GGWEBGL_EVAL_COVERAGE_VIGNETTE=true</code> plus <code>GGWEBGL_EVAL_LIVE_WIDGETS=true</code>.</li>
+<li>Delegated boids display defaults to the updated <code><a href="https://fbertran.github.io/boids4R/reference/as_ggwebgl_spec.html" class="external-link">boids4R::as_ggwebgl_spec()</a></code> adapter so species-aware velocity colours, current-boid emphasis, recent trails, and obstacle context rings are preserved by the optional integration.</li>
+<li>Prevented the temporal trajectories vignette from emitting a same-basename <code>.R</code> sidecar during explicit local renders, avoiding pkgdown article render failures in rich live-widget builds.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="ggwebgl-070">ggWebGL 0.7.0<a class="anchor" aria-label="anchor" href="#ggwebgl-070"></a></h2>

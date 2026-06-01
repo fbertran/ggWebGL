@@ -8,6 +8,8 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+knitr::opts_knit$set(purl = FALSE)
+
 ggwebgl_truthy <- function(x) {
   tolower(x) %in% c("1", "true", "yes", "y")
 }

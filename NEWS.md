@@ -7,6 +7,9 @@
 - Kept rich local and pkgdown vignette rendering opt-in through
   `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` plus
   `GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+- Delegated boids display defaults to the updated `boids4R::as_ggwebgl_spec()`
+  adapter so species-aware velocity colours, current-boid emphasis, recent
+  trails, and obstacle context rings are preserved by the optional integration.
 
 # ggWebGL 0.7.0
 
