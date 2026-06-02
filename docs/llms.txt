@@ -390,3 +390,9 @@ For static capture and publication workflows, `ggWebGL` exposes:
   Bridge](https://fbertran.github.io/ggWebGL/articles/xgeortr-bridge.md):
 - [Swarm Art in the Browser with
   boids4R](https://fbertran.github.io/ggWebGL/articles/boids4r-animation.md):
+- [2D Swarm Scenarios with
+  boids4R](https://fbertran.github.io/ggWebGL/articles/boids4r-scenarios-2d.md):
+- [3D Swarm Scenarios with
+  boids4R](https://fbertran.github.io/ggWebGL/articles/boids4r-scenarios-3d.md):
+- [Custom boids4R Corridor
+  Workflow](https://fbertran.github.io/ggWebGL/articles/boids4r-custom-workflow.md):

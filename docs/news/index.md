@@ -14,9 +14,9 @@
   adapter so species-aware velocity colours, current-boid emphasis,
   recent trails, and obstacle context rings are preserved by the
   optional integration.
-- Prevented the temporal trajectories vignette from emitting a
-  same-basename `.R` sidecar during explicit local renders, avoiding
-  pkgdown article render failures in rich live-widget builds.
+- Split the live `boids4R` animation article into an overview plus
+  smaller 2D, 3D, and custom-workflow pages so generated pkgdown
+  artifacts remain below repository hosting file-size limits.
 
 ## ggWebGL 0.7.0
 

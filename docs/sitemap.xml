@@ -1,6 +1,9 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://fbertran.github.io/ggWebGL/404.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/articles/boids4r-animation.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/articles/boids4r-custom-workflow.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/articles/boids4r-scenarios-2d.html</loc></url>
+<url><loc>https://fbertran.github.io/ggWebGL/articles/boids4r-scenarios-3d.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/articles/getting-started.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/articles/ggplot-coverage-3d.html</loc></url>
 <url><loc>https://fbertran.github.io/ggWebGL/articles/ggplot-coverage-core.html</loc></url>

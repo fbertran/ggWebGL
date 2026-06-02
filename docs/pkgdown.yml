@@ -3,6 +3,9 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   boids4r-animation: boids4r-animation.html
+  boids4r-custom-workflow: boids4r-custom-workflow.html
+  boids4r-scenarios-2d: boids4r-scenarios-2d.html
+  boids4r-scenarios-3d: boids4r-scenarios-3d.html
   getting-started: getting-started.html
   ggplot-coverage-3d: ggplot-coverage-3d.html
   ggplot-coverage-core: ggplot-coverage-core.html
@@ -15,7 +18,7 @@ articles:
   surface-mesh-showcase: surface-mesh-showcase.html
   temporal-trajectories: temporal-trajectories.html
   xgeortr-bridge: xgeortr-bridge.html
-last_built: 2026-06-01T22:55Z
+last_built: 2026-06-02T23:08Z
 urls:
   reference: https://fbertran.github.io/ggWebGL/reference
   article: https://fbertran.github.io/ggWebGL/articles

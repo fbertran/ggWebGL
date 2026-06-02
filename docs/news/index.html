@@ -39,6 +39,9 @@
     <li><h6 class="dropdown-header" data-toc-skip>Optional bridges</h6></li>
     <li><a class="dropdown-item" href="../articles/xgeortr-bridge.html">Optional XGeoRTR Bridge</a></li>
     <li><a class="dropdown-item" href="../articles/boids4r-animation.html">Swarm Art in the Browser with boids4R</a></li>
+    <li><a class="dropdown-item" href="../articles/boids4r-scenarios-2d.html">2D Swarm Scenarios with boids4R</a></li>
+    <li><a class="dropdown-item" href="../articles/boids4r-scenarios-3d.html">3D Swarm Scenarios with boids4R</a></li>
+    <li><a class="dropdown-item" href="../articles/boids4r-custom-workflow.html">Custom boids4R Corridor Workflow</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -61,7 +64,7 @@
 <ul><li>Added a separate vignette gate for live WebGL widgets across coverage, renderer capability/showcase, real-data, boids, surface/mesh, and temporal trajectory articles so CRAN source builds, CRAN checks, and CI can show examples without executing browser-side widget chunks.</li>
 <li>Kept rich local and pkgdown vignette rendering opt-in through <code>GGWEBGL_EVAL_COVERAGE_VIGNETTE=true</code> plus <code>GGWEBGL_EVAL_LIVE_WIDGETS=true</code>.</li>
 <li>Delegated boids display defaults to the updated <code><a href="https://fbertran.github.io/boids4R/reference/as_ggwebgl_spec.html" class="external-link">boids4R::as_ggwebgl_spec()</a></code> adapter so species-aware velocity colours, current-boid emphasis, recent trails, and obstacle context rings are preserved by the optional integration.</li>
-<li>Prevented the temporal trajectories vignette from emitting a same-basename <code>.R</code> sidecar during explicit local renders, avoiding pkgdown article render failures in rich live-widget builds.</li>
+<li>Split the live <code>boids4R</code> animation article into an overview plus smaller 2D, 3D, and custom-workflow pages so generated pkgdown artifacts remain below repository hosting file-size limits.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="ggwebgl-070">ggWebGL 0.7.0<a class="anchor" aria-label="anchor" href="#ggwebgl-070"></a></h2>

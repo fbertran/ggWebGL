@@ -18,4 +18,8 @@
 ^vignettes/ggplot-coverage-core[.]R$
 ^vignettes/ggplot-coverage-summaries[.]R$
 ^vignettes/ggplot-coverage-3d[.]R$
+^vignettes/boids4r-animation[.]R$
+^vignettes/boids4r-scenarios-2d[.]R$
+^vignettes/boids4r-scenarios-3d[.]R$
+^vignettes/boids4r-custom-workflow[.]R$
 ^internal.*$

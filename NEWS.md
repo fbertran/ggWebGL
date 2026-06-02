@@ -10,6 +10,9 @@
 - Delegated boids display defaults to the updated `boids4R::as_ggwebgl_spec()`
   adapter so species-aware velocity colours, current-boid emphasis, recent
   trails, and obstacle context rings are preserved by the optional integration.
+- Split the live `boids4R` animation article into an overview plus smaller 2D,
+  3D, and custom-workflow pages so generated pkgdown artifacts remain below
+  repository hosting file-size limits.
 
 # ggWebGL 0.7.0
 

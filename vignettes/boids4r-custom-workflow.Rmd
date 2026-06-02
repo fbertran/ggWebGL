@@ -1,0 +1,194 @@
+---
+title: "Custom boids4R Corridor Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Custom boids4R Corridor Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_knit$set(purl = FALSE)
+
+ggwebgl_truthy <- function(x) {
+  tolower(x) %in% c("1", "true", "yes", "y")
+}
+
+ggwebgl_ci_vars <- c(
+  "CI",
+  "GITHUB_ACTIONS",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "TRAVIS",
+  "APPVEYOR",
+  "CIRCLECI",
+  "JENKINS_URL"
+)
+ggwebgl_is_ci <- any(vapply(Sys.getenv(ggwebgl_ci_vars), ggwebgl_truthy, logical(1)))
+ggwebgl_is_check <- nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))
+ggwebgl_eval_code <- !ggwebgl_is_ci &&
+  !ggwebgl_is_check &&
+  (
+    ggwebgl_truthy(Sys.getenv("NOT_CRAN")) ||
+      ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_COVERAGE_VIGNETTE"))
+  )
+ggwebgl_eval_widgets <- ggwebgl_eval_code &&
+  ggwebgl_truthy(Sys.getenv("GGWEBGL_EVAL_LIVE_WIDGETS"))
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ggwebgl_eval_code)
+if (file.exists("../DESCRIPTION") && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all("..", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+} else {
+  library(ggWebGL)
+}
+
+boids4r_available <- requireNamespace("boids4R", quietly = TRUE)
+```
+
+# Custom Corridor Workflow
+
+This workflow builds a 2D corridor from low-level `boids4R` constructors, then
+compares a baseline run with a stronger obstacle/predator avoidance run. The
+visual encoding is the same as the scenario pages: current boids are emphasized,
+recent trails are faint, velocity vectors use species colours, and obstacles are
+shown as rings.
+
+Live WebGL widgets are disabled during CRAN, package checks, and CI. Rich local
+or pkgdown rendering requires `GGWEBGL_EVAL_COVERAGE_VIGNETTE=true` and
+`GGWEBGL_EVAL_LIVE_WIDGETS=true`.
+
+```{r, eval = ggwebgl_eval_code}
+if (!boids4r_available) {
+  cat("boids4R is unavailable, so live custom corridor widgets are skipped.\n")
+} else if (!ggwebgl_eval_widgets) {
+  cat("boids4R is available, but live custom corridor widgets are skipped because live widget evaluation is disabled.\n")
+} else {
+  cat("boids4R is available; live custom corridor widgets will be rendered below.\n")
+}
+```
+
+```{r, include = FALSE, eval = ggwebgl_eval_code}
+simulate_custom_corridor <- function(stronger_avoidance = FALSE, seed = 221L) {
+  bounds <- matrix(
+    c(-2.4, -1.35, 2.4, 1.35),
+    ncol = 2,
+    dimnames = list(c("x", "y"), c("min", "max"))
+  )
+
+  n_school <- 96L
+  n_scout <- 32L
+  n_boids <- n_school + n_scout
+  school_axis <- seq(0, 1, length.out = n_school)
+  scout_axis <- seq(0, 1, length.out = n_scout)
+  positions <- rbind(
+    cbind(-2.18 + 0.83 * school_axis, -0.70 + 0.95 * abs(sin(pi * school_axis))),
+    cbind(-2.22 + 0.77 * scout_axis, 0.28 + 0.64 * abs(cos(pi * scout_axis)))
+  )
+  velocity_phase <- seq(0, 2 * pi, length.out = n_boids)
+  velocities <- cbind(
+    0.35 + 0.20 * cos(velocity_phase),
+    0.08 * sin(velocity_phase)
+  )
+
+  custom_state <- boids4R::boids_state(
+    n_boids,
+    "2d",
+    bounds = bounds,
+    positions = positions,
+    velocities = velocities,
+    species = c(rep("school", n_school), rep("scout", n_scout))
+  )
+
+  custom_world <- boids4R::boids_world(
+    "2d",
+    bounds = bounds,
+    boundary = "reflect",
+    obstacles = data.frame(
+      x = c(-0.82, -0.05, 0.72),
+      y = c(0.42, -0.36, 0.48),
+      radius = c(0.30, 0.36, 0.31)
+    ),
+    predators = data.frame(
+      x = -0.25,
+      y = 0.92,
+      radius = 0.58,
+      strength = 1.2
+    ),
+    attractors = data.frame(
+      x = 2.08,
+      y = -0.86,
+      strength = 0.95
+    )
+  )
+
+  params <- boids4R::boids_params(
+    "2d",
+    separation_weight = 1.35,
+    alignment_weight = 0.94,
+    cohesion_weight = 0.62,
+    obstacle_weight = if (isTRUE(stronger_avoidance)) 2.8 else 2.5,
+    predator_weight = if (isTRUE(stronger_avoidance)) 3.2 else 2.3,
+    goal_weight = if (isTRUE(stronger_avoidance)) 0.20 else 0.16,
+    max_speed = 1.18,
+    max_force = 0.12,
+    noise = 0.001
+  )
+
+  boids4R::simulate_boids(
+    custom_state,
+    custom_world,
+    params,
+    steps = 240L,
+    record_every = 3L,
+    seed = seed
+  )
+}
+
+render_custom_corridor <- function(name, stronger_avoidance = FALSE, seed = 221L) {
+  sim <- simulate_custom_corridor(stronger_avoidance = stronger_avoidance, seed = seed)
+  spec <- ggWebGL:::ggwebgl_boids_display_spec(
+    sim,
+    boid_size = 4.4,
+    prey_size = 5.0,
+    predator_size = 8.0,
+    current_alpha = 0.96,
+    trail_alpha = 0.18,
+    vector_mode = "current",
+    vector_colour_mode = "species",
+    vector_every = 1L,
+    vector_alpha = 0.68,
+    vector_width = 1.25,
+    vector_scale = 0.14,
+    obstacle_mode = "ring",
+    obstacle_segments = 48L,
+    obstacle_alpha = 0.9,
+    trail = "recent",
+    trail_length = 32L,
+    shader = "default",
+    speed = 1.5,
+    fps = 24L
+  )
+  spec$labels$title <- paste("boids4R custom corridor:", name)
+  ggWebGL::ggWebGL(spec, height = 500)
+}
+```
+
+## Baseline Corridor
+
+```{r baseline-corridor, eval = ggwebgl_eval_widgets}
+if (!boids4r_available) {
+  cat("Baseline corridor widget skipped.\n")
+} else {
+  render_custom_corridor("baseline", stronger_avoidance = FALSE, seed = 221L)
+}
+```
+
+## Stronger Avoidance Corridor
+
+```{r stronger-avoidance-corridor, eval = ggwebgl_eval_widgets}
+if (!boids4r_available) {
+  cat("Stronger avoidance corridor widget skipped.\n")
+} else {
+  render_custom_corridor("stronger_avoidance", stronger_avoidance = TRUE, seed = 222L)
+}
+```

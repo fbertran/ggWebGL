@@ -52,6 +52,9 @@ articles:
     contents:
       - xgeortr-bridge
       - boids4r-animation
+      - boids4r-scenarios-2d
+      - boids4r-scenarios-3d
+      - boids4r-custom-workflow
 
 footer:
   structure:
