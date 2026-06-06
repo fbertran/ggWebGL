@@ -25,7 +25,8 @@ Imports:
     htmltools,
     htmlwidgets,
     jsonlite,
-    rlang
+    rlang,
+    utils
 Suggests:
     boids4R,
     chromote,

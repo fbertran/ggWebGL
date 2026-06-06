@@ -9,3 +9,7 @@
 #'
 #' @keywords internal
 "_PACKAGE"
+
+#' @importFrom utils getS3method
+#' 
+NULL
